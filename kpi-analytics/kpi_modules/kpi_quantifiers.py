@@ -41,11 +41,13 @@ def _split_signed(effect: float) -> tuple[float, float]:
 
 
 def aged_breaks(cfg: dict[str, Any]) -> list[int]:
+    """Return configured aging day thresholds (e.g. 30, 60, 90, 120)."""
     kq = _kq(cfg)
     return [int(d) for d in (kq.get("aged_day_breaks") or [30, 60, 90, 120])]
 
 
 def quantifier_column_names(cfg: dict[str, Any]) -> list[str]:
+    """Return ordered kpi_q_* column names for the current config."""
     kq = _kq(cfg)
     if not kq.get("enabled", True):
         return []
@@ -117,17 +119,11 @@ def apply_quantifiers_to_rows(
         bi = raw.get("billed_amount")
         billed_list.append(float(bi) if bi is not None else 0.0)
 
-    # Portfolio T (total AR)
+    # Portfolio T (total AR) — RCM methodology symbols (good-names in .pylintrc)
     T = sum(x_list)
-    if T <= 0:
-        # Avoid division by zero; still write zeros
-        T_safe = 0.0
-    else:
-        T_safe = T
+    T_safe = 0.0 if T <= 0 else T
 
-    # N_B for each threshold: sum of balances with AR > T (strict > per methodology "AR > 90")
-    # Doc uses "aged > 90". We use AR days >= threshold for bucket inclusion (standard ops).
-    # Methodology table: age 120, 105 in >90; 45, 15 not. Use >= threshold.
+    # N[thr]: sum of balances with AR days >= threshold (methodology aging buckets)
     N: dict[int, float] = {}
     for thr in breaks:
         N[thr] = 0.0
@@ -268,15 +264,6 @@ def check_kpi_quantifier_integrity(
             except ValueError:
                 failures.append({"Issue": "kpi_q_parse_error", "Column": name})
         return s
-
-    def pair_sum(base: str) -> float:
-        # base without _pos/_neg; try dual then single
-        if f"{base}_pos" in (columns or []) or any(
-            str(c).startswith(base) for c in (columns or [])
-        ):
-            if any(c.endswith("_pos") and c.startswith(base) for c in columns or []):
-                return col_sum(f"{base}_pos") + col_sum(f"{base}_neg")
-        return col_sum(base)
 
     logical: dict[str, float] = {}
 
