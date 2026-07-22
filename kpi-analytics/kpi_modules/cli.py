@@ -32,12 +32,23 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _import_dir() -> Path:
+    """Tracked input CSVs (synthetic or user-chosen extracts)."""
+    return _repo_root() / "import"
+
+
+def _default_score_input() -> Path:
+    """Default score input: tracked synthetic WQ under import\\."""
+    return _import_dir() / "wq_synthetic_data.csv"
+
+
 def _default_score_output() -> Path:
     return _repo_root() / "output" / "wq_scored.csv"
 
 
 def _default_generate_output() -> Path:
-    return _repo_root() / "output" / "wq_data_synthetic.csv"
+    """Default generate target: tracked import input (not regenerable output\\)."""
+    return _import_dir() / "wq_synthetic_data.csv"
 
 
 def _default_schema() -> Path:
@@ -123,7 +134,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_ver.add_argument("--quiet", action="store_true", help="Minimal host text")
 
     p_probe = sub.add_parser("probe", help="Run environment / path preflight")
-    p_probe.add_argument("--csv", dest="csv_path", default=None, help="Data CSV to check")
+    p_probe.add_argument(
+        "--csv",
+        dest="csv_path",
+        default=None,
+        help=(
+            "Data CSV to check "
+            "(default: <repo>/import/wq_synthetic_data.csv when present)"
+        ),
+    )
     p_probe.add_argument(
         "--config", dest="config_path", default=None, help="Config JSON to check"
     )
@@ -149,8 +168,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_score.add_argument(
         "--csv",
         dest="csv_path",
-        required=True,
-        help="Input data CSV",
+        default=None,
+        help=(
+            "Input data CSV (default: <repo>/import/wq_synthetic_data.csv)"
+        ),
     )
     p_score.add_argument(
         "--output",
@@ -214,7 +235,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--output",
         dest="output_path",
         default=None,
-        help="Output CSV (default: <repo>/output/wq_data_synthetic.csv)",
+        help=(
+            "Output CSV (default: <repo>/import/wq_synthetic_data.csv; "
+            "tracked input folder)"
+        ),
     )
     p_gen.add_argument(
         "--schema",
@@ -400,8 +424,13 @@ def main(argv: list[str] | None = None) -> int:
             return EXIT_OK
 
         if command == "probe":
+            probe_csv = getattr(args, "csv_path", None)
+            if not probe_csv:
+                default_in = _default_score_input()
+                if default_in.is_file():
+                    probe_csv = str(default_in)
             result = run_probe(
-                csv_path=getattr(args, "csv_path", None),
+                csv_path=probe_csv,
                 config_path=getattr(args, "config_path", None),
                 schema_path=getattr(args, "schema_path", None),
             )
@@ -423,17 +452,24 @@ def main(argv: list[str] | None = None) -> int:
         if command == "score":
             csv_path = args.csv_path
             if not csv_path:
-                _emit(
-                    {
-                        "Success": False,
-                        "Command": "score",
-                        "Version": __version__,
-                        "Message": "--csv is required",
-                    },
-                    as_json=as_json,
-                    quiet=quiet,
-                )
-                return EXIT_VALIDATION
+                default_in = _default_score_input()
+                if default_in.is_file():
+                    csv_path = str(default_in)
+                else:
+                    _emit(
+                        {
+                            "Success": False,
+                            "Command": "score",
+                            "Version": __version__,
+                            "Message": (
+                                "--csv is required when default input is missing "
+                                f"({default_in})"
+                            ),
+                        },
+                        as_json=as_json,
+                        quiet=quiet,
+                    )
+                    return EXIT_VALIDATION
 
             output_path = args.output_path or str(_default_score_output())
             result = score_csv(
