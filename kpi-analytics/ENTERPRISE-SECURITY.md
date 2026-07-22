@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Enterprise Security
 description: Security review notes and execution restrictions for KPI Analytics on controlled corporate PCs.
-version: "1.6.0"
+version: "1.7.0"
 status: current
 audience:
   - security
@@ -19,7 +19,7 @@ last_updated: "2026-07-22"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate desktops.
 
-**Toolkit version:** 1.6.0  
+**Toolkit version:** 1.7.0  
 **Toolkit folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\`  
 **Runtime:** Python **3.13** standard library only (no third-party packages)
@@ -74,7 +74,7 @@ This is a design audit, not a penetration-test report. It mirrors the trust mode
 | **Policy** | Does **not** change execution policy, GPO, or registry policy. |
 | **Network** | No downloads, HTTP clients, remote modules, or package index access. |
 | **Identity** | Does not read credentials, tokens, or browser stores. |
-| **Scope of files** | Reads user-supplied CSV/config/schema; writes scored, summary, and synthetic CSVs under chosen paths (default repo `output\`); writes diagnostics certificates under `kpi-analytics\diagnostics\`; may use `%TEMP%` for probe checks. |
+| **Scope of files** | Reads user-supplied CSV/config/schema; writes scored, summary, and synthetic CSVs under chosen paths (default repo `output\`); writes diagnostics certificates under `kpi-analytics\diagnostics\`; may use `%TEMP%` for probe checks. By default, **scored** CSV masks `patient` and blanks `dob` (config `privacy`); input files are not modified. This is operational masking, not Safe Harbor de-identification. |
 | **Office** | **Does not** automate Microsoft Excel or other Office apps. |
 | **Dependencies** | **Standard library only** for Python 3.13. |
 | **Surfaces** | CLI (`kpi-analytics.cmd` / `python -m kpi_modules`), importable package, fixtures under `fixtures\`, diagnostics under `diagnostics\`. |
@@ -100,6 +100,8 @@ Processing includes priority scoring, RCM claim-impact columns, vertical summary
 Excel export, if needed, is a separate step via **`excel-toolkit\`** (its own enterprise close policy).
 
 Synthetic `generate` creates **fake** WQ rows (`Doe,John*` / `Doe,Jane*`, DOB day fixed to 01) for testing only.
+
+**Score-output privacy (default on):** `score` masks the `patient` column (prefix + batch ordinal, e.g. `DOE001,JOH001`) and blanks `dob` unless config disables or changes `privacy`. Override per run with CLI `--privacy` / `--no-privacy`. This reduces accidental exposure in scored exports; it does **not** make the file HIPAA Safe Harbor de-identified. Callers remain responsible for handling source extracts that still contain full PHI.
 
 ---
 
@@ -220,3 +222,4 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | 1.5.0 | RCM dual-attribution alignment (static + exact Δ; Days in AR; balance-weighted aging) |
 | 1.5.1 | Vertical summary CSV; documentation refresh |
 | 1.6.0 | Enterprise `diagnostics` command, durable pass/fail report, operational command gate |
+| 1.7.0 | Score-output PHI field masking (`privacy`); patient prefix+token; DOB omit; `--privacy` / `--no-privacy` |

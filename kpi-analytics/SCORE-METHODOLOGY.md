@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "1.6.0"
+version: "1.7.0"
 status: current
 audience:
   - users
@@ -23,8 +23,9 @@ How `kpi-analytics` turns Work Queue rows into:
 1. An explainable **priority score** (`v1_*`)  
 2. **RCM portfolio KPIs** and **claim-level impacts** (`kpi_q_*`)  
 3. A **vertical summary CSV** for audit and communication  
+4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 1.6.0  
+**Toolkit version:** 1.7.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -58,10 +59,11 @@ It also describes the **vertical summary CSV** (metrics as rows with formulas an
 10. [Priority worked example](#9-priority-worked-example)
 11. [RCM KPI quantifiers (kpi_q_*)](#10-rcm-kpi-quantifiers-kpi_q_)
 12. [Vertical summary CSV](#11-vertical-summary-csv)
-13. [How to validate](#12-how-to-validate)
-14. [Common false alarms](#13-common-false-alarms)
-15. [Out of scope](#14-out-of-scope)
-16. [Document history](#15-document-history)
+13. [PHI field masking (privacy)](#12-phi-field-masking-privacy)
+14. [How to validate](#13-how-to-validate)
+15. [Common false alarms](#14-common-false-alarms)
+16. [Out of scope](#15-out-of-scope)
+17. [Document history](#16-document-history)
 
 ---
 
@@ -92,10 +94,13 @@ Data CSV
     ├─► [RCM KPI Q]
     │       T, N_T, ADC → static share/contrib → exact Δ (Days in AR; aging pp)
     │
+    ├─► [Privacy] (score output only; default on)
+    │       patient → prefix+token; dob → omit/passthrough
+    │
     └─► [Outputs]
-            detail CSV (source + v1_* + kpi_q_*)
+            detail CSV (source fields with optional PHI mask + v1_* + kpi_q_*)
             summary CSV (vertical: section, metric, value, formula, explanation)
-            CLI JSON (KpiTotals, scores, paths)
+            CLI JSON (KpiTotals, Privacy*, scores, paths)
 ```
 
 ```bat
@@ -313,9 +318,79 @@ Written next to the detail file unless `--no-summary`:
 
 **Portfolio KPI Q checksum** rows re-sum claim-level `kpi_q_*` fields to prove they rebuild portfolio KPIs (share ≈ 100%, days sum = Days in AR, aged contrib = AR-over-T %).
 
+Run section also records `privacy_enabled`, and when enabled: `privacy_patient_mode`, `privacy_dob_mode`, `privacy_unique_patients`.
+
 ---
 
-## 12. How to validate
+## 12. PHI field masking (privacy)
+
+Applied **after** priority and KPI Q, **only on the scored output rows**. The input CSV is never modified. Implementation: `kpi_modules\privacy.py`.
+
+**Important:** This is **operational PHI field masking / risk reduction**. It is **not** a claim of HIPAA Safe Harbor or Expert Determination de-identification. Other columns (`account`, `sub_id`, free-text comments, etc.) may still identify individuals.
+
+### Config (`privacy`)
+
+Default in `config_default.json`: **enabled**.
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `enabled` | `true` | Master switch for score-output masking |
+| `patient_field` | `patient` | Column name to mask |
+| `dob_field` | `dob` | Column name to mask |
+| `patient.mode` | `prefix_token` | `prefix_token` · `omit` · `passthrough` |
+| `patient.name_order` | `last_first` | Parse order of comma-separated name (`first_last` supported) |
+| `patient.prefix_len` | `3` | Letter prefix length per name part |
+| `patient.token_digits` | `3` | Zero-padded ordinal width (max 999 uniques) |
+| `patient.token_mode` | `alpha_order` | Unique names sorted A→Z → `001`…`N` |
+| `patient.uppercase` | `true` | Uppercase prefixes and sort keys |
+| `patient.pad_char` | `X` | Right-pad short letter prefixes |
+| `patient.empty_policy` | `leave_empty` | Or `placeholder` → `UNK000,UNK000` |
+| `dob.mode` | `omit` | `omit` (blank) or `passthrough` |
+
+Golden fixtures set `"privacy": { "enabled": false }` so handcalc patient labels stay stable.
+
+### Patient transform (`prefix_token`)
+
+1. Parse name using `name_order` (default **LAST,FIRST**).  
+2. Normalize key: collapse spaces, optional uppercasing → `LAST,FIRST`.  
+3. Collect **unique** keys in the batch; sort A→Z; assign `001`…`N`.  
+4. Emit:
+
+```text
+{LAST_PREFIX}{TOKEN},{FIRST_PREFIX}{TOKEN}
+DOE,JOHN  →  DOE001,JOH001
+```
+
+- Prefixes use **letters only** (e.g. `O'BRIEN` → `OBR`).  
+- Same person on multiple claim rows shares one token within the run.  
+- Tokens are **batch-relative**: a different extract can renumber the same person.
+
+### DOB
+
+| Mode | Output |
+|------|--------|
+| `omit` | Empty cell (default) |
+| `passthrough` | Unchanged input value |
+
+Priority and KPI math **do not** use `patient` or `dob`.
+
+### CLI JSON fields
+
+When scoring: `PrivacyEnabled`, `PrivacyPatientMode`, `PrivacyDobMode`, `PrivacyUniquePatients`, `PrivacyCliOverride`.
+
+### CLI overrides
+
+| Flag | Effect |
+|------|--------|
+| `--privacy` | Force `privacy.enabled = true` for this run (overrides JSON) |
+| `--no-privacy` | Force `privacy.enabled = false` for this run (overrides JSON) |
+| *(omit both)* | Use `privacy.enabled` from config (package default: **true**) |
+
+Flags are mutually exclusive. They toggle only the master switch; `patient.mode`, `dob.mode`, and other privacy keys still come from config.
+
+---
+
+## 13. How to validate
 
 ### Automated
 
@@ -348,7 +423,7 @@ Checks include:
 
 ---
 
-## 13. Common false alarms
+## 14. Common false alarms
 
 | Observation | Explanation |
 |-------------|-------------|
@@ -358,19 +433,23 @@ Checks include:
 | Days in AR looks high/low | Check `adc` and `adc_source` (estimate vs true practice ADC) |
 | Sum of aging **deltas** ≠ aging % | Expected — deltas are resolution impacts, not static shares |
 | Summary/detail write fails | File open in Excel (permission denied) |
+| Same person different `DOE00n` across two score runs | Batch-relative privacy tokens (different unique sets) |
+| Patient looks “backwards” | Check `privacy.patient.name_order` (`last_first` vs `first_last`) |
 
 ---
 
-## 14. Out of scope
+## 15. Out of scope
 
 - Priority Matrix V2/V3  
 - Excel COM automation  
 - Third-party Python packages  
 - Automatic true ADC from practice systems (supply via config)  
+- Full HIPAA Safe Harbor / Expert Determination de-identification  
+- Masking of other identifier columns (`account`, `sub_id`, comments) — future config extension  
 
 ---
 
-## 15. Document history
+## 16. Document history
 
 | Version | Notes |
 |---------|--------|
@@ -379,3 +458,4 @@ Checks include:
 | 1.5.0 | Align `kpi_q_*` with RCM dual-attribution methodology |
 | 1.5.1 | Vertical summary CSV; documentation refresh |
 | 1.6.0 | Toolkit version align; enterprise diagnostics gate (no formula change) |
+| 1.7.0 | Score-output PHI masking (`privacy`); patient prefix+token; DOB omit; `--privacy` / `--no-privacy` CLI |

@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics
 description: Python 3.13 stdlib toolkit for Work Queue priority scoring, RCM claim-level KPI impacts, synthetic data, and validation.
-version: "1.6.0"
+version: "1.7.0"
 status: current
 audience:
   - users
@@ -24,9 +24,10 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 3. **Vertical summary CSV** — run metrics, KPIs, and plain-language explanations as rows.  
 4. **Synthetic data** — de-identified professional billing test CSVs.  
 5. **Validation** — integrity checks and golden fixtures.  
-6. **Enterprise diagnostics** — first-run runtime/import dry-run with a durable pass/fail report and a gate on operational commands.
+6. **Enterprise diagnostics** — first-run runtime/import dry-run with a durable pass/fail report and a gate on operational commands.  
+7. **PHI field masking** — optional score-output masking of patient name and DOB (config-driven; default on).
 
-**Toolkit version:** 1.6.0  
+**Toolkit version:** 1.7.0  
 **Product folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\` (implementation; name differs from the product folder on purpose)
 
@@ -112,7 +113,7 @@ Outputs (by default):
 | File | Content |
 |------|---------|
 | `diagnostics\last_diagnostics.json` / `.txt` | Enterprise pass/fail certificate (auto-created on first operational run) |
-| `..\output\wq_scored.csv` | One row per claim: source fields + `v1_*` + `kpi_q_*` |
+| `..\output\wq_scored.csv` | One row per claim: source fields (patient/DOB masked by default) + `v1_*` + `kpi_q_*` |
 | `..\output\wq_scored_summary.csv` | Vertical summary: section, metric, value, unit, formula, explanation |
 
 `score`, `generate`, and `validate-score` require a valid diagnostics **pass** for this toolkit + Python version. If the certificate is missing, failed, or stale, diagnostics **auto-runs** and the command proceeds only when critical checks pass. Use `diagnostics --force` to re-check; `--skip-diagnostics-gate` is emergency/support only.
@@ -290,6 +291,8 @@ Full detail: **[CLI-GUIDE.md](./CLI-GUIDE.md)**.
 ```bat
 kpi-analytics.cmd score --csv data.csv --output ..\output\out.csv --summary ..\output\out_summary.csv
 kpi-analytics.cmd score --csv data.csv --output ..\output\out.csv --no-summary
+kpi-analytics.cmd score --csv data.csv --output ..\output\out.csv --privacy --json
+kpi-analytics.cmd score --csv data.csv --output ..\output\out.csv --no-privacy --json
 ```
 
 ---
@@ -302,6 +305,9 @@ Default: `kpi_modules\config_default.json`.
 |------|-----------------|
 | Priority | `weights`, `chaos`, `point_of_interest`, `normalization`, `ar_day_target`, `as_of_date`, `fields` |
 | RCM KPI Q | `kpi_quantifiers.adc`, `aged_day_breaks`, `credit_policy`, `emit_static_share`, `emit_exact_delta`, `dual_sign_columns` |
+| Privacy (score output) | `privacy.enabled`, `privacy.patient.mode` (`prefix_token` / `omit` / `passthrough`), `privacy.patient.name_order`, `privacy.dob.mode` (`omit` / `passthrough`) |
+
+**PHI masking (default on):** scored CSV writes patient as `DOE001,JOH001`-style tokens (3-letter prefixes + batch alpha-order index) and blanks DOB. This is **operational masking**, not a HIPAA Safe Harbor claim. Input files are never modified. Override per run with `score --privacy` or `score --no-privacy`. See [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [CLI-GUIDE.md](./CLI-GUIDE.md).
 
 ---
 

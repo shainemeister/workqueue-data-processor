@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "1.6.0"
+version: "1.7.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-22"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 1.6.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 1.7.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -37,7 +37,7 @@ This guide is the authoritative **command-line contract** for KPI Analytics. It 
 | Command | Produces |
 |---------|----------|
 | `diagnostics` | Enterprise dry-run report under `diagnostics\last_diagnostics.json` / `.txt` (gate certificate) |
-| `score` | Claim-level scored CSV (`v1_*` + `kpi_q_*`) and optional vertical **summary** CSV |
+| `score` | Claim-level scored CSV (`v1_*` + `kpi_q_*`; patient/DOB masked by default) and optional vertical **summary** CSV |
 | `generate` | Synthetic professional-billing WQ CSV (de-identified) |
 | `validate-score` | Integrity checks on priority contributions and KPI Q checksums (optional golden fixtures) |
 | `probe` | Optional path preflight (does **not** satisfy the diagnostics gate) |
@@ -154,12 +154,11 @@ Prefer **`--json`** stdout for machine-readable details.
 python -m kpi_modules version [--json]
 ```
 
-Without `--json`, prints the bare version string (e.g. `1.6.0`).
+Without `--json`, prints the bare version string (e.g. `1.7.0`).
 
 ```json
-{"Success":true,"Version":"1.6.0","Command":"version"}
+{"Success":true,"Version":"1.7.0","Command":"version"}
 ```
-
 ---
 
 ### 5.2 `probe`
@@ -208,8 +207,8 @@ Exit **0** if `OverallPass`; **1** if any critical check fails.
   "Success": true,
   "OverallPass": true,
   "Command": "diagnostics",
-  "Version": "1.6.0",
-  "ToolkitVersion": "1.6.0",
+  "Version": "1.7.0",
+  "ToolkitVersion": "1.7.0",
   "PythonVersion": "3.13.0",
   "ReportJsonPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.json",
   "ReportTextPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.txt",
@@ -252,6 +251,7 @@ Scores a data CSV:
 ```text
 python -m kpi_modules score --csv <path> [--output <path>]
     [--config <path>] [--summary <path>] [--no-summary]
+    [--privacy | --no-privacy]
     [--dry-run] [--json] [--quiet]
 ```
 
@@ -262,20 +262,26 @@ python -m kpi_modules score --csv <path> [--output <path>]
 | `--summary` | No | `<output_stem>_summary.csv` | Vertical summary CSV |
 | `--no-summary` | No | off | Skip summary file |
 | `--config` | No | package default | Weights / KPI config |
+| `--privacy` | No | (config) | Force PHI field masking on scored output |
+| `--no-privacy` | No | (config) | Disable PHI field masking on scored output |
 | `--dry-run` | No | off | No file writes |
 | `--force-diagnostics` | No | off | Refresh diagnostics certificate first |
 | `--skip-diagnostics-gate` | No | off | Emergency bypass of diagnostics gate |
 | `--json` | No | off | JSON on stdout |
 | `--quiet` | No | off | Minimal host text |
 
+`--privacy` and `--no-privacy` are mutually exclusive. When omitted, `privacy.enabled` from the JSON config applies (default **on** in package `config_default.json`). Overrides only the master switch; patient/DOB modes still come from config.
+
 **Examples**
 
 ```bat
 kpi-analytics.cmd score --csv ..\wq_data.csv --output ..\output\wq_scored.csv --json
 
+kpi-analytics.cmd score --csv ..\wq_data.csv --output ..\output\wq_scored.csv --no-privacy --json
+
 kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv ^
   --output ..\output\wq_scored_pro250.csv ^
-  --summary ..\output\wq_scored_pro250_summary.csv --json
+  --summary ..\output\wq_scored_pro250_summary.csv --privacy --json
 ```
 
 **JSON shape (illustrative)**
@@ -284,7 +290,7 @@ kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv ^
 {
   "Success": true,
   "Command": "score",
-  "Version": "1.6.0",
+  "Version": "1.7.0",
   "InputPath": "C:\\...\\wq_data.csv",
   "OutputPath": "C:\\...\\output\\wq_scored.csv",
   "SummaryPath": "C:\\...\\output\\wq_scored_summary.csv",
@@ -305,9 +311,16 @@ kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv ^
     "adc": 5121.78,
     "adc_source": "estimate_billed_90"
   },
+  "PrivacyEnabled": true,
+  "PrivacyPatientMode": "prefix_token",
+  "PrivacyDobMode": "omit",
+  "PrivacyUniquePatients": 198,
+  "PrivacyCliOverride": null,
   "Message": "Score complete (detail + summary)."
 }
 ```
+
+`PrivacyCliOverride` is `true` / `false` when `--privacy` / `--no-privacy` was passed; `null` when the config alone decided masking.
 
 **Summary CSV layout** (vertical / transposed):
 
@@ -444,9 +457,11 @@ Start in: `...\kpi-analytics`
 
 | Block | Content |
 |-------|---------|
-| Original CSV columns | Preserved order and names |
+| Original CSV columns | Preserved order and names; **`patient` / `dob` masked by default** (`privacy` config) |
 | `v1_*` | Priority audit + `v1_priority_score` |
 | `kpi_q_*` | Static RCM share/contrib + exact resolution Δ (pos/neg where configured) |
+
+Patient default: `DOE,JOHN` → `DOE001,JOH001` (batch alpha-order token). DOB default: blank. See [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) §12. Not a HIPAA Safe Harbor claim.
 
 ### 7.2 `score` summary CSV
 
@@ -495,4 +510,4 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and package version are aligned at **1.6.0**. Bump when changing verbs, exit codes, JSON field names, diagnostics gate behavior, or `kpi_q_*` / summary contracts.
+CLI and package version are aligned at **1.7.0**. Bump when changing verbs, exit codes, JSON field names, diagnostics gate behavior, privacy defaults, or `kpi_q_*` / summary contracts.
