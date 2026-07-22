@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "1.5.1"
+version: "1.6.0"
 status: current
 audience:
   - users
@@ -24,7 +24,7 @@ How `kpi-analytics` turns Work Queue rows into:
 2. **RCM portfolio KPIs** and **claim-level impacts** (`kpi_q_*`)  
 3. A **vertical summary CSV** for audit and communication  
 
-**Toolkit version:** 1.5.1  
+**Toolkit version:** 1.6.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -378,3 +378,4 @@ Checks include:
 | 1.3.0–1.4.0 | Early portfolio `kpi_q_*` experiments |
 | 1.5.0 | Align `kpi_q_*` with RCM dual-attribution methodology |
 | 1.5.1 | Vertical summary CSV; documentation refresh |
+| 1.6.0 | Toolkit version align; enterprise diagnostics gate (no formula change) |
