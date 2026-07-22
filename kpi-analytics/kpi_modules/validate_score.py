@@ -16,7 +16,7 @@ def _to_float(value: Any) -> float | None:
     if value is None:
         return None
     text = str(value).strip()
-    if text == "":
+    if not text:
         return None
     return float(text)
 
@@ -151,8 +151,19 @@ def check_against_expected(
             exp_v = exp.get(col)
             act_v = _to_float(act.get(col)) if col != "v1_queue_mode" else act.get(col)
             if col.startswith("v1_") and col != "v1_queue_mode":
-                exp_f = None if exp_v is None or exp_v == "" else float(exp_v)
-                if not _approx_equal(exp_f, act_v if isinstance(act_v, float) else _to_float(act_v), eps):
+                # Treat only None / blank string as missing — keep numeric 0.0
+                if exp_v is None or (
+                    isinstance(exp_v, str) and not str(exp_v).strip()
+                ):
+                    exp_f = None
+                else:
+                    exp_f = float(exp_v)
+                act_f = (
+                    act_v
+                    if isinstance(act_v, float)
+                    else _to_float(act_v)
+                )
+                if not _approx_equal(exp_f, act_f, eps):
                     failures.append(
                         {
                             "RowIndex": i,
@@ -186,10 +197,15 @@ def validate_score(
 
     if scored_csv_path:
         fieldnames, scored_rows = read_csv_rows(scored_csv_path)
+        first = scored_rows[0] if scored_rows else {}
         summary = {
             "row_count": len(scored_rows),
-            "as_of_date": scored_rows[0].get(f"{prefix}as_of_date") if scored_rows else None,
-            "queue_mode": scored_rows[0].get(f"{prefix}queue_mode") or scored_rows[0].get("v1_queue_mode") if scored_rows else None,
+            "as_of_date": first.get(f"{prefix}as_of_date") or None,
+            "queue_mode": (
+                first.get(f"{prefix}queue_mode")
+                or first.get("v1_queue_mode")
+                or None
+            ),
             "source": "scored_csv",
         }
         # mode column name may be v1_queue_mode
@@ -260,7 +276,7 @@ def validate_score(
                     )
 
     failures = integrity + kpi_failures + golden
-    ok = len(failures) == 0
+    ok = not failures
 
     # Sample top/bottom for human review when recomputed
     samples: list[dict[str, Any]] = []
