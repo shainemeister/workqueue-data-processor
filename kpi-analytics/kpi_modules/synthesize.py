@@ -236,10 +236,12 @@ def date_to_excel_serial(d: date) -> int:
 
 
 def excel_serial_to_date(serial: int) -> date:
+    """Convert a Windows Excel serial day number to a calendar date."""
     return _EXCEL_EPOCH + timedelta(days=int(serial))
 
 
 def load_schema_fields(schema_path: str | Path) -> list[dict[str, Any]]:
+    """Load field definitions from wq_schema-style JSON."""
     path = Path(schema_path)
     if not path.is_file():
         raise FileNotFoundError(f"Schema not found: {path}")
@@ -785,6 +787,7 @@ def generate_rows(
     as_of: date | None = None,
     start_index: int = 1,
 ) -> list[dict[str, str]]:
+    """Generate a list of synthetic WQ rows with a fixed RNG seed."""
     if row_count < 1:
         raise ValueError("--rows must be >= 1")
     if row_count > 500_000:
