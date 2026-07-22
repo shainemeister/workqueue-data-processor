@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.1.2"
+version: "1.1.3"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-22"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.1.2  
+**Document version:** 1.1.3  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -103,6 +103,8 @@ Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-
 | Path | Type | Summary |
 |------|------|---------|
 | [wq_synthetic_data.csv](./import/wq_synthetic_data.csv) | data | Synthetic professional-billing WQ extract (~250 rows); default `score` / `generate` path for kpi-analytics. |
+| [wq_synthetic_data.xlsx](./import/wq_synthetic_data.xlsx) | data | Same synthetic rows as CSV, unprotected workbook for excel-toolkit `import-excel` demos. |
+| [wq_synthetic_data_protected.xlsx](./import/wq_synthetic_data_protected.xlsx) | data | Same synthetic rows with workbook open password `SyntheticTest1` (known non-secret fixture password). |
 
 ---
 
@@ -116,12 +118,12 @@ Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-
 | [README.md](./excel-toolkit/README.md) | doc | Toolkit overview: menu, modules, CLI, prerequisites, and consumer notes. |
 | [CLI-GUIDE.md](./excel-toolkit/CLI-GUIDE.md) | doc | CLI contract: verbs, exit codes, JSON shapes, and automation examples. |
 | [ENTERPRISE-SECURITY.md](./excel-toolkit/ENTERPRISE-SECURITY.md) | doc | Trust boundary, disallowed patterns, and execution-policy guidance for COM automation. |
-| [ExcelCom.psm1](./excel-toolkit/ExcelCom.psm1) | module | Low-level Excel COM lifecycle, range I/O, CSV sheet import, and safe Quit (no force-kill). |
-| [ExcelToolkit.psm1](./excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, schema header maps, and `Export-ExcelFromCsv`. |
-| [ExcelToolkit.ps1](./excel-toolkit/ExcelToolkit.ps1) | script | CLI entry: `version` / `probe` / `export-csv` / `help` over `ExcelToolkit.psm1`. |
+| [ExcelCom.psm1](./excel-toolkit/ExcelCom.psm1) | module | Low-level Excel COM lifecycle, range I/O, CSV sheet import/export, optional workbook passwords, and safe Quit (no force-kill). |
+| [ExcelToolkit.psm1](./excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, schema header maps, `Export-ExcelFromCsv`, and `Import-CsvFromExcel`. |
+| [ExcelToolkit.ps1](./excel-toolkit/ExcelToolkit.ps1) | script | CLI entry: `version` / `probe` / `export-csv` / `import-excel` / `help` over `ExcelToolkit.psm1`. |
 | [excel-toolkit.cmd](./excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](./excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
-| [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu for export and self-tests; column layout driven by CSV/schema, not hard-coded domain lists. |
+| [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: export, import (option 3; CSV defaults under `import\`), schema, and Diagnostics submenu (readiness / self-test); column layout driven by CSV/schema, not hard-coded domain lists. |
 | [Export-CsvToExcel.ps1](./excel-toolkit/Export-CsvToExcel.ps1) | script | Thin menu/legacy wrapper around `Export-ExcelFromCsv` in the high-level module. |
 | [Export-WqDataToExcel.ps1](./excel-toolkit/Export-WqDataToExcel.ps1) | script | Compatibility forwarder to `Export-CsvToExcel.ps1` (legacy entry name). |
 | [Test-ExcelCom.ps1](./excel-toolkit/Test-ExcelCom.ps1) | script | Dry-run and full smoke tests for COM readiness and workbook operations. |
@@ -250,6 +252,11 @@ kpi-analytics.cmd score --output ..\output\wq_scored.csv
 rem optional refresh of tracked input: generate (defaults to import\wq_synthetic_data.csv)
 cd ..\excel-toolkit
 excel-toolkit.cmd export-csv -CsvPath ..\output\wq_scored.csv -OutputPath ..\output\wq_scored.xlsx
+rem optional: rebuild synthetic Excel fixtures under import\
+excel-toolkit.cmd export-csv -CsvPath ..\import\wq_synthetic_data.csv -OutputPath ..\import\wq_synthetic_data.xlsx -Force
+excel-toolkit.cmd export-csv -CsvPath ..\import\wq_synthetic_data.csv -OutputPath ..\import\wq_synthetic_data_protected.xlsx -Password SyntheticTest1 -Force
+excel-toolkit.cmd import-excel -ExcelPath ..\import\wq_synthetic_data.xlsx -OutputPath ..\import\from_xlsx_smoke.csv
+rem Existing destinations require -Force to overwrite
 ```
 
 ---
@@ -262,3 +269,4 @@ excel-toolkit.cmd export-csv -CsvPath ..\output\wq_scored.csv -OutputPath ..\out
 | 1.1.0 | `diagnostics.py`, `diagnostics/` folder, toolkit version 1.6.0 gate certificate |
 | 1.1.1 | `privacy.py` score-output PHI masking; toolkit version 1.7.0 |
 | 1.1.2 | `import\` tracked inputs; default score/generate paths; toolkit 1.8.0 |
+| 1.1.3 | Synthetic import `.xlsx` fixtures; excel-toolkit 1.2.0 `import-excel` |
