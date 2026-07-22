@@ -114,7 +114,7 @@ export-csv options:
   -Password <text>        Optional workbook open password (not logged)
   -Visible                Show Excel UI
   -DryRun                 Validate only; do not write
-  -Force                  Overwrite existing output file (default: refuse)
+  -Force                  Replace exact OutputPath if it exists (default: unique suffix)
 
 import-excel options:
   -ExcelPath <path>       Input .xlsx / .xls (required)
@@ -123,7 +123,7 @@ import-excel options:
   -Password <text>        Workbook password for automation (not logged)
   -Visible                Show Excel UI
   -DryRun                 Validate open only; do not write CSV
-  -Force                  Overwrite existing output file (default: refuse)
+  -Force                  Replace exact OutputPath if it exists (default: unique suffix)
 
   Password notes:
   - Interactive runs prompt when a workbook needs a password and -Password is omitted.
@@ -131,7 +131,8 @@ import-excel options:
   - Password is never included in JSON output.
 
   Output safety:
-  - Existing destination files are not overwritten unless -Force is set.
+  - Existing destinations are not replaced by default; a free path name_1.ext is used.
+  - -Force overwrites the exact path (automation only).
   - Omitting -OutputPath on import writes under import\ using the workbook base name.
 
 Exit codes:  0 success | 1 validation | 2 runtime
@@ -238,16 +239,18 @@ try {
 
             $r = Export-ExcelFromCsv @exportParams
             $payload = [pscustomobject]@{
-                Success       = [bool]$r.Success
-                Command       = 'export-csv'
-                Version       = (Get-ExcelToolkitVersion)
-                OutputPath    = $r.OutputPath
-                RowCount      = $r.RowCount
-                ColumnCount   = $r.ColumnCount
-                DryRun        = [bool]$r.DryRun
-                Message       = $r.Message
-                HeadersSample = @($r.HeadersSample)
-                SheetName     = $r.SheetName
+                Success             = [bool]$r.Success
+                Command             = 'export-csv'
+                Version             = (Get-ExcelToolkitVersion)
+                OutputPath          = $r.OutputPath
+                RequestedOutputPath = $r.RequestedOutputPath
+                PathAdjusted        = [bool]$r.PathAdjusted
+                RowCount            = $r.RowCount
+                ColumnCount         = $r.ColumnCount
+                DryRun              = [bool]$r.DryRun
+                Message             = $r.Message
+                HeadersSample       = @($r.HeadersSample)
+                SheetName           = $r.SheetName
             }
 
             if ($Json) {
@@ -257,6 +260,9 @@ try {
                 if ($r.Success) {
                     Write-Host ("OK: {0}" -f $r.Message) -ForegroundColor Green
                     Write-Host ("  Output : {0}" -f $r.OutputPath)
+                    if ($r.PathAdjusted) {
+                        Write-Host ("  Requested: {0}" -f $r.RequestedOutputPath)
+                    }
                     Write-Host ("  Rows   : {0}" -f $r.RowCount)
                     Write-Host ("  Cols   : {0}" -f $r.ColumnCount)
                     if ($r.HeadersSample -and $r.HeadersSample.Count -gt 0) {
@@ -272,7 +278,7 @@ try {
                 $exitCode = 0
             }
             else {
-                if ($r.Message -match 'not found|required|No columns|preflight|Schema file|password|already exists') {
+                if ($r.Message -match 'not found|required|No columns|preflight|Schema file|password|free output path') {
                     $exitCode = 1
                 }
                 else {
@@ -321,18 +327,20 @@ try {
 
             $r = Import-CsvFromExcel @importParams
             $payload = [pscustomobject]@{
-                Success       = [bool]$r.Success
-                Command       = 'import-excel'
-                Version       = (Get-ExcelToolkitVersion)
-                ExcelPath     = $r.ExcelPath
-                OutputPath    = $r.OutputPath
-                RowCount      = $r.RowCount
-                ColumnCount   = $r.ColumnCount
-                DryRun        = [bool]$r.DryRun
-                Message       = $r.Message
-                HeadersSample = @($r.HeadersSample)
-                SheetName     = $r.SheetName
-                PasswordUsed  = [bool]$r.PasswordUsed
+                Success             = [bool]$r.Success
+                Command             = 'import-excel'
+                Version             = (Get-ExcelToolkitVersion)
+                ExcelPath           = $r.ExcelPath
+                OutputPath          = $r.OutputPath
+                RequestedOutputPath = $r.RequestedOutputPath
+                PathAdjusted        = [bool]$r.PathAdjusted
+                RowCount            = $r.RowCount
+                ColumnCount         = $r.ColumnCount
+                DryRun              = [bool]$r.DryRun
+                Message             = $r.Message
+                HeadersSample       = @($r.HeadersSample)
+                SheetName           = $r.SheetName
+                PasswordUsed        = [bool]$r.PasswordUsed
             }
 
             if ($Json) {
@@ -343,6 +351,9 @@ try {
                     Write-Host ("OK: {0}" -f $r.Message) -ForegroundColor Green
                     Write-Host ("  Excel  : {0}" -f $r.ExcelPath)
                     Write-Host ("  Output : {0}" -f $r.OutputPath)
+                    if ($r.PathAdjusted) {
+                        Write-Host ("  Requested: {0}" -f $r.RequestedOutputPath)
+                    }
                     Write-Host ("  Sheet  : {0}" -f $r.SheetName)
                     Write-Host ("  Rows   : {0}" -f $r.RowCount)
                     Write-Host ("  Cols   : {0}" -f $r.ColumnCount)
@@ -362,7 +373,7 @@ try {
                 $exitCode = 0
             }
             else {
-                if ($r.Message -match 'not found|required|password|preflight|No columns|interactive prompt|already exists') {
+                if ($r.Message -match 'not found|required|password|preflight|No columns|interactive prompt|free output path') {
                     $exitCode = 1
                 }
                 else {

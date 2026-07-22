@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.2.1"
+version: "1.3.0"
 status: current
 audience:
   - security
@@ -18,7 +18,7 @@ last_updated: "2026-07-22"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.2.1  
+**Toolkit version:** 1.3.0  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
@@ -28,7 +28,7 @@ Reference for security reviews, AppLocker/WDAC discussions, and controlled corpo
 
 ## Summary
 
-The Excel Toolkit is designed for **locked-down corporate desktops**. It converts user-supplied CSV data to formatted Excel workbooks **and** can import Excel workbooks back to CSV **locally** via Microsoft Excel COM: no downloads, no credential store access, no privilege elevation, and no permanent execution-policy changes. Allowed behavior is limited to reading user-chosen CSV/schema/Excel paths, writing workbooks or CSVs under user-chosen paths, optional workbook open-password handling in process memory only, process-scoped launcher Bypass on `.cmd` entry points, and local module import.
+The Excel Toolkit is designed for **locked-down corporate desktops**. It converts user-supplied CSV data to formatted Excel workbooks **and** can import Excel workbooks back to CSV **locally** via Microsoft Excel COM: no downloads, no credential store access, no privilege elevation, and no permanent execution-policy changes. Allowed behavior is limited to reading user-chosen CSV/schema/Excel paths, writing workbooks or CSVs under user-chosen paths, optional workbook open-password handling in process memory only, process-scoped launcher Bypass on `.cmd` entry points, local module import, and (menu option only) **subprocess** of the sibling local `kpi-analytics.cmd` for score-then-export composition. Existing destinations are not overwritten by default (unique numerical suffix); `-Force` is explicit replace only.
 
 This document states the **trust boundary**, lists high-risk patterns the toolkit **does not** use (force-kill Office, P/Invoke, download-and-run, silent MOTW unblock, etc.), what IT still must allow (PowerShell + Excel COM + script path), and a minimal validation sequence for security review. Sibling KPI analytics risks live under `kpi-analytics\ENTERPRISE-SECURITY.md`, not here.
 
@@ -72,8 +72,9 @@ This is not a formal penetration-test report; it is a design audit of the PowerS
 | **Policy** | Does **not** permanently change `ExecutionPolicy`, GPO, or registry policy. |
 | **Network** | No downloads, no HTTP clients, no remote modules. |
 | **Identity** | Does not read credentials, tokens, or browser stores. Workbook open passwords are accepted only via interactive SecureString prompt or optional CLI `-Password` for automation. |
-| **Scope of files** | Reads user-supplied CSV/schema/Excel paths; writes export workbooks under chosen paths (default repo `output\`); writes **import-excel** CSVs under chosen paths (default repo `import\`); uses `%TEMP%` for tests. |
+| **Scope of files** | Reads user-supplied CSV/schema/Excel paths; writes export workbooks under chosen paths (default repo `output\`); writes **import-excel** CSVs under chosen paths (default repo `import\`); uses `%TEMP%` for tests. Does **not** clobber existing destinations by default (writes `name_N.ext` siblings). |
 | **Office** | Automates **local** Microsoft Excel via COM when installed for the user. |
+| **Sibling toolkit** | Menu “Score → Excel” may start **local** `kpi-analytics\kpi-analytics.cmd` (Python 3.13 stdlib scoring). No remote endpoints. |
 | **Surfaces** | Interactive menu, **CLI** (`ExcelToolkit.ps1` / `excel-toolkit.cmd`), and **modules** (`ExcelToolkit.psm1`, `ExcelCom.psm1`). |
 | **Passwords** | Held in process memory only for the COM open/save call; **never** written to JSON, logs, host success messages, or disk. |
 
@@ -241,3 +242,4 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.1 | CLI + `ExcelToolkit.psm1`; docs use YAML frontmatter; enterprise close path unchanged; no force-kill / auto-unblock |
 | 1.2 | `import-excel` / `Import-CsvFromExcel`; optional workbook open password on open/save; password never logged or written to JSON |
 | 1.2.1 | Refuse overwrite of existing output files unless `-Force` (or interactive menu confirm) |
+| 1.3.0 | Default collision policy: unique numerical suffix (`name_N.ext`) instead of refuse; menu Score→Excel may subprocess local `kpi-analytics.cmd`; `-Force` still exact-path replace only |

@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.2.0"
+version: "1.2.1"
 status: current
 audience:
   - developers
@@ -22,7 +22,7 @@ last_updated: "2026-07-22"
 
 Fundamental rules for maintaining **workqueue-data-processor** as a professional, auditable dual-toolkit repository. These rules govern documentation, code boundaries, data contracts, git hygiene, and verification—not product tutorials.
 
-**Document version:** 1.2.0  
+**Document version:** 1.2.1  
 
 **Related:** [README.md](./README.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc)
 
@@ -148,11 +148,12 @@ If pylint is not installed on a developer machine, install it into the **develop
 | Rule | Detail |
 |------|--------|
 | **Runtime separation** | Do not call Excel COM from Python product code. Do not implement priority/KPI math in PowerShell product code. |
-| **Composition** | Join toolkits at the **workflow** layer (generate/score CSV → export XLSX), not by merging engines. |
+| **Composition** | Join toolkits at the **workflow** layer (generate/score CSV → export XLSX), not by merging engines. Interactive composition may live in `excel-toolkit\Start-ExcelMenu.ps1` (subprocess `kpi-analytics.cmd`, then Excel export). |
 | **Excel entry points** | Prefer `excel-toolkit.cmd` / `ExcelToolkit.ps1` (automation) or `Import-Module ExcelToolkit.psm1` (in-process). Treat `Export-WqDataToExcel.ps1` as a legacy forwarder. |
 | **KPI entry points** | Prefer `kpi-analytics.cmd` or `python -m kpi_modules`. Keep `kpi_modules` importable without side effects beyond CLI `__main__`. |
 | **Dependencies** | No pip packages, no download-and-run, no credential stores, no hidden telemetry in product paths. |
 | **Excel lifecycle** | Close via Quit + controlled retry + user warning. **Never** force-kill `EXCEL.EXE` in toolkit code. |
+| **Output collision** | Product writers **must not** clobber an existing destination by default. Prefer a free path with a numerical suffix (`name_1.ext`). Use explicit `-Force` (or documented equivalent) only when the caller intends to replace that exact path. |
 | **Domain hard-coding** | Export layout is CSV/schema-driven. Avoid hard-coded business field lists in the Excel engine. |
 
 ---
@@ -167,7 +168,8 @@ If pylint is not installed on a developer machine, install it into the **develop
 6. **No real PHI/PII, credentials, tokens, or production dumps** in the repository. Samples are synthetic or non-sensitive illustrations.  
 7. **Synthetic data** remains obviously non-production (existing de-identification conventions in `synthesize.py`).  
 8. **`import\`** holds tracked **input** CSVs (synthetic demos or deliberately shared non-PHI extracts). Prefer synthetic data; **never** commit real PHI/PII there. Default `score` / `generate` paths target `import\wq_synthetic_data.csv`.  
-9. **`output\`** is regenerable workspace only (scored CSVs, summaries, Excel)—not source of truth and not versioned.
+9. **`output\`** is regenerable workspace only (scored CSVs, summaries, Excel)—not source of truth and not versioned.  
+10. **Do not overwrite tracked or existing outputs by default.** Excel toolkit writers resolve a unique sibling path when the target exists (unless the caller passes documented `-Force`). KPI `score` receives pre-resolved unique paths from the menu pipeline so intermediate CSVs are not clobbered either.
 
 ---
 
@@ -388,3 +390,4 @@ Before you commit or share a change:
 | 1.0.0 | Initial maintenance rules: authority map, docs, format, architecture, data, security, versioning, git, verification |
 | 1.1.0 | Git commit message format, documentation-consistency rules, and commit workflow |
 | 1.2.0 | Python PEP-8 style gate via pylint (`.pylintrc`); verification and checklist requirements |
+| 1.2.1 | Output collision rule (unique suffix by default); workflow composition via Excel menu → kpi-analytics |

@@ -65,19 +65,7 @@ if ([string]::IsNullOrWhiteSpace($OutputPath)) {
 
 $OutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
 
-# Interactive safety: prompt when destination exists and -Force was not passed
-if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) {
-    Write-Host ("File already exists: {0}" -f $OutputPath) -ForegroundColor Yellow
-    $overwrite = Read-Host 'Overwrite existing file? [y/N]'
-    if ($overwrite -match '^[Yy]') {
-        $Force = $true
-    }
-    else {
-        Write-Host 'Cancelled (existing file not overwritten).' -ForegroundColor Yellow
-        exit 1
-    }
-}
-
+# Collision policy: unique numerical suffix unless -Force (no y/N overwrite prompt)
 Write-Host '=== Export-CsvToExcel ===' -ForegroundColor Cyan
 Write-Host ("CSV     : {0}" -f $CsvPath)
 Write-Host ("Schema  : {0}" -f $SchemaPath)
@@ -105,6 +93,9 @@ if ($r.Success) {
     Write-Host ''
     Write-Host ("OK: {0}" -f $r.Message) -ForegroundColor Green
     Write-Host ("  Output  : {0}" -f $r.OutputPath)
+    if ($r.PathAdjusted) {
+        Write-Host ("  Requested: {0}" -f $r.RequestedOutputPath)
+    }
     Write-Host ("  Rows    : {0}" -f $r.RowCount)
     Write-Host ("  Columns : {0}" -f $r.ColumnCount)
     if ($r.HeadersSample -and @($r.HeadersSample).Count -gt 0) {

@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
-description: PowerShell 5.1 Excel COM toolkit for CSV export, interactive menu, module API, and CLI.
-version: "1.2.1"
+description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
+version: "1.3.0"
 status: current
 audience:
   - users
@@ -15,14 +15,16 @@ last_updated: "2026-07-22"
 
 # Excel Toolkit (`excel-toolkit`)
 
-PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
+PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), one-menu **KPI score → Excel** pipeline (via sibling `kpi-analytics`), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.2.1  
+**Toolkit version:** 1.3.0  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
 **Column layout for export is always driven by your CSV file.** An optional JSON schema can supply display labels. No column names are hard-coded in the engine. Import reads the worksheet used range as-is.
+
+**Collision policy:** existing destinations are **not** overwritten by default. A free sibling path with a numerical suffix is used (`name.csv` → `name_1.csv`). Pass `-Force` only when automation must replace an exact path.
 
 ---
 
@@ -45,16 +47,28 @@ PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including
 
 | Option | What it does |
 |--------|----------------|
-| **1** | Export CSV → Excel (data CSV headers) |
-| **2** | Export CSV → Excel (schema display headers) |
-| **3** | Import Excel → CSV (prompts for password when needed; default CSV under `import\`) |
-| **4** | Open the `output` folder |
-| **5** | Show environment / policy info |
-| **6** | Schema: show source, preview fields, switch JSON/CSV |
-| **7** | Diagnostics… (readiness dry-run / full self-test) |
+| **1** | **Score CSV → Excel (KPI pipeline)** — select one or more CSVs under `import\`, run sibling `kpi-analytics` score, export scored + summary workbooks under `output\` |
+| **2** | Export CSV → Excel (data CSV headers) |
+| **3** | Export CSV → Excel (schema display headers) |
+| **4** | Import Excel → CSV (password prompt if needed; default CSV under `import\`) |
+| **5** | Open the `output` folder |
+| **6** | Show environment / policy info |
+| **7** | Schema: show source, preview fields, switch JSON/CSV |
+| **8** | Diagnostics… (readiness dry-run / full self-test) |
 | **0** | Exit |
 
-3. Open export workbooks under **`output\`**; imported CSVs default under **`import\`**.
+3. Open export / scored workbooks under **`output\`**; imported CSVs default under **`import\`**.
+
+### Score → Excel (option 1)
+
+Composes the two toolkits at the **workflow** layer only (no shared process, no scoring math in PowerShell, no Excel COM from Python):
+
+1. Pick CSV file(s) from `import\` (multi-select: `1` or `1,2`) or type a path.  
+2. For each file, resolve free paths for scored/summary CSV under `output\` (`<stem>_scored.csv`, `<stem>_scored_summary.csv`, with `_N` if needed).  
+3. Call `kpi-analytics\kpi-analytics.cmd score … --json`.  
+4. Export both CSVs to `.xlsx` (again using unique paths if those workbooks already exist).
+
+**Needs:** Python **3.13** (for `kpi-analytics`) **and** desktop Excel (for COM). First score may run KPI diagnostics once (gate).
 
 The `.cmd` launcher starts PowerShell with a **process-only** execution policy setting for that window. It does **not** permanently change organization policy.
 
@@ -74,7 +88,8 @@ Designed for controlled PCs (no admin, no permanent policy change). Full write-u
 | Force-kill | **Never** kills `EXCEL.EXE` |
 | P/Invoke / `Add-Type` | **Not used** |
 | Workbook passwords | Interactive SecureString prompt or optional CLI `-Password`; never logged or written to JSON |
-| Overwrite safety | Existing output files are **not** replaced unless `-Force` (CLI/module) or the user confirms in the menu |
+| Overwrite safety | Existing outputs are **not** replaced by default; a free `name_N.ext` path is used. `-Force` replaces the exact path (automation only). Menu KPI pipeline never uses `-Force` |
+| KPI composition | Menu option 1 may **subprocess** local `kpi-analytics.cmd` only (no network) |
 | Auto Unblock-File | **Not used** (unblock manually if Windows marks files from the internet) |
 | Network / downloads | Not used |
 | Macros | Automation sets Excel to not run macros when opening files |
@@ -89,7 +104,8 @@ If Excel stays open after a run, close it yourself (or via Task Manager), then r
 |------|--------|
 | Windows PowerShell 5.1 | Built into Windows (`powershell.exe`) |
 | Microsoft Excel | Desktop Excel for the current user (COM automation) |
-| Your data files | A `.csv` for export, and/or `.xlsx` under `import\` for import; optional JSON/CSV schema for export display names |
+| Python 3.13 (option 1 only) | Sibling `kpi-analytics\` on PATH via `kpi-analytics.cmd` |
+| Your data files | A `.csv` for export/score, and/or `.xlsx` under `import\` for import; optional JSON/CSV schema for export display names |
 
 ---
 
@@ -123,10 +139,10 @@ Extra data-CSV columns not listed in the schema are still exported. Schema-only 
 | File | Purpose |
 |------|---------|
 | `Start-ExcelMenu.cmd` | Double-click menu launcher |
-| `Start-ExcelMenu.ps1` | Interactive menu |
+| `Start-ExcelMenu.ps1` | Interactive menu (incl. KPI score → Excel pipeline) |
 | `excel-toolkit.cmd` | CLI shim for automation |
 | `ExcelToolkit.ps1` | CLI (`version`, `probe`, `export-csv`, `import-excel`) |
-| `ExcelToolkit.psm1` | High-level module (`Export-ExcelFromCsv`, `Import-CsvFromExcel`, version) |
+| `ExcelToolkit.psm1` | High-level module (`Export-ExcelFromCsv`, `Import-CsvFromExcel`, `Resolve-ExcelToolkitUniquePath`, version) |
 | `ExcelCom.psm1` | Low-level Excel COM primitives (including optional workbook passwords) |
 | `Export-CsvToExcel.ps1` | Thin export wrapper (menu / legacy) |
 | `Export-WqDataToExcel.ps1` | Compatibility forwarder |
@@ -173,7 +189,9 @@ if (-not $in.Success) { throw $in.Message }
 | Property | Type | Description |
 |----------|------|-------------|
 | `Success` | bool | `$true` if the operation succeeded |
-| `OutputPath` | string | Destination workbook path (planned or written) |
+| `OutputPath` | string | Destination workbook path actually used |
+| `RequestedOutputPath` | string | Path requested before unique-suffix resolution |
+| `PathAdjusted` | bool | `$true` if a numerical suffix was applied to avoid overwrite |
 | `RowCount` | int | Data rows exported (excluding header) |
 | `ColumnCount` | int | Column count from CSV header |
 | `DryRun` | bool | `$true` if no file was written |
@@ -188,7 +206,9 @@ if (-not $in.Success) { throw $in.Message }
 |----------|------|-------------|
 | `Success` | bool | `$true` if the operation succeeded |
 | `ExcelPath` | string | Source workbook path |
-| `OutputPath` | string | Destination CSV path |
+| `OutputPath` | string | Destination CSV path actually used |
+| `RequestedOutputPath` | string | Path requested before unique-suffix resolution |
+| `PathAdjusted` | bool | `$true` if a numerical suffix was applied to avoid overwrite |
 | `RowCount` | int | Data rows imported (excluding header) |
 | `ColumnCount` | int | Column count |
 | `SheetName` | string | Worksheet used |
@@ -260,4 +280,4 @@ This toolkit does **not** change machine-wide execution policy and does not inst
 
 ## Out of scope
 
-Charts, pivot tables, macros, password-protected workbooks, and pure OpenXML (no Excel installed).
+Charts, pivot tables, macros (user-authored), pure OpenXML without Excel installed, and implementing KPI scoring math inside PowerShell (use `kpi-analytics`). Workbook **open** passwords on import/export are supported; charting and pivot automation are not.

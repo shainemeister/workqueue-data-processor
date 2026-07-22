@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.2.1"
+version: "1.3.0"
 status: current
 audience:
   - developers
@@ -17,7 +17,7 @@ last_updated: "2026-07-22"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.2.1 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.3.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -175,10 +175,10 @@ excel-toolkit.cmd version -Json
 **JSON shape (illustrative)**
 
 ```json
-{"Success":true,"Version":"1.2.1","Command":"version"}
+{"Success":true,"Version":"1.3.0","Command":"version"}
 ```
 
-Without `-Json`, stdout is the bare version string (for example `1.2.1`).
+Without `-Json`, stdout is the bare version string (for example `1.3.0`).
 
 ---
 
@@ -224,7 +224,7 @@ OK
 {
   "Success": true,
   "Command": "probe",
-  "Version": "1.2.1",
+  "Version": "1.3.0",
   "Message": "Preflight passed.",
   "Checks": [
     { "Name": "ExcelCom", "Passed": true, "Detail": "Excel version 16.0" }
@@ -261,14 +261,14 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
 | `-SheetName` | No | `Data` | Worksheet tab name |
 | `-Visible` | No | off | Show Excel UI (debug) |
 | `-Password` | No | — | Optional workbook **open** password when saving `.xlsx` (not logged; not in JSON) |
-| `-Force` | No | off | Overwrite an existing output file (default: **refuse**) |
+| `-Force` | No | off | Replace the **exact** `-OutputPath` if it exists. Default: **do not overwrite** — write to a free sibling path with a numerical suffix (`export_1.xlsx`, …) |
 | `-DryRun` | No | off | Validate and plan only; no file write |
 | `-Json` | No | off | JSON result on stdout |
 | `-Quiet` | No | off | Less host text |
 
 \* If `-OutputPath` is omitted, the CLI uses `\<repo>\output\export.xlsx` (parent of `excel-toolkit`).
 
-**Overwrite safety:** if the destination `.xlsx` already exists, the command fails with exit **1** unless `-Force` is set.
+**Collision policy:** if the destination already exists and `-Force` is **not** set, the toolkit writes to `name_1.ext`, `name_2.ext`, … (cap 999). JSON always reports the **actual** `OutputPath`, plus `RequestedOutputPath` and `PathAdjusted`.
 
 **Examples**
 
@@ -310,8 +310,10 @@ excel-toolkit.cmd export-csv ^
 {
   "Success": true,
   "Command": "export-csv",
-  "Version": "1.2.1",
+  "Version": "1.3.0",
   "OutputPath": "C:\\...\\output\\export.xlsx",
+  "RequestedOutputPath": "C:\\...\\output\\export.xlsx",
+  "PathAdjusted": false,
   "RowCount": 1,
   "ColumnCount": 40,
   "DryRun": false,
@@ -321,7 +323,7 @@ excel-toolkit.cmd export-csv ^
 }
 ```
 
-**Exit codes:** `0` success; `1` validation/preflight (including **output already exists** without `-Force`); `2` runtime (COM/save).
+**Exit codes:** `0` success; `1` validation/preflight; `2` runtime (COM/save).
 
 ---
 
@@ -344,7 +346,7 @@ ExcelToolkit.ps1 import-excel -ExcelPath <path> [-OutputPath <path>]
 | `-OutputPath` | No | `\<repo>\import\<excel-basename>.csv` | Destination CSV (default folder is **`import\`**) |
 | `-SheetName` | No | first worksheet | Tab name when set |
 | `-Password` | No | — | Workbook open password for automation (**not logged**; not in JSON) |
-| `-Force` | No | off | Overwrite an existing output CSV (default: **refuse**) |
+| `-Force` | No | off | Replace the **exact** `-OutputPath` if it exists. Default: unique numerical suffix (`name_1.csv`, …) |
 | `-Visible` | No | off | Show Excel UI (debug) |
 | `-DryRun` | No | off | Open and plan only; no CSV write |
 | `-Json` | No | off | JSON result on stdout |
@@ -389,7 +391,7 @@ Interactive (prompt if needed; default CSV is `import\<excel-basename>.csv`):
 excel-toolkit.cmd import-excel -ExcelPath ..\import\wq_synthetic_data_protected.xlsx
 ```
 
-**Default path caution:** omitting `-OutputPath` writes `import\<basename>.csv`. If that file already exists, the import **fails** unless `-Force` is set (protects tracked files such as `import\wq_synthetic_data.csv`).
+**Default path caution:** omitting `-OutputPath` writes `import\<basename>.csv`. If that file already exists (for example tracked `import\wq_synthetic_data.csv`), the import **does not overwrite** it; it writes `import\<basename>_1.csv` (or the next free `_N`) unless `-Force` is set.
 
 **JSON shape (illustrative)**
 
@@ -397,20 +399,22 @@ excel-toolkit.cmd import-excel -ExcelPath ..\import\wq_synthetic_data_protected.
 {
   "Success": true,
   "Command": "import-excel",
-  "Version": "1.2.1",
+  "Version": "1.3.0",
   "ExcelPath": "C:\\...\\import\\wq_synthetic_data.xlsx",
-  "OutputPath": "C:\\...\\import\\from_xlsx_smoke.csv",
+  "OutputPath": "C:\\...\\import\\wq_synthetic_data_1.csv",
+  "RequestedOutputPath": "C:\\...\\import\\wq_synthetic_data.csv",
+  "PathAdjusted": true,
   "RowCount": 250,
   "ColumnCount": 40,
   "DryRun": false,
-  "Message": "Import complete.",
+  "Message": "Import complete (wrote ...; avoided overwrite of ...).",
   "HeadersSample": ["wq_status", "related_charge_lines"],
   "SheetName": "Data",
   "PasswordUsed": false
 }
 ```
 
-**Exit codes:** `0` success; `1` validation / missing or wrong password / **output already exists** without `-Force`; `2` runtime (COM).
+**Exit codes:** `0` success; `1` validation / missing or wrong password; `2` runtime (COM).
 
 **Synthetic fixture password:** demo workbooks under `import\` use the known non-secret value `SyntheticTest1` when protected. Do not reuse real credentials in repo examples.
 
@@ -554,8 +558,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 | Symptom | What to check |
 |---------|----------------|
 | Exit code 1 on `probe` | Excel installed? FullLanguage? Paths valid? |
-| Exit code 1 on `export-csv` | `-CsvPath` set? Schema required if `-UseDisplayNames`? Destination already exists without `-Force`? |
-| Exit code 1 on `import-excel` | `-ExcelPath` set? Password required with `-Json`? Wrong password? Destination already exists without `-Force`? |
+| Exit code 1 on `export-csv` | `-CsvPath` set? Schema required if `-UseDisplayNames`? Unique-path cap exceeded? |
+| Exit code 1 on `import-excel` | `-ExcelPath` set? Password required with `-Json`? Wrong password? Unique-path cap exceeded? |
+| Unexpected new `name_N` file | Destination already existed; check `PathAdjusted` / `RequestedOutputPath` in JSON |
 | Exit code 2 | Excel COM/save failure; file locked - close Excel and retry |
 | Empty JSON / parse error in Python | Ensure `-Json` and read **stdout** only; check `returncode` first |
 | Scripts blocked | AppLocker/WDAC/GPO - see enterprise doc; do not add more aggressive flags |
@@ -565,4 +570,6 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.2.1** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.3.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.3.0 notes:** default collision policy is unique numerical suffix (not refuse). JSON adds `RequestedOutputPath` and `PathAdjusted`. Interactive menu option **Score CSV → Excel** is documented in [README.md](./README.md) (workflow composition with `kpi-analytics`; not a CLI verb).

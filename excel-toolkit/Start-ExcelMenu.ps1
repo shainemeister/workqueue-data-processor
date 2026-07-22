@@ -8,11 +8,13 @@
     Windows PowerShell 5.1. No PowerShell syntax knowledge is required for
     common tasks.
 
-    Main menu: export, import (option 3; CSV defaults under import\), folders,
-    schema, and Diagnostics (option 7: readiness + full self-test).
+    Main menu: Score CSV to Excel (KPI pipeline), export, import (CSV defaults
+    under import\), folders, schema, and Diagnostics (readiness + full self-test).
 
     Column layout always comes from your data CSV. An optional schema (JSON or
     CSV) supplies display labels only. Nothing domain-specific is hard-coded.
+    Existing output files are not overwritten: a free path with a numerical
+    suffix (name_1.ext) is chosen instead.
 
 .NOTES
     Launch via Start-ExcelMenu.cmd so the process uses -ExecutionPolicy Bypass
@@ -34,6 +36,8 @@ if ([string]::IsNullOrWhiteSpace($scriptDir)) {
 $repoRoot     = Split-Path -Parent $scriptDir
 $outputDir    = Join-Path $repoRoot 'output'
 $importDir    = Join-Path $repoRoot 'import'
+$kpiAnalyticsDir = Join-Path $repoRoot 'kpi-analytics'
+$kpiAnalyticsCmd = Join-Path $kpiAnalyticsDir 'kpi-analytics.cmd'
 $exportScript = Join-Path $scriptDir 'Export-CsvToExcel.ps1'
 $testScript   = Join-Path $scriptDir 'Test-ExcelCom.ps1'
 $toolkitModulePath = Join-Path $scriptDir 'ExcelToolkit.psm1'
@@ -376,34 +380,25 @@ function Invoke-ImportExcelMenu {
         throw ("Invalid output path: {0}" -f $_.Exception.Message)
     }
 
-    if (Test-Path -LiteralPath $outPrompt) {
-        Write-Host ("File already exists: {0}" -f $outPrompt) -ForegroundColor Yellow
-        $overwrite = Read-Host 'Overwrite existing file? [y/N]'
-        if ($overwrite -notmatch '^[Yy]') {
-            Write-Host 'Cancelled (existing file not overwritten).' -ForegroundColor Yellow
-            return
-        }
-    }
-
     Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
     Write-Host ''
     Write-Host ("Importing: {0}" -f $excelPath) -ForegroundColor Cyan
-    Write-Host ("       to: {0}" -f $outPrompt) -ForegroundColor Cyan
+    Write-Host ("  Planned: {0}" -f $outPrompt) -ForegroundColor Cyan
+    Write-Host 'If that CSV already exists, a free path with a numerical suffix is used (no overwrite).' -ForegroundColor DarkGray
 
-    # User already confirmed overwrite above when the target existed
     $importParams = @{
         ExcelPath           = $excelPath
         OutputPath          = $outPrompt
         AllowPasswordPrompt = $true
-    }
-    if (Test-Path -LiteralPath $outPrompt) {
-        $importParams['Force'] = $true
     }
 
     $r = Import-CsvFromExcel @importParams
     if ($r.Success) {
         Write-Host ("OK: {0}" -f $r.Message) -ForegroundColor Green
         Write-Host ("  Output : {0}" -f $r.OutputPath)
+        if ($r.PathAdjusted) {
+            Write-Host ("  Requested: {0}" -f $r.RequestedOutputPath)
+        }
         Write-Host ("  Sheet  : {0}" -f $r.SheetName)
         Write-Host ("  Rows   : {0}" -f $r.RowCount)
         Write-Host ("  Cols   : {0}" -f $r.ColumnCount)
@@ -413,6 +408,308 @@ function Invoke-ImportExcelMenu {
     }
     else {
         Write-Host ("FAIL: {0}" -f $r.Message) -ForegroundColor Red
+    }
+}
+
+function Invoke-KpiAnalyticsScore {
+    <#
+    .SYNOPSIS
+        Call sibling kpi-analytics.cmd score with absolute paths; return exit + JSON.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CsvPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$OutputPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SummaryPath
+    )
+
+    if (-not (Test-Path -LiteralPath $kpiAnalyticsCmd)) {
+        throw ("kpi-analytics launcher not found: {0}" -f $kpiAnalyticsCmd)
+    }
+
+    $tmpOut = [System.IO.Path]::GetTempFileName()
+    $tmpErr = [System.IO.Path]::GetTempFileName()
+    $exitCode = 1
+    $stdout = ''
+    $stderr = ''
+
+    try {
+        # kpi-analytics.cmd must run with cwd = kpi-analytics\ (module import)
+        $argLine = '/c ""{0}" score --csv "{1}" --output "{2}" --summary "{3}" --json"' -f `
+            $kpiAnalyticsCmd, $CsvPath, $OutputPath, $SummaryPath
+
+        $proc = Start-Process -FilePath 'cmd.exe' `
+            -ArgumentList $argLine `
+            -WorkingDirectory $kpiAnalyticsDir `
+            -Wait -PassThru -NoNewWindow `
+            -RedirectStandardOutput $tmpOut `
+            -RedirectStandardError $tmpErr
+
+        $exitCode = [int]$proc.ExitCode
+        if (Test-Path -LiteralPath $tmpOut) {
+            $stdout = [System.IO.File]::ReadAllText($tmpOut)
+        }
+        if (Test-Path -LiteralPath $tmpErr) {
+            $stderr = [System.IO.File]::ReadAllText($tmpErr)
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue
+    }
+
+    $jsonObj = $null
+    $trimmed = $stdout.Trim()
+    if (-not [string]::IsNullOrWhiteSpace($trimmed)) {
+        # Prefer last JSON object line if diagnostics noise appears on stdout
+        $lines = @($trimmed -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        for ($i = $lines.Count - 1; $i -ge 0; $i--) {
+            $line = $lines[$i].Trim()
+            if ($line.StartsWith('{')) {
+                try {
+                    $jsonObj = $line | ConvertFrom-Json -ErrorAction Stop
+                    break
+                }
+                catch { }
+            }
+        }
+        if ($null -eq $jsonObj) {
+            try {
+                $jsonObj = $trimmed | ConvertFrom-Json -ErrorAction Stop
+            }
+            catch { }
+        }
+    }
+
+    return [pscustomobject]@{
+        ExitCode = $exitCode
+        StdOut   = $stdout
+        StdErr   = $stderr
+        Json     = $jsonObj
+    }
+}
+
+function Select-CsvInputsForPipeline {
+    <#
+    .SYNOPSIS
+        List import\ CSVs and accept multi-select indices or a typed path.
+    #>
+    $selected = New-Object System.Collections.Generic.List[string]
+
+    $candidates = @()
+    if (Test-Path -LiteralPath $importDir) {
+        $candidates = @(Get-ChildItem -LiteralPath $importDir -Filter '*.csv' -File -ErrorAction SilentlyContinue |
+            Sort-Object Name)
+    }
+
+    if ($candidates.Count -gt 0) {
+        Write-Host 'CSV files under import\:' -ForegroundColor Cyan
+        for ($i = 0; $i -lt $candidates.Count; $i++) {
+            $item = $candidates[$i]
+            Write-Host ("  {0,2}) {1}  ({2:N0} bytes, {3})" -f ($i + 1), $item.Name, $item.Length, $item.LastWriteTime)
+        }
+        Write-Host ''
+        Write-Host 'Enter number(s) e.g. 1 or 1,2 — or a full path to a CSV:' -ForegroundColor DarkGray
+        $raw = Read-Host 'Selection'
+    }
+    else {
+        Write-Host ("No .csv files found under {0}" -f $importDir) -ForegroundColor Yellow
+        $raw = Read-Host 'Enter full path to a data CSV'
+    }
+
+    if ([string]::IsNullOrWhiteSpace($raw)) {
+        return @()
+    }
+
+    $raw = $raw.Trim().Trim('"')
+
+    # Typed path (contains path separators or ends with .csv and is not pure numbers)
+    $looksLikePath = ($raw -match '[\\/]' -or $raw -match '\.csv$' -or $raw -match '^[A-Za-z]:')
+    $onlyIndexList = ($raw -match '^[\d,\s]+$')
+
+    if ($looksLikePath -and -not $onlyIndexList) {
+        try {
+            $resolved = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($raw)
+        }
+        catch {
+            throw ("Invalid path: {0}" -f $_.Exception.Message)
+        }
+        if (-not (Test-Path -LiteralPath $resolved)) {
+            throw ("CSV not found: {0}" -f $resolved)
+        }
+        $selected.Add($resolved)
+        return @($selected.ToArray())
+    }
+
+    $parts = @($raw -split '[,;\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    foreach ($p in $parts) {
+        $n = 0
+        if (-not [int]::TryParse($p, [ref]$n)) {
+            throw ("Not a valid selection number: {0}" -f $p)
+        }
+        if ($n -lt 1 -or $n -gt $candidates.Count) {
+            throw ("Selection out of range: {0} (1-{1})" -f $n, $candidates.Count)
+        }
+        $full = $candidates[$n - 1].FullName
+        if (-not ($selected -contains $full)) {
+            $selected.Add($full)
+        }
+    }
+
+    return @($selected.ToArray())
+}
+
+function Invoke-KpiScoreExportMenu {
+    Write-Host ''
+    Write-Host 'Score CSV → Excel (KPI pipeline)' -ForegroundColor Cyan
+    Write-Host 'Runs kpi-analytics score, then exports scored + summary CSVs to Excel.' -ForegroundColor DarkGray
+    Write-Host 'Engines stay separate: Python scores; Excel COM formats workbooks.' -ForegroundColor DarkGray
+    Write-Host 'Existing outputs are kept; new files use a free numerical suffix when needed.' -ForegroundColor DarkGray
+    Write-Host ''
+
+    if (-not (Test-Path -LiteralPath $kpiAnalyticsCmd)) {
+        throw ("kpi-analytics not found at: {0}`nInstall/place the sibling kpi-analytics toolkit next to excel-toolkit." -f $kpiAnalyticsCmd)
+    }
+    if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
+        throw ("ExcelToolkit.psm1 not found: {0}" -f $toolkitModulePath)
+    }
+
+    Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+
+    if (-not (Test-Path -LiteralPath $outputDir)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+    }
+
+    $inputs = @(Select-CsvInputsForPipeline)
+    if ($inputs.Count -eq 0) {
+        Write-Host 'No CSV selected.' -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host ''
+    Write-Host ("Selected {0} file(s). First KPI run may run diagnostics (one-time gate)." -f $inputs.Count) -ForegroundColor DarkGray
+    Write-Host ''
+
+    $okCount = 0
+    $failCount = 0
+
+    foreach ($csvPath in $inputs) {
+        Write-Host ('-' * 50) -ForegroundColor DarkGray
+        Write-Host ("Input: {0}" -f $csvPath) -ForegroundColor Cyan
+
+        try {
+            $stem = [System.IO.Path]::GetFileNameWithoutExtension($csvPath)
+            if ([string]::IsNullOrWhiteSpace($stem)) { $stem = 'wq_data' }
+
+            $plannedScoredCsv   = Join-Path $outputDir ('{0}_scored.csv' -f $stem)
+            $plannedSummaryCsv  = Join-Path $outputDir ('{0}_scored_summary.csv' -f $stem)
+
+            $scoredCsvInfo  = Resolve-ExcelToolkitUniquePath -Path $plannedScoredCsv
+            $summaryCsvInfo = Resolve-ExcelToolkitUniquePath -Path $plannedSummaryCsv
+
+            if ($scoredCsvInfo.PathAdjusted -or $summaryCsvInfo.PathAdjusted) {
+                Write-Host '  Unique CSV paths (avoided overwrite):' -ForegroundColor Yellow
+                Write-Host ("    Scored  : {0}" -f $scoredCsvInfo.Path)
+                Write-Host ("    Summary : {0}" -f $summaryCsvInfo.Path)
+            }
+            else {
+                Write-Host ("  Scored CSV  : {0}" -f $scoredCsvInfo.Path)
+                Write-Host ("  Summary CSV : {0}" -f $summaryCsvInfo.Path)
+            }
+
+            Write-Host '  Scoring (kpi-analytics)...' -ForegroundColor Cyan
+            $scoreResult = Invoke-KpiAnalyticsScore `
+                -CsvPath $csvPath `
+                -OutputPath $scoredCsvInfo.Path `
+                -SummaryPath $summaryCsvInfo.Path
+
+            $scoreOk = ($scoreResult.ExitCode -eq 0)
+            $scoreJson = $scoreResult.Json
+            if ($null -ne $scoreJson -and $scoreJson.PSObject.Properties.Name -contains 'Success') {
+                $scoreOk = $scoreOk -and [bool]$scoreJson.Success
+            }
+
+            if (-not $scoreOk) {
+                $msg = 'Score failed.'
+                if ($null -ne $scoreJson -and $scoreJson.Message) {
+                    $msg = [string]$scoreJson.Message
+                }
+                elseif (-not [string]::IsNullOrWhiteSpace($scoreResult.StdErr)) {
+                    $msg = $scoreResult.StdErr.Trim()
+                }
+                elseif (-not [string]::IsNullOrWhiteSpace($scoreResult.StdOut)) {
+                    $msg = $scoreResult.StdOut.Trim()
+                }
+                Write-Host ("  FAIL score (exit {0}): {1}" -f $scoreResult.ExitCode, $msg) -ForegroundColor Red
+                $diagTxt = Join-Path $kpiAnalyticsDir 'diagnostics\last_diagnostics.txt'
+                if (Test-Path -LiteralPath $diagTxt) {
+                    Write-Host ("  See diagnostics: {0}" -f $diagTxt) -ForegroundColor Yellow
+                }
+                $failCount++
+                continue
+            }
+
+            $actualScoredCsv = $scoredCsvInfo.Path
+            $actualSummaryCsv = $summaryCsvInfo.Path
+            if ($null -ne $scoreJson) {
+                if ($scoreJson.OutputPath) { $actualScoredCsv = [string]$scoreJson.OutputPath }
+                if ($scoreJson.SummaryPath) { $actualSummaryCsv = [string]$scoreJson.SummaryPath }
+            }
+
+            $rowNote = ''
+            if ($null -ne $scoreJson -and $scoreJson.PSObject.Properties.Name -contains 'RowCount') {
+                $rowNote = (" rows={0}" -f $scoreJson.RowCount)
+            }
+            Write-Host ("  Score OK.{0}" -f $rowNote) -ForegroundColor Green
+
+            $plannedScoredXlsx  = [System.IO.Path]::ChangeExtension($actualScoredCsv, '.xlsx')
+            $plannedSummaryXlsx = [System.IO.Path]::ChangeExtension($actualSummaryCsv, '.xlsx')
+
+            Write-Host '  Exporting scored workbook...' -ForegroundColor Cyan
+            $ex1 = Export-ExcelFromCsv -CsvPath $actualScoredCsv -OutputPath $plannedScoredXlsx
+            if (-not $ex1.Success) {
+                Write-Host ("  FAIL scored Excel: {0}" -f $ex1.Message) -ForegroundColor Red
+                Write-Host ("  Scored CSV still at: {0}" -f $actualScoredCsv) -ForegroundColor Yellow
+                $failCount++
+                continue
+            }
+            Write-Host ("  Scored XLSX : {0}" -f $ex1.OutputPath) -ForegroundColor Green
+
+            Write-Host '  Exporting summary workbook...' -ForegroundColor Cyan
+            if (-not (Test-Path -LiteralPath $actualSummaryCsv)) {
+                Write-Host ("  FAIL summary CSV missing: {0}" -f $actualSummaryCsv) -ForegroundColor Red
+                $failCount++
+                continue
+            }
+            $ex2 = Export-ExcelFromCsv -CsvPath $actualSummaryCsv -OutputPath $plannedSummaryXlsx
+            if (-not $ex2.Success) {
+                Write-Host ("  FAIL summary Excel: {0}" -f $ex2.Message) -ForegroundColor Red
+                Write-Host ("  Summary CSV still at: {0}" -f $actualSummaryCsv) -ForegroundColor Yellow
+                $failCount++
+                continue
+            }
+            Write-Host ("  Summary XLSX: {0}" -f $ex2.OutputPath) -ForegroundColor Green
+
+            Write-Host '  Pipeline complete for this file.' -ForegroundColor Green
+            $okCount++
+        }
+        catch {
+            Write-Host ("  FAIL: {0}" -f $_.Exception.Message) -ForegroundColor Red
+            $failCount++
+        }
+    }
+
+    Write-Host ('-' * 50) -ForegroundColor DarkGray
+    Write-Host ("Done: {0} succeeded, {1} failed." -f $okCount, $failCount) -ForegroundColor $(if ($failCount -eq 0) { 'Green' } else { 'Yellow' })
+
+    if ($okCount -gt 0) {
+        $open = Read-Host 'Open output folder? [y/N]'
+        if ($open -match '^[Yy]') {
+            Open-OutputFolder
+        }
     }
 }
 
@@ -778,19 +1075,21 @@ function Show-Menu {
     Write-Host '================================================' -ForegroundColor Cyan
     Write-Host '  Excel Data Tools' -ForegroundColor Cyan
     Write-Host '================================================' -ForegroundColor Cyan
-    Write-Host '  1) Export CSV to Excel'
-    Write-Host '  2) Export CSV to Excel (schema display headers)'
-    Write-Host '  3) Import Excel to CSV (password prompt if needed)'
-    Write-Host '  4) Open output folder'
-    Write-Host '  5) Show environment / policy info'
-    Write-Host '  6) Schema: show source, preview, change JSON/CSV'
-    Write-Host '  7) Diagnostics (readiness / self-test)'
+    Write-Host '  1) Score CSV → Excel (KPI pipeline)'
+    Write-Host '  2) Export CSV to Excel'
+    Write-Host '  3) Export CSV to Excel (schema display headers)'
+    Write-Host '  4) Import Excel to CSV (password prompt if needed)'
+    Write-Host '  5) Open output folder'
+    Write-Host '  6) Show environment / policy info'
+    Write-Host '  7) Schema: show source, preview, change JSON/CSV'
+    Write-Host '  8) Diagnostics (readiness / self-test)'
     Write-Host '  0) Exit'
     Write-Host '================================================' -ForegroundColor Cyan
     Write-Host ''
     Write-Host ("Current schema: {0}" -f $schemaNote) -ForegroundColor DarkGray
     Write-Host 'Headers/columns come from your data CSV; schema is for display labels only.' -ForegroundColor DarkGray
-    Write-Host 'Import CSV defaults to the import\ folder.' -ForegroundColor DarkGray
+    Write-Host 'Existing outputs are not overwritten (unique name_N.ext when needed).' -ForegroundColor DarkGray
+    Write-Host 'Import CSV defaults to the import\ folder. Pipeline uses kpi-analytics + Excel.' -ForegroundColor DarkGray
 }
 
 #endregion Paths and helpers
@@ -807,14 +1106,23 @@ while ($running) {
 
     switch ($choice) {
         '1' {
-            $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments)
+            try {
+                Invoke-KpiScoreExportMenu
+            }
+            catch {
+                Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+            }
             Wait-ForEnter
         }
         '2' {
-            $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments -UseDisplayNames)
+            $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments)
             Wait-ForEnter
         }
         '3' {
+            $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments -UseDisplayNames)
+            Wait-ForEnter
+        }
+        '4' {
             try {
                 Invoke-ImportExcelMenu
             }
@@ -823,7 +1131,7 @@ while ($running) {
             }
             Wait-ForEnter
         }
-        '4' {
+        '5' {
             try {
                 Open-OutputFolder
             }
@@ -832,7 +1140,7 @@ while ($running) {
             }
             Wait-ForEnter
         }
-        '5' {
+        '6' {
             try {
                 Show-EnvironmentInfo
             }
@@ -841,7 +1149,7 @@ while ($running) {
             }
             Wait-ForEnter
         }
-        '6' {
+        '7' {
             try {
                 Invoke-SchemaMenu
             }
@@ -850,7 +1158,7 @@ while ($running) {
                 Wait-ForEnter
             }
         }
-        '7' {
+        '8' {
             try {
                 Invoke-DiagnosticsMenu
             }

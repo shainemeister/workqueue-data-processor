@@ -27,6 +27,7 @@ Data is defined by a small contract: [wq_schema.json](./wq_schema.json) describe
 | **Measure RCM claim impact** | Portfolio KPIs plus per-claim static share and resolution impact (`kpi_q_*`) | `score` · [SCORE-METHODOLOGY](./kpi-analytics/SCORE-METHODOLOGY.md) |
 | **Demo or test without real PHI** | Synthetic professional-billing WQ CSV (de-identified names) | `generate` · [CLI guide](./kpi-analytics/CLI-GUIDE.md) |
 | **Share results with leadership** | Formatted `.xlsx` from a scored or summary CSV | [excel-toolkit](./excel-toolkit/README.md) |
+| **Score and open Excel in one menu step** | Scored + summary workbooks under `output\` | `Start-ExcelMenu.cmd` → option 1 |
 | **First run on a locked-down PC** | Pass/fail environment certificate for IT | `diagnostics` · [KPI security](./kpi-analytics/ENTERPRISE-SECURITY.md) |
 | **Understand or extend the data layout** | Field definitions and sample fact rows | [wq_schema.json](./wq_schema.json) · [wq_data.csv](./wq_data.csv) |
 
@@ -54,7 +55,9 @@ Enterprise / IT notes: [kpi-analytics/ENTERPRISE-SECURITY.md](./kpi-analytics/EN
 
 ## Quick start
 
-From the repository root, a common flow is: **generate test data → score → export to Excel**.
+**One-menu path (score + Excel):** double-click `Start-ExcelMenu.cmd` → option **1) Score CSV → Excel (KPI pipeline)** → pick a CSV under `import\`. Writes scored/summary CSVs and both `.xlsx` under `output\` (unique `name_N` suffixes if files already exist). Needs Python 3.13 **and** Excel.
+
+From the repository root, a **manual** flow is: **generate test data → score → export to Excel**.
 
 ```bat
 cd kpi-analytics

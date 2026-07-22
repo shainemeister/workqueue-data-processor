@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.2.1'
+$script:ExcelToolkitVersion = '1.3.0'
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
 if (-not (Test-Path -LiteralPath $excelComPath)) {
@@ -43,10 +43,69 @@ function Get-ExcelToolkitVersion {
 
 #region Output safety
 
+function Resolve-ExcelToolkitUniquePath {
+    <#
+    .SYNOPSIS
+        Resolve a destination path that will not clobber an existing file.
+
+    .DESCRIPTION
+        Without -Force, if the path already exists, appends _1, _2, ... before the
+        extension until a free path is found (cap 999). With -Force, returns the
+        exact path (caller may overwrite).
+
+    .OUTPUTS
+        PSCustomObject: Path (write target), RequestedPath, PathAdjusted (bool)
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [switch]$Force,
+
+        [int]$MaxAttempts = 999
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        throw 'Output path is required.'
+    }
+
+    $resolved = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+
+    if ($Force -or -not (Test-Path -LiteralPath $resolved)) {
+        return [pscustomobject]@{
+            Path          = $resolved
+            RequestedPath = $resolved
+            PathAdjusted  = $false
+        }
+    }
+
+    $dir  = [System.IO.Path]::GetDirectoryName($resolved)
+    $base = [System.IO.Path]::GetFileNameWithoutExtension($resolved)
+    $ext  = [System.IO.Path]::GetExtension($resolved)
+
+    for ($i = 1; $i -le $MaxAttempts; $i++) {
+        $candidate = Join-Path $dir ('{0}_{1}{2}' -f $base, $i, $ext)
+        if (-not (Test-Path -LiteralPath $candidate)) {
+            return [pscustomobject]@{
+                Path          = $candidate
+                RequestedPath = $resolved
+                PathAdjusted  = $true
+            }
+        }
+    }
+
+    throw ("Could not find a free output path after {0} attempts for: {1}" -f $MaxAttempts, $resolved)
+}
+
 function Assert-ExcelToolkitOutputWritable {
     <#
     .SYNOPSIS
-        Refuse to overwrite an existing destination unless -Force is set.
+        Legacy name: resolve a non-clobbering path unless -Force.
+
+    .DESCRIPTION
+        Prefer Resolve-ExcelToolkitUniquePath. This wrapper returns the unique Path
+        string for older call sites.
     #>
     [CmdletBinding()]
     param(
@@ -57,12 +116,11 @@ function Assert-ExcelToolkitOutputWritable {
     )
 
     if ([string]::IsNullOrWhiteSpace($Path)) {
-        return
+        return $Path
     }
 
-    if ((Test-Path -LiteralPath $Path) -and -not $Force) {
-        throw ("Output file already exists: {0}. Use -Force to overwrite." -f $Path)
-    }
+    $info = Resolve-ExcelToolkitUniquePath -Path $Path -Force:$Force
+    return $info.Path
 }
 
 #endregion Output safety
@@ -215,7 +273,8 @@ function Export-ExcelFromCsv {
         Never log this value. Empty/null = unprotected workbook.
 
     .PARAMETER Force
-        Overwrite an existing output workbook. Without -Force, an existing path fails validation.
+        Overwrite the exact OutputPath if it already exists. Without -Force, an
+        existing path is not replaced: a free sibling path is chosen (name_1.ext, …).
 
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -SchemaPath .\schema.json -UseDisplayNames -OutputPath .\out.xlsx -DryRun
@@ -251,15 +310,17 @@ function Export-ExcelFromCsv {
     )
 
     $result = [pscustomobject]@{
-        Success       = $false
-        OutputPath    = $null
-        RowCount      = 0
-        ColumnCount   = 0
-        DryRun        = [bool]$DryRun
-        Message       = ''
-        HeadersSample = @()
-        SchemaFormat  = $null
-        SheetName     = $SheetName
+        Success            = $false
+        OutputPath         = $null
+        RequestedOutputPath = $null
+        PathAdjusted       = $false
+        RowCount           = 0
+        ColumnCount        = 0
+        DryRun             = [bool]$DryRun
+        Message            = ''
+        HeadersSample      = @()
+        SchemaFormat       = $null
+        SheetName          = $SheetName
     }
 
     try {
@@ -323,17 +384,24 @@ function Export-ExcelFromCsv {
             }
         }
 
+        # Unique path unless -Force (including DryRun planning)
+        $pathInfo = Resolve-ExcelToolkitUniquePath -Path $OutputPath -Force:$Force
+        $OutputPath = $pathInfo.Path
+        $result.RequestedOutputPath = $pathInfo.RequestedPath
+        $result.PathAdjusted = [bool]$pathInfo.PathAdjusted
+        $result.OutputPath = $OutputPath
         $result.RowCount = $rowCount
         $result.ColumnCount = $propertyNames.Count
         $result.HeadersSample = @($displayHeaders | Select-Object -First 5)
-        $result.OutputPath = $OutputPath
-
-        # Refuse overwrite unless -Force (including DryRun planning)
-        Assert-ExcelToolkitOutputWritable -Path $OutputPath -Force:$Force
 
         if ($DryRun) {
             $result.Success = $true
-            $result.Message = 'DryRun complete - no workbook written.'
+            if ($pathInfo.PathAdjusted) {
+                $result.Message = ("DryRun complete - would write to {0} (avoided overwrite of {1})." -f $OutputPath, $pathInfo.RequestedPath)
+            }
+            else {
+                $result.Message = 'DryRun complete - no workbook written.'
+            }
             return $result
         }
 
@@ -381,7 +449,12 @@ function Export-ExcelFromCsv {
             $result.OutputPath = $saved
             $result.RowCount = $importInfo.RowCount
             $result.ColumnCount = $importInfo.ColumnCount
-            $result.Message = 'Export complete.'
+            if ($pathInfo.PathAdjusted) {
+                $result.Message = ("Export complete (wrote {0}; avoided overwrite of {1})." -f $saved, $pathInfo.RequestedPath)
+            }
+            else {
+                $result.Message = 'Export complete.'
+            }
         }
         catch {
             $msg = $_.Exception.Message
@@ -449,11 +522,13 @@ function Import-CsvFromExcel {
         Validate open and sheet selection only; do not write CSV.
 
     .PARAMETER Force
-        Overwrite an existing output CSV. Without -Force, an existing path fails validation.
+        Overwrite the exact OutputPath if it already exists. Without -Force, an
+        existing path is not replaced: a free sibling path is chosen (name_1.csv, …).
 
     .OUTPUTS
-        PSCustomObject with Success, ExcelPath, OutputPath, RowCount, ColumnCount,
-        SheetName, DryRun, Message, HeadersSample, PasswordUsed (boolean only).
+        PSCustomObject with Success, ExcelPath, OutputPath, RequestedOutputPath,
+        PathAdjusted, RowCount, ColumnCount, SheetName, DryRun, Message,
+        HeadersSample, PasswordUsed (boolean only).
 
     .EXAMPLE
         Import-CsvFromExcel -ExcelPath .\import\data.xlsx -OutputPath .\import\data.csv
@@ -485,30 +560,35 @@ function Import-CsvFromExcel {
     )
 
     $result = [pscustomobject]@{
-        Success       = $false
-        ExcelPath     = $null
-        OutputPath    = $null
-        RowCount      = 0
-        ColumnCount   = 0
-        SheetName     = $null
-        DryRun        = [bool]$DryRun
-        Message       = ''
-        HeadersSample = @()
-        PasswordUsed  = $false
+        Success             = $false
+        ExcelPath           = $null
+        OutputPath          = $null
+        RequestedOutputPath = $null
+        PathAdjusted        = $false
+        RowCount            = 0
+        ColumnCount         = 0
+        SheetName           = $null
+        DryRun              = [bool]$DryRun
+        Message             = ''
+        HeadersSample       = @()
+        PasswordUsed        = $false
     }
 
     try {
         $ExcelPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ExcelPath)
         $OutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
         $result.ExcelPath = $ExcelPath
-        $result.OutputPath = $OutputPath
 
         if (-not (Test-Path -LiteralPath $ExcelPath)) {
             throw ("Excel file not found: {0}" -f $ExcelPath)
         }
 
-        # Refuse overwrite unless -Force (before Excel work; applies to DryRun too)
-        Assert-ExcelToolkitOutputWritable -Path $OutputPath -Force:$Force
+        # Unique path unless -Force (before Excel work; applies to DryRun too)
+        $pathInfo = Resolve-ExcelToolkitUniquePath -Path $OutputPath -Force:$Force
+        $OutputPath = $pathInfo.Path
+        $result.RequestedOutputPath = $pathInfo.RequestedPath
+        $result.PathAdjusted = [bool]$pathInfo.PathAdjusted
+        $result.OutputPath = $OutputPath
 
         $envResult = Test-ExcelComEnvironment
         if (-not $envResult.Passed) {
@@ -628,7 +708,12 @@ function Import-CsvFromExcel {
                 Close-ExcelWorkbook -Workbook $workbook
                 $workbook = $null
                 $result.Success = $true
-                $result.Message = 'DryRun complete - no CSV written.'
+                if ($pathInfo.PathAdjusted) {
+                    $result.Message = ("DryRun complete - would write to {0} (avoided overwrite of {1})." -f $OutputPath, $pathInfo.RequestedPath)
+                }
+                else {
+                    $result.Message = 'DryRun complete - no CSV written.'
+                }
                 return $result
             }
 
@@ -653,7 +738,12 @@ function Import-CsvFromExcel {
 
             $result.Success = $true
             $result.OutputPath = $saved
-            $result.Message = 'Import complete.'
+            if ($pathInfo.PathAdjusted) {
+                $result.Message = ("Import complete (wrote {0}; avoided overwrite of {1})." -f $saved, $pathInfo.RequestedPath)
+            }
+            else {
+                $result.Message = 'Import complete.'
+            }
         }
         catch {
             $msg = $_.Exception.Message
@@ -686,6 +776,7 @@ function Import-CsvFromExcel {
 
 Export-ModuleMember -Function @(
     'Get-ExcelToolkitVersion',
+    'Resolve-ExcelToolkitUniquePath',
     'Export-ExcelFromCsv',
     'Import-CsvFromExcel'
 )
