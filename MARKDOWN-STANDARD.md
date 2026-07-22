@@ -1,7 +1,7 @@
 ---
 title: Markdown Documentation Standard
 description: Cross-functional standard for consistent, professional markdown across this repository and its toolkits.
-version: "1.0.0"
+version: "1.1.0"
 status: current
 audience:
   - developers
@@ -12,6 +12,7 @@ doc_type: other
 related:
   - README.md
   - templates/TEMPLATE-GENERIC.md
+  - templates/TEMPLATE-README.md
 last_updated: "2026-07-22"
 ---
 
@@ -19,11 +20,11 @@ last_updated: "2026-07-22"
 
 A repeatable standard for professional, consistent markdown in this repository—usable across product toolkits, methodologies, security notes, design concepts, and runbooks.
 
-**Standard version:** 1.0.0  
+**Standard version:** 1.1.0  
 **Location:** repository root (`MARKDOWN-STANDARD.md`)  
 **Templates:** [`templates/`](./templates/)
 
-**Related:** [README.md](./README.md) · [templates/TEMPLATE-GENERIC.md](./templates/TEMPLATE-GENERIC.md)
+**Related:** [README.md](./README.md) · [templates/TEMPLATE-GENERIC.md](./templates/TEMPLATE-GENERIC.md) · [templates/TEMPLATE-README.md](./templates/TEMPLATE-README.md)
 
 ---
 
@@ -31,7 +32,9 @@ A repeatable standard for professional, consistent markdown in this repository�
 
 This document defines **how we structure and write markdown** so docs stay scannable, professional, and easy to maintain. It is **product-agnostic**: the same rules apply to `kpi-analytics`, `excel-toolkit`, and future packages.
 
-Every substantial document should include **YAML frontmatter**, a clear **H1**, a short **lead**, a **status block**, a **Summary**, a linked **Contents** list, then the **body** in a type-appropriate order. Copy-paste skeletons live in [`templates/`](./templates/).
+Most **substantial** documents use **YAML frontmatter**, a clear **H1**, a short **lead**, a **status block**, a **Summary**, a linked **Contents** list, then the **body** in a type-appropriate order. Copy-paste skeletons live in [`templates/`](./templates/).
+
+**Exception:** the **repository root landing README** (and similar end-user entry pages) intentionally **omit frontmatter** and follow a lighter outline focused on summary and use cases—see [Landing / root README](#landing--root-readme-no-frontmatter).
 
 ---
 
@@ -39,34 +42,98 @@ Every substantial document should include **YAML frontmatter**, a clear **H1**, 
 
 1. [Summary](#summary)
 2. [When to use this standard](#when-to-use-this-standard)
-3. [Canonical document order](#canonical-document-order)
-4. [YAML frontmatter](#yaml-frontmatter)
-5. [Headings and anchors](#headings-and-anchors)
-6. [Writing conventions](#writing-conventions)
-7. [Tables, code, and links](#tables-code-and-links)
-8. [Document types and body outlines](#document-types-and-body-outlines)
-9. [Templates](#templates)
-10. [Author checklist](#author-checklist)
-11. [Anti-patterns](#anti-patterns)
-12. [Document history](#document-history)
+3. [Landing / root README (no frontmatter)](#landing--root-readme-no-frontmatter)
+4. [Canonical document order](#canonical-document-order)
+5. [YAML frontmatter](#yaml-frontmatter)
+6. [Headings and anchors](#headings-and-anchors)
+7. [Writing conventions](#writing-conventions)
+8. [Tables, code, and links](#tables-code-and-links)
+9. [Document types and body outlines](#document-types-and-body-outlines)
+10. [Templates](#templates)
+11. [Author checklist](#author-checklist)
+12. [Anti-patterns](#anti-patterns)
+13. [Document history](#document-history)
 
 ---
 
 ## When to use this standard
 
-| Use for | Examples |
-|---------|----------|
-| Product / toolkit overview | `README.md` in a package folder |
-| CLI or API contract | `CLI-GUIDE.md` |
-| How formulas or processes work | Methodology, design notes |
-| Security / enterprise posture | `ENTERPRISE-SECURITY.md` |
-| Design concepts | Progressive design, multi-version concepts |
-| Operational runbooks | Deploy, validate, recover |
+| Use for | Examples | Frontmatter |
+|---------|----------|-------------|
+| Product / toolkit overview | Package `README.md` (`kpi-analytics\`, `excel-toolkit\`) | **Yes** |
+| CLI or API contract | `CLI-GUIDE.md` | **Yes** |
+| How formulas or processes work | Methodology, design notes | **Yes** |
+| Security / enterprise posture | `ENTERPRISE-SECURITY.md` | **Yes** |
+| Design concepts | Progressive design, multi-version concepts | **Yes** |
+| Operational runbooks | Deploy, validate, recover | **Yes** |
+| **Repo landing / root entry** | Root [README.md](./README.md) | **No** (by design) |
 
 | Optional / lighter treatment | Examples |
 |------------------------------|----------|
 | Tiny sample folders | Short README without full frontmatter if under ~30 lines |
 | Generated notes | Prefer linking to a curated doc instead of free-form dump |
+| Root landing README | Full pattern in [Landing / root README](#landing--root-readme-no-frontmatter) |
+
+---
+
+## Landing / root README (no frontmatter)
+
+Use this pattern for the **repository root `README.md`** (and any similar **end-user landing page**). Goal: a professional first impression that is easy to scan—not a maintainer catalog, not a CLI contract, not a methodology dump.
+
+### Purpose
+
+| This page does | This page does not |
+|----------------|--------------------|
+| Explain what the repo is for in plain language | Replace toolkit READMEs or CLI guides |
+| Lead with **Summary** and **Use cases** | Open with RULES, FILE-CATALOG, or template inventories |
+| Show one **Quick start** path | Paste every flag, formula, or security matrix |
+| Link to deep docs by need | Duplicate another document in full |
+
+### Required order
+
+| # | Block | Required? | Notes |
+|---|--------|-----------|--------|
+| 1 | **H1** | Yes | Product-facing title (e.g. Work Queue Data Processor) |
+| 2 | **Lead** | Yes | One or two sentences under the H1—no frontmatter above it |
+| 3 | **Summary** | Yes | What it is, for whom, key constraint (e.g. offline / stdlib) |
+| 4 | **Use cases** | Yes | Table: goal · outcome · start path |
+| 5 | **What’s included** | Recommended | Compact map of toolkits and data—not every source file |
+| 6 | **Prerequisites** | Yes if software is required | Short table only |
+| 7 | **Quick start** | Yes | One realistic end-to-end example; language-tagged fence |
+| 8 | **Your data** (or equivalent) | If a data contract exists | Schema vs rows; types in one line |
+| 9 | **Where to go next** | Yes | Links by user need |
+| 10 | **For maintainers** | Optional, last | RULES, catalog, this standard—keep thin |
+
+**Contents:** optional. Prefer **no** Contents block when there are fewer than about six H2 sections so the landing page stays light.
+
+**YAML frontmatter:** **omit**. Do not add version/status badges that require frontmatter sync on a landing page; keep identity in the H1 and lead.
+
+### Tone and length
+
+| Guidance | Detail |
+|----------|--------|
+| Voice | Professional, direct, second person (“you”) where natural |
+| Jargon | Pair product terms with a plain phrase the first time |
+| Length | Prefer roughly **under 120 lines**; link out for depth |
+| Tables | Use for use cases, prerequisites, and “start here” maps |
+| Code | One primary workflow example; more examples live in toolkit docs |
+
+### Maintenance rules
+
+1. When a toolkit **entry point or recommended workflow** changes, update **Quick start** and **Use cases** in the **same change set**.  
+2. When a new end-user capability ships, add a **use case row** or a **Where to go next** link—do not only update FILE-CATALOG.  
+3. Keep **For maintainers** short; never move it above Summary / Use cases.  
+4. Do not list every path in the repo; inventory belongs in [FILE-CATALOG.md](./FILE-CATALOG.md).  
+5. Relative links only from the file’s directory (root: `./kpi-analytics/README.md`).
+
+### Relationship to toolkit READMEs
+
+| Document | Pattern |
+|----------|---------|
+| **Root landing** (`/README.md`) | This section—**no** frontmatter; use cases first |
+| **Toolkit README** (`kpi-analytics\README.md`, etc.) | Full standard + frontmatter + `doc_type: readme` · [TEMPLATE-README.md](./templates/TEMPLATE-README.md) |
+
+Do not force the landing outline onto deep toolkit docs, and do not force full frontmatter onto the root landing page.
 
 ---
 
@@ -223,6 +290,8 @@ Set `doc_type` in frontmatter. After **Summary** and **Contents**, use the body 
 
 ### `readme` — product or toolkit overview
 
+Use for **package** READMEs (with frontmatter). For the **repository root** landing page, use [Landing / root README](#landing--root-readme-no-frontmatter) instead—do not force this full outline on the root file.
+
 1. Who should use what  
 2. Recommended / quick start  
 3. What it produces (or features)  
@@ -334,16 +403,30 @@ Use **Summary → Contents → logical H2s → History**. Prefer `TEMPLATE-GENER
 
 Before merging or publishing a doc:
 
-- [ ] Frontmatter complete; `status` accurate  
+### All docs
+
 - [ ] Single H1; Summary present if the body is non-trivial  
-- [ ] Contents links resolve and match H2 titles  
-- [ ] Version in frontmatter matches status block (if both exist)  
-- [ ] `last_updated` set  
 - [ ] Relative links work from the file’s directory  
 - [ ] Code fences have language tags  
 - [ ] No unresolved `{{PLACEHOLDERS}}`  
 - [ ] Tables render (header separator present)  
 - [ ] “Out of scope” or “Not in this doc” used instead of silent omissions when helpful  
+
+### Standard docs (frontmatter required)
+
+- [ ] Frontmatter complete; `status` accurate  
+- [ ] Contents links resolve and match H2 titles (if Contents present)  
+- [ ] Version in frontmatter matches status block (if both exist)  
+- [ ] `last_updated` set  
+
+### Landing / root README (no frontmatter)
+
+- [ ] No YAML frontmatter  
+- [ ] Summary and **Use cases** appear near the top  
+- [ ] Quick start shows one end-to-end path  
+- [ ] Does **not** open with maintainer-only inventory (RULES, catalog, templates)  
+- [ ] Maintainer links (if any) stay at the end and stay short  
+- [ ] Deep contracts linked, not pasted  
 
 ---
 
@@ -360,6 +443,10 @@ Before merging or publishing a doc:
 | Walls of prose for option lists | Tables |
 | Emoji-heavy headings | Plain headings for stable anchors |
 | Duplicating another doc in full | Link and summarize |
+| Root README that is only a file dump | Use cases + quick start + “where to go next” |
+| Frontmatter on a deliberately simple landing page | Omit frontmatter; H1 + lead + Summary |
+| Root page that opens with RULES / catalog / templates | Put maintainers last |
+| Pasting full CLI-GUIDE into the root README | One example + link |
 
 ---
 
@@ -368,3 +455,4 @@ Before merging or publishing a doc:
 | Version | Notes |
 |---------|--------|
 | 1.0.0 | Initial cross-functional standard; root placement; templates under `templates/` |
+| 1.1.0 | Landing / root README pattern (no frontmatter); use cases and checklist; anti-patterns |
