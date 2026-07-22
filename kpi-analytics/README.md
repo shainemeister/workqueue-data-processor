@@ -159,6 +159,8 @@ Transposed run report for leadership and audit: each KPI or setting is a **row**
 | Optional config | `kpi_modules\config_default.json` shape |
 | Optional ADC | Set `kpi_quantifiers.adc` for true Days in AR; else estimated from batch billed / 90 |
 
+**Developers (optional):** PEP-8 style gate uses system/dev [pylint](https://pylint.readthedocs.io/) with [`.pylintrc`](./.pylintrc). From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules`. Pylint is **not** required to run scoring on enterprise PCs and is not a product dependency.
+
 ---
 
 ## Data and configuration
