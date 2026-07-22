@@ -7,6 +7,7 @@ from typing import Any
 
 
 def parse_date(value: str | None, formats: list[str]) -> date | None:
+    """Parse a date string with the first matching format, or return None."""
     if value is None:
         return None
     text = str(value).strip()
@@ -21,6 +22,7 @@ def parse_date(value: str | None, formats: list[str]) -> date | None:
 
 
 def parse_float(value: str | None) -> float | None:
+    """Parse a float (commas stripped), or return None if empty/invalid."""
     if value is None:
         return None
     text = str(value).strip().replace(",", "")
@@ -33,6 +35,7 @@ def parse_float(value: str | None) -> float | None:
 
 
 def parse_int(value: str | None) -> int | None:
+    """Parse an integer via parse_float, or return None."""
     f = parse_float(value)
     if f is None:
         return None
@@ -40,8 +43,9 @@ def parse_int(value: str | None) -> int | None:
 
 
 def resolve_as_of(cfg: dict[str, Any]) -> date:
+    """Return config as_of_date or today when unset/blank."""
     raw = cfg.get("as_of_date")
-    if raw is None or str(raw).strip() == "":
+    if raw is None or not str(raw).strip():
         return date.today()
     parsed = parse_date(str(raw), list(cfg.get("date_formats") or []))
     if parsed is None:
@@ -103,7 +107,7 @@ def detect_chaos_mode(
         "row_count_with_ar_days": n,
         "reasons": [],
     }
-    if n == 0:
+    if not n:
         stats["mean_ar_days"] = None
         return False, stats
 

@@ -48,7 +48,7 @@ def _percentile_scale(
     indexed = [(i, float(v)) for i, v in enumerate(values) if v is not None]
     result = [missing] * len(values)
     n = len(indexed)
-    if n == 0:
+    if not n:
         return result
     if n == 1:
         result[indexed[0][0]] = 0.5
@@ -88,6 +88,7 @@ def normalize_metric_column(
     direction: str,
     missing: float,
 ) -> list[float]:
+    """Normalize one metric column via minmax or percentile scaling."""
     higher = direction == "higher"
     if method == "percentile":
         return _percentile_scale(
