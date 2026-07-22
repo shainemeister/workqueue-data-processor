@@ -1,0 +1,74 @@
+{
+  "version": "1.0",
+  "description": "Fixed as-of fixture for Priority Matrix V1 hand validation",
+  "as_of_date": "2026-07-22",
+  "date_formats": ["%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y", "%Y/%m/%d"],
+  "fields": {
+    "service_date": "service_date",
+    "out_ins_amt": "out_ins_amt",
+    "billed_amount": "billed_amount",
+    "days_until_appeal_deadline": "days_until_appeal_deadline",
+    "days_on_wq_tab": "days_on_wq_tab"
+  },
+  "ar_day_target": 45,
+  "normalization": "minmax",
+  "missing_norm_value": 0.0,
+  "weights": {
+    "ar_days": 0.20,
+    "ar_disparity": 0.20,
+    "out_ins_amt": 0.25,
+    "billed_amount": 0.10,
+    "appeal_urgency": 0.15,
+    "wq_age": 0.10
+  },
+  "metric_direction": {
+    "ar_days": "higher",
+    "ar_disparity": "higher",
+    "out_ins_amt": "higher",
+    "billed_amount": "higher",
+    "appeal_urgency": "lower",
+    "wq_age": "higher"
+  },
+  "chaos": {
+    "enabled": true,
+    "mean_ar_days_factor": 1.5,
+    "share_ar_ge_60": 0.40,
+    "share_ar_ge_90": 0.25,
+    "share_ar_ge_120": 0.15,
+    "multipliers": {
+      "ar_days": 1.0,
+      "ar_disparity": 1.4,
+      "out_ins_amt": 1.0,
+      "billed_amount": 1.0,
+      "appeal_urgency": 1.5,
+      "wq_age": 1.0
+    }
+  },
+  "point_of_interest": {
+    "name": "default",
+    "multipliers": {
+      "ar_days": 1.0,
+      "ar_disparity": 1.0,
+      "out_ins_amt": 1.0,
+      "billed_amount": 1.0,
+      "appeal_urgency": 1.0,
+      "wq_age": 1.0
+    }
+  },
+  "output": {
+    "score_column": "v1_priority_score",
+    "mode_column": "v1_queue_mode",
+    "prefix": "v1_"
+  },
+  "kpi_quantifiers": {
+    "enabled": true,
+    "amount_field": "out_ins_amt",
+    "aged_day_breaks": [90, 120],
+    "adc": 2000,
+    "adc_lookback_days": 90,
+    "credit_policy": "exclude_from_T",
+    "emit_static_share": true,
+    "emit_exact_delta": true,
+    "dual_sign_columns": true
+  }
+}

@@ -1,0 +1,6 @@
+patient,account,service_date,out_ins_amt,billed_amount,days_until_appeal_deadline,days_on_wq_tab,payer,code_category,cpt_codes,denial_status
+"Doe,John1",A1001,07/22/2024,5000.00,6000,5,200,CIGNA,Timely Filing,99214,Denied
+"Doe,Jane2",A1002,07/15/2026,50.00,100,180,2,AETNA,Coding,99213,Created
+"Doe,John3",A1003,01/22/2026,1200.00,1500,45,60,UHC,Authorization,99232,In Progress
+"Doe,Jane4",A1004,04/22/2025,800.00,900,0,120,MEDICARE,Medical Necessity,27447,Appealed
+"Doe,John5",A1005,06/22/2026,300.00,350,90,10,BCBS,Eligibility,99204,Created

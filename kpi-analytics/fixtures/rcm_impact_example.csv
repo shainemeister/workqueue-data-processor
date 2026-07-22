@@ -1,0 +1,5 @@
+patient,account,service_date,out_ins_amt,billed_amount,days_until_appeal_deadline,days_on_wq_tab
+"Claim,A",A,03/24/2026,10000,10000,30,100
+"Claim,B",B,06/07/2026,5000,5000,60,40
+"Claim,C",C,07/07/2026,20000,20000,90,10
+"Claim,D",D,04/08/2026,15000,15000,20,90

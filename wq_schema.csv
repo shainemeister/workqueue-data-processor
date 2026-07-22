@@ -1,0 +1,41 @@
+field_name,display_name,data_type,nullable
+wq_status,WQ Status,str,False
+related_charge_lines,Related Charge lines,int,True
+deferral_reason,Deferral Reason,str,True
+patient,Patient,str,False
+account,Account,str,False
+score,Score,int,True
+out_ins_amt,Out. Ins. Amt.,float,True
+days_until_appeal_deadline,Days Until Appeal Deadline,int,True
+days_until_replacement_deadline,Days Until Replacement Deadline,int,True
+days_on_wq_tab,Days on WQ Tab,int,True
+service_date,Service Date,str,True
+payer,Payer,str,True
+plan,Plan,str,True
+invoice_num,Invoice #,str,True
+last_worked_date,Last Worked Date,str,True
+reason_code_list,Reason Code List,str,True
+remittance_code,Remittance Code,str,True
+location,Location,str,True
+denial_status,Denial Status,str,True
+code_category,Code Category,str,True
+cpt_codes,CPT Codes,str,True
+modifiers,Modifiers,str,True
+diagnosis_codes,Diagnosis Codes,str,True
+denial_count,Denial Count,int,True
+billed_amount,Billed Amount,int,True
+svc_provider,Svc Provider,str,True
+billing_provider,Billing Provider,str,True
+suspended_nrp_status,Suspended NRP Status,str,True
+pending_remittance_run,Pending Remittance Run,str,True
+dob,Date of Birth,int,True
+sub_id,Sub ID,str,True
+group_num,Group #,int,True
+department,Department,str,True
+billing_provider_tax_id,Billing Provider Tax ID,str,True
+billing_provider_npi,Billing Provider NPI,str,True
+follow_up_priority,Follow-up Priority,int,True
+follow_up_record_id,Follow-up Record ID,int,True
+crd_record_id,CRD Record ID,int,True
+wq_defer_user_comment,WQ Defer User Comment,str,True
+wq_transfer_user_comment,WQ Transfer User Comment,str,True

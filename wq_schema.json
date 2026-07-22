@@ -1,0 +1,246 @@
+{
+  "version": "1.0",
+  "description": "Schema for Work Queue (WQ) denial / follow-up records",
+  "fields": [
+    {
+      "field_name": "wq_status",
+      "wq_field_name": "WQ Status",
+      "data_type": "str",
+      "nullable": false
+    },
+    {
+      "field_name": "related_charge_lines",
+      "wq_field_name": "Related Charge lines",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "deferral_reason",
+      "wq_field_name": "Deferral Reason",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "patient",
+      "wq_field_name": "Patient",
+      "data_type": "str",
+      "nullable": false
+    },
+    {
+      "field_name": "account",
+      "wq_field_name": "Account",
+      "data_type": "str",
+      "nullable": false
+    },
+    {
+      "field_name": "score",
+      "wq_field_name": "Score",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "out_ins_amt",
+      "wq_field_name": "Out. Ins. Amt.",
+      "data_type": "float",
+      "nullable": true
+    },
+    {
+      "field_name": "days_until_appeal_deadline",
+      "wq_field_name": "Days Until Appeal Deadline",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "days_until_replacement_deadline",
+      "wq_field_name": "Days Until Replacement Deadline",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "days_on_wq_tab",
+      "wq_field_name": "Days on WQ Tab",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "service_date",
+      "wq_field_name": "Service Date",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "payer",
+      "wq_field_name": "Payer",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "plan",
+      "wq_field_name": "Plan",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "invoice_num",
+      "wq_field_name": "Invoice #",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "last_worked_date",
+      "wq_field_name": "Last Worked Date",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "reason_code_list",
+      "wq_field_name": "Reason Code List",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "remittance_code",
+      "wq_field_name": "Remittance Code",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "location",
+      "wq_field_name": "Location",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "denial_status",
+      "wq_field_name": "Denial Status",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "code_category",
+      "wq_field_name": "Code Category",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "cpt_codes",
+      "wq_field_name": "CPT Codes",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "modifiers",
+      "wq_field_name": "Modifiers",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "diagnosis_codes",
+      "wq_field_name": "Diagnosis Codes",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "denial_count",
+      "wq_field_name": "Denial Count",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "billed_amount",
+      "wq_field_name": "Billed Amount",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "svc_provider",
+      "wq_field_name": "Svc Provider",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "billing_provider",
+      "wq_field_name": "Billing Provider",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "suspended_nrp_status",
+      "wq_field_name": "Suspended NRP Status",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "pending_remittance_run",
+      "wq_field_name": "Pending Remittance Run",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "dob",
+      "wq_field_name": "Date of Birth",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "sub_id",
+      "wq_field_name": "Sub ID",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "group_num",
+      "wq_field_name": "Group #",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "department",
+      "wq_field_name": "Department",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "billing_provider_tax_id",
+      "wq_field_name": "Billing Provider Tax ID",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "billing_provider_npi",
+      "wq_field_name": "Billing Provider NPI",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "follow_up_priority",
+      "wq_field_name": "Follow-up Priority",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "follow_up_record_id",
+      "wq_field_name": "Follow-up Record ID",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "crd_record_id",
+      "wq_field_name": "CRD Record ID",
+      "data_type": "int",
+      "nullable": true
+    },
+    {
+      "field_name": "wq_defer_user_comment",
+      "wq_field_name": "WQ Defer User Comment",
+      "data_type": "str",
+      "nullable": true
+    },
+    {
+      "field_name": "wq_transfer_user_comment",
+      "wq_field_name": "WQ Transfer User Comment",
+      "data_type": "str",
+      "nullable": true
+    }
+  ]
+}
