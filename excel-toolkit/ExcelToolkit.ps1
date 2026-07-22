@@ -15,7 +15,7 @@
         2  runtime failure
 
 .PARAMETER Command
-    Verb: version | probe | export-csv
+    Verb: version | probe | export-csv | import-excel | help
 
 .EXAMPLE
     .\ExcelToolkit.ps1 version
@@ -26,17 +26,22 @@
 .EXAMPLE
     .\ExcelToolkit.ps1 export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx -Json
 
+.EXAMPLE
+    .\ExcelToolkit.ps1 import-excel -ExcelPath ..\import\wq_synthetic_data.xlsx -OutputPath ..\import\from_xlsx_smoke.csv -Json
+
 .NOTES
     See CLI-GUIDE.md for full syntax and examples.
+    -Password is never written to JSON, host success lines, or logs.
 #>
 
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('version', 'probe', 'export-csv', 'help', '')]
+    [ValidateSet('version', 'probe', 'export-csv', 'import-excel', 'help', '')]
     [string]$Command = 'help',
 
     [string]$CsvPath,
+    [string]$ExcelPath,
     [string]$SchemaPath,
     [ValidateSet('Auto', 'Json', 'Csv')]
     [string]$SchemaFormat = 'Auto',
@@ -44,8 +49,10 @@ param(
     [switch]$UseDisplayNames,
     [string]$DisplayNameProperty = '',
     [string]$SheetName = 'Data',
+    [string]$Password = '',
     [switch]$Visible,
     [switch]$DryRun,
+    [switch]$Force,
     [switch]$Json,
     [switch]$Quiet
 )
@@ -60,14 +67,20 @@ function Write-CliHost {
     }
 }
 
-function Write-CliResult {
-    param($Object)
-    if ($Json) {
-        $Object | ConvertTo-Json -Compress -Depth 6
+function ConvertTo-CliSecurePassword {
+    param([string]$Plain)
+    if ([string]::IsNullOrEmpty($Plain)) {
+        return $null
     }
-    elseif (-not $Quiet) {
-        $Object | Format-List | Out-String | Write-Host
+    if (Get-Command -Name ConvertTo-SecureStringPlain -ErrorAction SilentlyContinue) {
+        return ConvertTo-SecureStringPlain -PlainPassword $Plain
     }
+    $secure = New-Object System.Security.SecureString
+    foreach ($ch in $Plain.ToCharArray()) {
+        $secure.AppendChar($ch)
+    }
+    $secure.MakeReadOnly()
+    return $secure
 }
 
 function Show-Help {
@@ -79,6 +92,7 @@ Commands:
   version                 Print toolkit version
   probe                   Run environment preflight (Excel COM, paths)
   export-csv              Export a data CSV to .xlsx
+  import-excel            Import an Excel workbook to .csv
   help                    Show this help
 
 Common options:
@@ -91,14 +105,34 @@ probe options:
 
 export-csv options:
   -CsvPath <path>         Input data CSV (required)
-  -OutputPath <path>      Output .xlsx (required unless using defaults from caller)
+  -OutputPath <path>      Output .xlsx (default: ..\output\export.xlsx)
   -SchemaPath <path>      Optional schema for display names
   -SchemaFormat Auto|Json|Csv
   -UseDisplayNames        Apply schema display labels
   -DisplayNameProperty    Preferred schema label property
   -SheetName <name>       Worksheet name (default Data)
+  -Password <text>        Optional workbook open password (not logged)
   -Visible                Show Excel UI
   -DryRun                 Validate only; do not write
+  -Force                  Overwrite existing output file (default: refuse)
+
+import-excel options:
+  -ExcelPath <path>       Input .xlsx / .xls (required)
+  -OutputPath <path>      Output .csv (default: ..\import\<excel-basename>.csv)
+  -SheetName <name>       Worksheet name (default: first sheet)
+  -Password <text>        Workbook password for automation (not logged)
+  -Visible                Show Excel UI
+  -DryRun                 Validate open only; do not write CSV
+  -Force                  Overwrite existing output file (default: refuse)
+
+  Password notes:
+  - Interactive runs prompt when a workbook needs a password and -Password is omitted.
+  - With -Json (non-interactive), supply -Password when the file is protected.
+  - Password is never included in JSON output.
+
+  Output safety:
+  - Existing destination files are not overwritten unless -Force is set.
+  - Omitting -OutputPath on import writes under import\ using the workbook base name.
 
 Exit codes:  0 success | 1 validation | 2 runtime
 
@@ -117,11 +151,16 @@ try {
     }
     Import-Module -Name $modulePath -Force -ErrorAction Stop
 
-    # ExcelCom is loaded by ExcelToolkit.psm1 for export/probe internals
+    # ExcelCom is loaded by ExcelToolkit.psm1 for export/import/probe internals
     $excelComPath = Join-Path $here 'ExcelCom.psm1'
     if (Test-Path -LiteralPath $excelComPath) {
         Import-Module -Name $excelComPath -Force -ErrorAction SilentlyContinue
     }
+
+    $repoRoot = Split-Path -Parent $here
+    $securePassword = ConvertTo-CliSecurePassword -Plain $Password
+    # Clear plain CLI param from further accidental use in messages
+    $Password = $null
 
     switch ($Command) {
         'help' {
@@ -170,7 +209,6 @@ try {
                 throw 'export-csv requires -CsvPath'
             }
             if ([string]::IsNullOrWhiteSpace($OutputPath)) {
-                $repoRoot = Split-Path -Parent $here
                 $OutputPath = Join-Path $repoRoot 'output\export.xlsx'
             }
 
@@ -183,6 +221,7 @@ try {
                 SheetName    = $SheetName
                 DryRun       = $DryRun
                 Visible      = $Visible
+                Force        = $Force
             }
             if (-not [string]::IsNullOrWhiteSpace($SchemaPath)) {
                 $exportParams['SchemaPath'] = $SchemaPath
@@ -192,6 +231,9 @@ try {
             }
             if (-not [string]::IsNullOrWhiteSpace($DisplayNameProperty)) {
                 $exportParams['DisplayNameProperty'] = $DisplayNameProperty
+            }
+            if ($null -ne $securePassword) {
+                $exportParams['Password'] = $securePassword
             }
 
             $r = Export-ExcelFromCsv @exportParams
@@ -230,8 +272,97 @@ try {
                 $exitCode = 0
             }
             else {
-                # validation-style messages → 1; otherwise runtime → 2
-                if ($r.Message -match 'not found|required|No columns|preflight|Schema file') {
+                if ($r.Message -match 'not found|required|No columns|preflight|Schema file|password|already exists') {
+                    $exitCode = 1
+                }
+                else {
+                    $exitCode = 2
+                }
+            }
+        }
+        'import-excel' {
+            if ([string]::IsNullOrWhiteSpace($ExcelPath)) {
+                throw 'import-excel requires -ExcelPath'
+            }
+            if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+                $baseName = [System.IO.Path]::GetFileNameWithoutExtension($ExcelPath)
+                if ([string]::IsNullOrWhiteSpace($baseName)) {
+                    $baseName = 'import'
+                }
+                $importDir = Join-Path $repoRoot 'import'
+                if (-not (Test-Path -LiteralPath $importDir)) {
+                    New-Item -ItemType Directory -Path $importDir -Force | Out-Null
+                }
+                $OutputPath = Join-Path $importDir ("{0}.csv" -f $baseName)
+            }
+
+            Write-CliHost ("import-excel: {0} -> {1}" -f $ExcelPath, $OutputPath) Cyan
+
+            # Default SheetName for export is 'Data'; for import empty means first sheet
+            $importSheet = $SheetName
+            if ($importSheet -eq 'Data' -and -not $PSBoundParameters.ContainsKey('SheetName')) {
+                $importSheet = ''
+            }
+
+            $importParams = @{
+                ExcelPath            = $ExcelPath
+                OutputPath           = $OutputPath
+                DryRun               = $DryRun
+                Visible              = $Visible
+                Force                = $Force
+                AllowPasswordPrompt  = (-not $Json)
+            }
+            if (-not [string]::IsNullOrWhiteSpace($importSheet)) {
+                $importParams['SheetName'] = $importSheet
+            }
+            if ($null -ne $securePassword) {
+                $importParams['Password'] = $securePassword
+            }
+
+            $r = Import-CsvFromExcel @importParams
+            $payload = [pscustomobject]@{
+                Success       = [bool]$r.Success
+                Command       = 'import-excel'
+                Version       = (Get-ExcelToolkitVersion)
+                ExcelPath     = $r.ExcelPath
+                OutputPath    = $r.OutputPath
+                RowCount      = $r.RowCount
+                ColumnCount   = $r.ColumnCount
+                DryRun        = [bool]$r.DryRun
+                Message       = $r.Message
+                HeadersSample = @($r.HeadersSample)
+                SheetName     = $r.SheetName
+                PasswordUsed  = [bool]$r.PasswordUsed
+            }
+
+            if ($Json) {
+                $payload | ConvertTo-Json -Compress -Depth 6
+            }
+            else {
+                if ($r.Success) {
+                    Write-Host ("OK: {0}" -f $r.Message) -ForegroundColor Green
+                    Write-Host ("  Excel  : {0}" -f $r.ExcelPath)
+                    Write-Host ("  Output : {0}" -f $r.OutputPath)
+                    Write-Host ("  Sheet  : {0}" -f $r.SheetName)
+                    Write-Host ("  Rows   : {0}" -f $r.RowCount)
+                    Write-Host ("  Cols   : {0}" -f $r.ColumnCount)
+                    if ($r.PasswordUsed) {
+                        Write-Host '  Password: used (value not shown)'
+                    }
+                    if ($r.HeadersSample -and $r.HeadersSample.Count -gt 0) {
+                        Write-Host ("  Headers: {0}" -f ($r.HeadersSample -join ', '))
+                    }
+                }
+                else {
+                    Write-Host ("FAIL: {0}" -f $r.Message) -ForegroundColor Red
+                }
+            }
+
+            if ($r.Success) {
+                $exitCode = 0
+            }
+            else {
+                if ($r.Message -match 'not found|required|password|preflight|No columns|interactive prompt|already exists') {
                     $exitCode = 1
                 }
                 else {
@@ -258,6 +389,9 @@ catch {
         Write-Host ("FAIL: {0}" -f $err) -ForegroundColor Red
     }
     $exitCode = 1
+}
+finally {
+    $securePassword = $null
 }
 
 exit $exitCode

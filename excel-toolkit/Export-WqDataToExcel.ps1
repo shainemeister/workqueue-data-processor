@@ -20,7 +20,8 @@ param(
     [string]$DisplayNameProperty = '',
     [string]$SheetName = 'Data',
     [switch]$Visible,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$Force
 )
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -47,6 +48,7 @@ if (-not [string]::IsNullOrWhiteSpace($DisplayNameProperty)) { $forward['Display
 if ($UseDisplayNames) { $forward['UseDisplayNames'] = $true }
 if ($Visible) { $forward['Visible'] = $true }
 if ($DryRun) { $forward['DryRun'] = $true }
+if ($Force) { $forward['Force'] = $true }
 
 & $target @forward
 exit $LASTEXITCODE

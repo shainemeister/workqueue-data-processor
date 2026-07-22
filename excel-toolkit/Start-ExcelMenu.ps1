@@ -1,12 +1,15 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Interactive menu for Excel CSV export and self-tests.
+    Interactive menu for Excel CSV export, Excel→CSV import, schema, and diagnostics.
 
 .DESCRIPTION
     Double-click Start-ExcelMenu.cmd (recommended) or run this script under
     Windows PowerShell 5.1. No PowerShell syntax knowledge is required for
     common tasks.
+
+    Main menu: export, import (option 3; CSV defaults under import\), folders,
+    schema, and Diagnostics (option 7: readiness + full self-test).
 
     Column layout always comes from your data CSV. An optional schema (JSON or
     CSV) supplies display labels only. Nothing domain-specific is hard-coded.
@@ -30,8 +33,10 @@ if ([string]::IsNullOrWhiteSpace($scriptDir)) {
 }
 $repoRoot     = Split-Path -Parent $scriptDir
 $outputDir    = Join-Path $repoRoot 'output'
+$importDir    = Join-Path $repoRoot 'import'
 $exportScript = Join-Path $scriptDir 'Export-CsvToExcel.ps1'
 $testScript   = Join-Path $scriptDir 'Test-ExcelCom.ps1'
+$toolkitModulePath = Join-Path $scriptDir 'ExcelToolkit.psm1'
 $modulePath   = Join-Path $scriptDir 'ExcelCom.psm1'
 
 # --- Session schema settings (option 7; used by export options 3/4) ---
@@ -303,12 +308,154 @@ function Invoke-ToolScript {
     return $exitCode
 }
 
+function Invoke-ImportExcelMenu {
+    Write-Host ''
+    Write-Host 'Import Excel to CSV' -ForegroundColor Cyan
+    Write-Host 'Opens a workbook (password-protected files prompt for a password) and writes a CSV under import\ by default.' -ForegroundColor DarkGray
+    Write-Host ''
+
+    if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
+        throw ("ExcelToolkit.psm1 not found: {0}" -f $toolkitModulePath)
+    }
+
+    if (-not (Test-Path -LiteralPath $importDir)) {
+        New-Item -ItemType Directory -Path $importDir -Force | Out-Null
+    }
+
+    $candidates = @()
+    if (Test-Path -LiteralPath $importDir) {
+        $xlsx = @(Get-ChildItem -LiteralPath $importDir -Filter '*.xlsx' -File -ErrorAction SilentlyContinue)
+        $xls = @(Get-ChildItem -LiteralPath $importDir -Filter '*.xls' -File -ErrorAction SilentlyContinue)
+        $candidates = @($xlsx + $xls | Sort-Object Name)
+    }
+
+    if ($candidates.Count -gt 0) {
+        Write-Host 'Workbooks under import\:' -ForegroundColor Cyan
+        for ($i = 0; $i -lt $candidates.Count; $i++) {
+            Write-Host ("  [{0}] {1}" -f ($i + 1), $candidates[$i].Name)
+        }
+        Write-Host '  [P] Enter a full path'
+        $pick = Read-Host 'Select workbook (number or P)'
+        if ($pick -match '^[Pp]$') {
+            $excelPath = Read-Host 'Excel file path'
+        }
+        elseif ($pick -match '^\d+$') {
+            $idx = [int]$pick - 1
+            if ($idx -lt 0 -or $idx -ge $candidates.Count) {
+                throw 'Invalid selection.'
+            }
+            $excelPath = $candidates[$idx].FullName
+        }
+        else {
+            throw 'Invalid selection.'
+        }
+    }
+    else {
+        Write-Host ("No .xlsx/.xls found under {0}" -f $importDir) -ForegroundColor Yellow
+        $excelPath = Read-Host 'Excel file path'
+    }
+
+    if ([string]::IsNullOrWhiteSpace($excelPath)) {
+        throw 'Excel path is required.'
+    }
+    if (-not (Test-Path -LiteralPath $excelPath)) {
+        throw ("Excel file not found: {0}" -f $excelPath)
+    }
+
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($excelPath)
+    $defaultOut = Join-Path $importDir ("{0}.csv" -f $baseName)
+    $outPrompt = Read-Host ("Output CSV path [{0}]" -f $defaultOut)
+    if ([string]::IsNullOrWhiteSpace($outPrompt)) {
+        $outPrompt = $defaultOut
+    }
+
+    try {
+        $outPrompt = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outPrompt.Trim('"'))
+    }
+    catch {
+        throw ("Invalid output path: {0}" -f $_.Exception.Message)
+    }
+
+    if (Test-Path -LiteralPath $outPrompt) {
+        Write-Host ("File already exists: {0}" -f $outPrompt) -ForegroundColor Yellow
+        $overwrite = Read-Host 'Overwrite existing file? [y/N]'
+        if ($overwrite -notmatch '^[Yy]') {
+            Write-Host 'Cancelled (existing file not overwritten).' -ForegroundColor Yellow
+            return
+        }
+    }
+
+    Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+    Write-Host ''
+    Write-Host ("Importing: {0}" -f $excelPath) -ForegroundColor Cyan
+    Write-Host ("       to: {0}" -f $outPrompt) -ForegroundColor Cyan
+
+    # User already confirmed overwrite above when the target existed
+    $importParams = @{
+        ExcelPath           = $excelPath
+        OutputPath          = $outPrompt
+        AllowPasswordPrompt = $true
+    }
+    if (Test-Path -LiteralPath $outPrompt) {
+        $importParams['Force'] = $true
+    }
+
+    $r = Import-CsvFromExcel @importParams
+    if ($r.Success) {
+        Write-Host ("OK: {0}" -f $r.Message) -ForegroundColor Green
+        Write-Host ("  Output : {0}" -f $r.OutputPath)
+        Write-Host ("  Sheet  : {0}" -f $r.SheetName)
+        Write-Host ("  Rows   : {0}" -f $r.RowCount)
+        Write-Host ("  Cols   : {0}" -f $r.ColumnCount)
+        if ($r.PasswordUsed) {
+            Write-Host '  Password: used (value not shown)'
+        }
+    }
+    else {
+        Write-Host ("FAIL: {0}" -f $r.Message) -ForegroundColor Red
+    }
+}
+
+function Invoke-DiagnosticsMenu {
+    $inDiag = $true
+    while ($inDiag) {
+        Write-Host ''
+        Write-Host '================================================' -ForegroundColor Cyan
+        Write-Host '  Diagnostics' -ForegroundColor Cyan
+        Write-Host '================================================' -ForegroundColor Cyan
+        Write-Host '  1) Check readiness (dry-run)'
+        Write-Host '  2) Run full self-test'
+        Write-Host '  0) Back to main menu'
+        Write-Host '================================================' -ForegroundColor Cyan
+        Write-Host ''
+        $sub = Read-Host 'Select a diagnostics option'
+        switch -Regex ($sub) {
+            '^[1]$' {
+                $null = Invoke-ToolScript -Path $testScript -Arguments @{ DryRun = $true }
+                Wait-ForEnter
+            }
+            '^[2]$' {
+                $null = Invoke-ToolScript -Path $testScript
+                Wait-ForEnter
+            }
+            '^[0Bb]$' {
+                $inDiag = $false
+            }
+            default {
+                Write-Host 'Please enter 1, 2, or 0 (back).' -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
+}
+
 function Show-EnvironmentInfo {
     Write-Host ''
     Write-Host 'Environment' -ForegroundColor Cyan
     Write-Host ("  PowerShell     : {0}" -f $PSVersionTable.PSVersion)
     Write-Host ("  Script folder  : {0}" -f $scriptDir)
     Write-Host ("  Data folder    : {0}" -f $repoRoot)
+    Write-Host ("  Import folder  : {0}" -f $importDir)
     Write-Host ("  Output folder  : {0}" -f $outputDir)
     Write-Host ''
     Write-Host 'Execution policy (read-only; this menu does not change it permanently):' -ForegroundColor Cyan
@@ -631,18 +778,19 @@ function Show-Menu {
     Write-Host '================================================' -ForegroundColor Cyan
     Write-Host '  Excel Data Tools' -ForegroundColor Cyan
     Write-Host '================================================' -ForegroundColor Cyan
-    Write-Host '  1) Check readiness (dry-run)'
-    Write-Host '  2) Run full self-test'
-    Write-Host '  3) Export CSV to Excel'
-    Write-Host '  4) Export CSV to Excel (schema display headers)'
-    Write-Host '  5) Open output folder'
-    Write-Host '  6) Show environment / policy info'
-    Write-Host '  7) Schema: show source, preview, change JSON/CSV'
+    Write-Host '  1) Export CSV to Excel'
+    Write-Host '  2) Export CSV to Excel (schema display headers)'
+    Write-Host '  3) Import Excel to CSV (password prompt if needed)'
+    Write-Host '  4) Open output folder'
+    Write-Host '  5) Show environment / policy info'
+    Write-Host '  6) Schema: show source, preview, change JSON/CSV'
+    Write-Host '  7) Diagnostics (readiness / self-test)'
     Write-Host '  0) Exit'
     Write-Host '================================================' -ForegroundColor Cyan
     Write-Host ''
     Write-Host ("Current schema: {0}" -f $schemaNote) -ForegroundColor DarkGray
     Write-Host 'Headers/columns come from your data CSV; schema is for display labels only.' -ForegroundColor DarkGray
+    Write-Host 'Import CSV defaults to the import\ folder.' -ForegroundColor DarkGray
 }
 
 #endregion Paths and helpers
@@ -659,22 +807,23 @@ while ($running) {
 
     switch ($choice) {
         '1' {
-            $null = Invoke-ToolScript -Path $testScript -Arguments @{ DryRun = $true }
-            Wait-ForEnter
-        }
-        '2' {
-            $null = Invoke-ToolScript -Path $testScript
-            Wait-ForEnter
-        }
-        '3' {
             $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments)
             Wait-ForEnter
         }
-        '4' {
+        '2' {
             $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments -UseDisplayNames)
             Wait-ForEnter
         }
-        '5' {
+        '3' {
+            try {
+                Invoke-ImportExcelMenu
+            }
+            catch {
+                Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+            }
+            Wait-ForEnter
+        }
+        '4' {
             try {
                 Open-OutputFolder
             }
@@ -683,7 +832,7 @@ while ($running) {
             }
             Wait-ForEnter
         }
-        '6' {
+        '5' {
             try {
                 Show-EnvironmentInfo
             }
@@ -692,9 +841,18 @@ while ($running) {
             }
             Wait-ForEnter
         }
-        '7' {
+        '6' {
             try {
                 Invoke-SchemaMenu
+            }
+            catch {
+                Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                Wait-ForEnter
+            }
+        }
+        '7' {
+            try {
+                Invoke-DiagnosticsMenu
             }
             catch {
                 Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red

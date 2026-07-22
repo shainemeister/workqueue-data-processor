@@ -32,6 +32,7 @@
 .CHANGELOG
     1.0.0  Initial release — lifecycle, cells, sheets, format, CSV, preflight
     1.1.0  Enterprise harden: remove P/Invoke + force-kill; graceful Quit/retry/notify
+    1.2.0  Optional workbook open/save password; support protected import/export fixtures
 #>
 
 Set-StrictMode -Version Latest
@@ -144,6 +145,71 @@ function Release-ComObjectSafe {
     catch {
         Write-Verbose ("Release-ComObjectSafe: {0}" -f $_.Exception.Message)
     }
+}
+
+function ConvertFrom-SecureStringPlain {
+    <#
+    .SYNOPSIS
+        Convert SecureString to plain text for Excel COM only. Caller should not log the result.
+    #>
+    [CmdletBinding()]
+    param(
+        [SecureString]$SecurePassword
+    )
+
+    if ($null -eq $SecurePassword -or $SecurePassword.Length -eq 0) {
+        return ''
+    }
+
+    $bstr = [System.IntPtr]::Zero
+    try {
+        $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecurePassword)
+        return [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+    }
+    finally {
+        if ($bstr -ne [System.IntPtr]::Zero) {
+            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+    }
+}
+
+function ConvertTo-SecureStringPlain {
+    <#
+    .SYNOPSIS
+        Build a SecureString from a plain password string (CLI edge). Empty/null → $null.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$PlainPassword
+    )
+
+    if ([string]::IsNullOrEmpty($PlainPassword)) {
+        return $null
+    }
+
+    $secure = New-Object System.Security.SecureString
+    foreach ($ch in $PlainPassword.ToCharArray()) {
+        $secure.AppendChar($ch)
+    }
+    $secure.MakeReadOnly()
+    return $secure
+}
+
+function Test-ExcelPasswordRelatedError {
+    <#
+    .SYNOPSIS
+        Heuristic: does an exception message suggest a workbook open password issue?
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Message
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Message)) {
+        return $false
+    }
+
+    return [bool]($Message -match 'password|passwd|protected|encrypt|0x800A03EC|0x800A1066')
 }
 
 #endregion Private helpers
@@ -260,8 +326,15 @@ function Open-ExcelWorkbook {
     .PARAMETER ReadOnly
         Open read-only when $true.
 
+    .PARAMETER Password
+        Optional workbook open password (SecureString). Never log this value.
+        Empty/null means no password.
+
     .EXAMPLE
         $wb = Open-ExcelWorkbook -Application $app -Path 'C:\temp\report.xlsx'
+
+    .EXAMPLE
+        $wb = Open-ExcelWorkbook -Application $app -Path '.\locked.xlsx' -Password $securePwd
     #>
     [CmdletBinding()]
     param(
@@ -271,7 +344,9 @@ function Open-ExcelWorkbook {
         [Parameter(Mandatory = $true)]
         [string]$Path,
 
-        [switch]$ReadOnly
+        [switch]$ReadOnly,
+
+        [SecureString]$Password
     )
 
     $fullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
@@ -279,9 +354,25 @@ function Open-ExcelWorkbook {
         throw ("Workbook not found: {0}" -f $fullPath)
     }
 
-    Write-Verbose ("Opening workbook: {0} (ReadOnly={1})" -f $fullPath, [bool]$ReadOnly)
-    # Workbooks.Open(Filename, UpdateLinks, ReadOnly, ...)
-    $workbook = $Application.Workbooks.Open($fullPath, 0, [bool]$ReadOnly)
+    $hasPassword = ($null -ne $Password -and $Password.Length -gt 0)
+    Write-Verbose ("Opening workbook: {0} (ReadOnly={1}; PasswordSupplied={2})" -f $fullPath, [bool]$ReadOnly, $hasPassword)
+
+    # Workbooks.Open(Filename, UpdateLinks, ReadOnly, Format, Password, ...)
+    # Password is the 5th argument. Empty string = no password.
+    $plainPassword = ConvertFrom-SecureStringPlain -SecurePassword $Password
+    try {
+        $workbook = $Application.Workbooks.Open(
+            $fullPath,
+            0,
+            [bool]$ReadOnly,
+            [Type]::Missing,
+            $plainPassword
+        )
+    }
+    finally {
+        $plainPassword = $null
+    }
+
     return $workbook
 }
 
@@ -294,6 +385,7 @@ function Save-ExcelWorkbook {
         If -Path is supplied (or the workbook has never been saved), performs SaveAs
         as .xlsx (file format 51). Otherwise calls Save().
 
+        Optional -Password sets the workbook open password on SaveAs only.
         Supports -WhatIf via SupportsShouldProcess.
 
     .PARAMETER Workbook
@@ -301,6 +393,10 @@ function Save-ExcelWorkbook {
 
     .PARAMETER Path
         Destination path for SaveAs. Required if the workbook is new/unsaved.
+
+    .PARAMETER Password
+        Optional workbook open password (SecureString) applied on SaveAs.
+        Never log this value. Empty/null = unprotected workbook.
 
     .EXAMPLE
         Save-ExcelWorkbook -Workbook $wb -Path 'C:\temp\out.xlsx'
@@ -310,7 +406,9 @@ function Save-ExcelWorkbook {
         [Parameter(Mandatory = $true)]
         $Workbook,
 
-        [string]$Path
+        [string]$Path,
+
+        [SecureString]$Password
     )
 
     # xlOpenXMLWorkbook = 51 (.xlsx)
@@ -325,10 +423,22 @@ function Save-ExcelWorkbook {
             New-Item -ItemType Directory -Path $directory -Force | Out-Null
         }
 
+        $hasPassword = ($null -ne $Password -and $Password.Length -gt 0)
         if ($PSCmdlet.ShouldProcess($fullPath, 'SaveAs workbook')) {
-            Write-Verbose ("SaveAs: {0}" -f $fullPath)
-            # SaveAs(Filename, FileFormat)
-            $Workbook.SaveAs($fullPath, $xlOpenXMLWorkbook)
+            Write-Verbose ("SaveAs: {0} (PasswordSupplied={1})" -f $fullPath, $hasPassword)
+            # SaveAs(Filename, FileFormat, Password)
+            $plainPassword = ConvertFrom-SecureStringPlain -SecurePassword $Password
+            try {
+                if ($hasPassword) {
+                    $Workbook.SaveAs($fullPath, $xlOpenXMLWorkbook, $plainPassword)
+                }
+                else {
+                    $Workbook.SaveAs($fullPath, $xlOpenXMLWorkbook)
+                }
+            }
+            finally {
+                $plainPassword = $null
+            }
         }
         return $fullPath
     }
@@ -1489,7 +1599,9 @@ Export-ModuleMember -Function @(
     'Set-ExcelAutoFit',
     'Import-CsvToWorksheet',
     'Export-WorksheetToCsv',
-    'Test-ExcelComEnvironment'
+    'Test-ExcelComEnvironment',
+    'ConvertTo-SecureStringPlain',
+    'Test-ExcelPasswordRelatedError'
 )
 
 #endregion Module exports

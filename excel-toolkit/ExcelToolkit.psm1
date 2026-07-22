@@ -8,6 +8,7 @@
 
         Import-Module .\excel-toolkit\ExcelToolkit.psm1 -Force
         Export-ExcelFromCsv -CsvPath .\data.csv -OutputPath .\out.xlsx
+        Import-CsvFromExcel -ExcelPath .\data.xlsx -OutputPath .\out.csv
 
     For Python / Task Scheduler / cmd, use ExcelToolkit.ps1 (CLI) instead.
 
@@ -18,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.1.0'
+$script:ExcelToolkitVersion = '1.2.1'
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
 if (-not (Test-Path -LiteralPath $excelComPath)) {
@@ -39,6 +40,32 @@ function Get-ExcelToolkitVersion {
 }
 
 #endregion Version
+
+#region Output safety
+
+function Assert-ExcelToolkitOutputWritable {
+    <#
+    .SYNOPSIS
+        Refuse to overwrite an existing destination unless -Force is set.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [switch]$Force
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return
+    }
+
+    if ((Test-Path -LiteralPath $Path) -and -not $Force) {
+        throw ("Output file already exists: {0}. Use -Force to overwrite." -f $Path)
+    }
+}
+
+#endregion Output safety
 
 #region Schema helpers
 
@@ -183,6 +210,13 @@ function Export-ExcelFromCsv {
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -OutputPath .\out.xlsx
 
+    .PARAMETER Password
+        Optional workbook open password (SecureString) applied when saving the .xlsx.
+        Never log this value. Empty/null = unprotected workbook.
+
+    .PARAMETER Force
+        Overwrite an existing output workbook. Without -Force, an existing path fails validation.
+
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -SchemaPath .\schema.json -UseDisplayNames -OutputPath .\out.xlsx -DryRun
     #>
@@ -208,6 +242,10 @@ function Export-ExcelFromCsv {
         [switch]$Visible,
 
         [switch]$DryRun,
+
+        [SecureString]$Password,
+
+        [switch]$Force,
 
         [switch]$PassThru
     )
@@ -290,6 +328,9 @@ function Export-ExcelFromCsv {
         $result.HeadersSample = @($displayHeaders | Select-Object -First 5)
         $result.OutputPath = $OutputPath
 
+        # Refuse overwrite unless -Force (including DryRun planning)
+        Assert-ExcelToolkitOutputWritable -Path $OutputPath -Force:$Force
+
         if ($DryRun) {
             $result.Success = $true
             $result.Message = 'DryRun complete - no workbook written.'
@@ -325,7 +366,14 @@ function Export-ExcelFromCsv {
             Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
             Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
 
-            $saved = Save-ExcelWorkbook -Workbook $workbook -Path $OutputPath
+            $saveParams = @{
+                Workbook = $workbook
+                Path     = $OutputPath
+            }
+            if ($null -ne $Password -and $Password.Length -gt 0) {
+                $saveParams['Password'] = $Password
+            }
+            $saved = Save-ExcelWorkbook @saveParams
             Close-ExcelWorkbook -Workbook $workbook
             $workbook = $null
 
@@ -362,7 +410,282 @@ function Export-ExcelFromCsv {
 
 #endregion Export
 
+#region Import
+
+function Import-CsvFromExcel {
+    <#
+    .SYNOPSIS
+        Import an Excel workbook sheet to a CSV file.
+
+    .DESCRIPTION
+        Opens a local .xlsx/.xls via Excel COM, reads the chosen worksheet
+        used range, and writes a UTF-8 CSV. Supports workbook open passwords:
+        optional -Password (SecureString), or interactive SecureString prompt
+        when allowed and the file requires a password.
+
+        Returns a result object (does not call exit). Safe for Import-Module callers.
+        Never includes the password in the result object or messages.
+
+    .PARAMETER ExcelPath
+        Input workbook path (required).
+
+    .PARAMETER OutputPath
+        Destination .csv path (required for real import).
+
+    .PARAMETER SheetName
+        Optional worksheet name. Default: first sheet.
+
+    .PARAMETER Password
+        Optional workbook open password as SecureString.
+
+    .PARAMETER AllowPasswordPrompt
+        When $true (default), prompt interactively if open fails for password reasons
+        and no usable password was supplied. Set $false for automation / -Json CLI.
+
+    .PARAMETER Visible
+        Show Excel UI. Default: hidden.
+
+    .PARAMETER DryRun
+        Validate open and sheet selection only; do not write CSV.
+
+    .PARAMETER Force
+        Overwrite an existing output CSV. Without -Force, an existing path fails validation.
+
+    .OUTPUTS
+        PSCustomObject with Success, ExcelPath, OutputPath, RowCount, ColumnCount,
+        SheetName, DryRun, Message, HeadersSample, PasswordUsed (boolean only).
+
+    .EXAMPLE
+        Import-CsvFromExcel -ExcelPath .\import\data.xlsx -OutputPath .\import\data.csv
+
+    .EXAMPLE
+        Import-CsvFromExcel -ExcelPath .\locked.xlsx -OutputPath .\out.csv -Password $secure
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ExcelPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$OutputPath,
+
+        [string]$SheetName = '',
+
+        [SecureString]$Password,
+
+        [bool]$AllowPasswordPrompt = $true,
+
+        [switch]$Visible,
+
+        [switch]$DryRun,
+
+        [switch]$Force,
+
+        [switch]$PassThru
+    )
+
+    $result = [pscustomobject]@{
+        Success       = $false
+        ExcelPath     = $null
+        OutputPath    = $null
+        RowCount      = 0
+        ColumnCount   = 0
+        SheetName     = $null
+        DryRun        = [bool]$DryRun
+        Message       = ''
+        HeadersSample = @()
+        PasswordUsed  = $false
+    }
+
+    try {
+        $ExcelPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ExcelPath)
+        $OutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
+        $result.ExcelPath = $ExcelPath
+        $result.OutputPath = $OutputPath
+
+        if (-not (Test-Path -LiteralPath $ExcelPath)) {
+            throw ("Excel file not found: {0}" -f $ExcelPath)
+        }
+
+        # Refuse overwrite unless -Force (before Excel work; applies to DryRun too)
+        Assert-ExcelToolkitOutputWritable -Path $OutputPath -Force:$Force
+
+        $envResult = Test-ExcelComEnvironment
+        if (-not $envResult.Passed) {
+            $failed = @($envResult.Checks | Where-Object { -not $_.Passed } | ForEach-Object { $_.Name })
+            throw ("Environment preflight failed: {0}" -f ($failed -join ', '))
+        }
+
+        $app = $null
+        $workbook = $null
+        $securePwd = $Password
+        $passwordUsed = ($null -ne $securePwd -and $securePwd.Length -gt 0)
+
+        try {
+            $app = New-ExcelApplication -Visible:$Visible
+
+            $openAttempts = 0
+            $maxAttempts = 2
+            $opened = $false
+            $lastOpenError = $null
+
+            while (-not $opened -and $openAttempts -lt $maxAttempts) {
+                $openAttempts++
+                try {
+                    $openParams = @{
+                        Application = $app
+                        Path        = $ExcelPath
+                        ReadOnly    = $true
+                    }
+                    if ($null -ne $securePwd -and $securePwd.Length -gt 0) {
+                        $openParams['Password'] = $securePwd
+                    }
+                    $workbook = Open-ExcelWorkbook @openParams
+                    $opened = $true
+                }
+                catch {
+                    $lastOpenError = $_.Exception.Message
+                    $isPwd = Test-ExcelPasswordRelatedError -Message $lastOpenError
+                    if (-not $isPwd) {
+                        throw $lastOpenError
+                    }
+
+                    # Wrong password supplied explicitly
+                    if ($null -ne $Password -and $Password.Length -gt 0 -and $openAttempts -eq 1 -and -not $AllowPasswordPrompt) {
+                        throw 'Incorrect workbook password (or the file could not be opened with the supplied password).'
+                    }
+
+                    if (-not $AllowPasswordPrompt) {
+                        throw 'Workbook requires a password. Provide -Password, or run interactively to be prompted.'
+                    }
+
+                    if ($openAttempts -ge $maxAttempts) {
+                        throw 'Incorrect workbook password (or the file could not be opened).'
+                    }
+
+                    try {
+                        $securePwd = Read-Host -Prompt 'Workbook password' -AsSecureString
+                    }
+                    catch {
+                        throw 'Workbook requires a password, but an interactive prompt is not available. Provide -Password.'
+                    }
+
+                    if ($null -eq $securePwd -or $securePwd.Length -eq 0) {
+                        throw 'Workbook requires a password. No password was entered.'
+                    }
+                    $passwordUsed = $true
+                }
+            }
+
+            if (-not $opened -or $null -eq $workbook) {
+                throw $(if ($lastOpenError) { $lastOpenError } else { 'Failed to open workbook.' })
+            }
+
+            $result.PasswordUsed = [bool]$passwordUsed
+
+            if (-not [string]::IsNullOrWhiteSpace($SheetName)) {
+                $ws = Get-ExcelWorksheet -Workbook $workbook -Name $SheetName
+                $result.SheetName = $SheetName
+            }
+            else {
+                $ws = Get-ExcelWorksheet -Workbook $workbook -Index 1
+                try {
+                    $result.SheetName = [string]$ws.Name
+                }
+                catch {
+                    $result.SheetName = 'Sheet1'
+                }
+            }
+
+            # Sample headers from first row of used range (best-effort; COM cleanup on Quit)
+            $headersSample = @()
+            $colCount = 0
+            $dataRowCount = 0
+            try {
+                $used = $ws.UsedRange
+                if ($null -ne $used) {
+                    $colCount = [int]$used.Columns.Count
+                    $totalRows = [int]$used.Rows.Count
+                    if ($totalRows -gt 0) {
+                        $dataRowCount = [Math]::Max(0, $totalRows - 1)
+                    }
+                    $maxSample = [Math]::Min(5, $colCount)
+                    for ($c = 1; $c -le $maxSample; $c++) {
+                        $val = $used.Cells.Item(1, $c).Value2
+                        $headersSample += $(if ($null -eq $val) { '' } else { [string]$val })
+                    }
+                }
+            }
+            catch {
+                Write-Verbose ("Header sample: {0}" -f $_.Exception.Message)
+            }
+
+            $result.ColumnCount = $colCount
+            $result.RowCount = $dataRowCount
+            $result.HeadersSample = @($headersSample)
+
+            if ($DryRun) {
+                Close-ExcelWorkbook -Workbook $workbook
+                $workbook = $null
+                $result.Success = $true
+                $result.Message = 'DryRun complete - no CSV written.'
+                return $result
+            }
+
+            $saved = Export-WorksheetToCsv -Worksheet $ws -Path $OutputPath
+            Close-ExcelWorkbook -Workbook $workbook
+            $workbook = $null
+
+            # Prefer Import-Csv for accurate data-row count and headers
+            if (Test-Path -LiteralPath $saved) {
+                $csvRows = @(Import-Csv -LiteralPath $saved)
+                $result.RowCount = $csvRows.Count
+                if ($csvRows.Count -gt 0) {
+                    $names = @($csvRows[0].PSObject.Properties | ForEach-Object { $_.Name })
+                    $result.ColumnCount = $names.Count
+                    $result.HeadersSample = @($names | Select-Object -First 5)
+                }
+                elseif ($colCount -gt 0) {
+                    # Header-only file
+                    $result.RowCount = 0
+                }
+            }
+
+            $result.Success = $true
+            $result.OutputPath = $saved
+            $result.Message = 'Import complete.'
+        }
+        catch {
+            $msg = $_.Exception.Message
+            if ($msg -match 'locked|in use|Cannot access|already open|Permission') {
+                $msg = $msg + ' Close Excel completely and try again. Tools never force-kill Excel.'
+            }
+            throw $msg
+        }
+        finally {
+            if ($null -ne $workbook) {
+                try { Close-ExcelWorkbook -Workbook $workbook } catch { }
+            }
+            if ($null -ne $app) {
+                Stop-ExcelApplication -Application $app
+            }
+            $securePwd = $null
+        }
+
+        return $result
+    }
+    catch {
+        $result.Success = $false
+        $result.Message = $_.Exception.Message
+        # Never attach password material; PasswordUsed stays boolean default unless set above
+        return $result
+    }
+}
+
+#endregion Import
+
 Export-ModuleMember -Function @(
     'Get-ExcelToolkitVersion',
-    'Export-ExcelFromCsv'
+    'Export-ExcelFromCsv',
+    'Import-CsvFromExcel'
 )

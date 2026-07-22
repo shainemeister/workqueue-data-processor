@@ -22,7 +22,8 @@ param(
     [string]$DisplayNameProperty = '',
     [string]$SheetName = 'Data',
     [switch]$Visible,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$Force
 )
 
 Set-StrictMode -Version Latest
@@ -62,12 +63,28 @@ if ([string]::IsNullOrWhiteSpace($OutputPath)) {
     $OutputPath = Join-Path $repoRoot 'output\export.xlsx'
 }
 
+$OutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
+
+# Interactive safety: prompt when destination exists and -Force was not passed
+if ((Test-Path -LiteralPath $OutputPath) -and -not $Force) {
+    Write-Host ("File already exists: {0}" -f $OutputPath) -ForegroundColor Yellow
+    $overwrite = Read-Host 'Overwrite existing file? [y/N]'
+    if ($overwrite -match '^[Yy]') {
+        $Force = $true
+    }
+    else {
+        Write-Host 'Cancelled (existing file not overwritten).' -ForegroundColor Yellow
+        exit 1
+    }
+}
+
 Write-Host '=== Export-CsvToExcel ===' -ForegroundColor Cyan
 Write-Host ("CSV     : {0}" -f $CsvPath)
 Write-Host ("Schema  : {0}" -f $SchemaPath)
 Write-Host ("Output  : {0}" -f $OutputPath)
 Write-Host ("Display : {0}" -f [bool]$UseDisplayNames)
 Write-Host ("DryRun  : {0}" -f [bool]$DryRun)
+Write-Host ("Force   : {0}" -f [bool]$Force)
 
 $params = @{
     CsvPath      = $CsvPath
@@ -80,6 +97,7 @@ if ($UseDisplayNames) { $params['UseDisplayNames'] = $true }
 if (-not [string]::IsNullOrWhiteSpace($DisplayNameProperty)) { $params['DisplayNameProperty'] = $DisplayNameProperty }
 if ($Visible) { $params['Visible'] = $true }
 if ($DryRun) { $params['DryRun'] = $true }
+if ($Force) { $params['Force'] = $true }
 
 $r = Export-ExcelFromCsv @params
 
