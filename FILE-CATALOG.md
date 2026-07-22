@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.0.0"
+version: "1.1.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-22"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.0.0  
+**Document version:** 1.1.0  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -36,7 +36,7 @@ Each row below states **what the file is for** in one sentence. Runtime contract
 |------|------------------------|
 | Interactive Excel | `Start-ExcelMenu.cmd` (root or `excel-toolkit\`) |
 | Excel automation CLI | `excel-toolkit\excel-toolkit.cmd` |
-| KPI score / generate / validate | `kpi-analytics\kpi-analytics.cmd` |
+| KPI score / generate / validate / diagnostics | `kpi-analytics\kpi-analytics.cmd` |
 | Markdown conventions | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) |
 | Maintenance policy | [RULES.md](./RULES.md) |
 
@@ -53,10 +53,11 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 5. [excel-toolkit/sample-test](#excel-toolkitsample-test)
 6. [kpi-analytics](#kpi-analytics)
 7. [kpi-analytics/kpi_modules](#kpi-analyticskpi_modules)
-8. [kpi-analytics/fixtures](#kpi-analyticsfixtures)
-9. [templates](#templates)
-10. [Generated and ignored paths](#generated-and-ignored-paths)
-11. [Document history](#document-history)
+8. [kpi-analytics/diagnostics](#kpi-analyticsdiagnostics)
+9. [kpi-analytics/fixtures](#kpi-analyticsfixtures)
+10. [templates](#templates)
+11. [Generated and ignored paths](#generated-and-ignored-paths)
+12. [Document history](#document-history)
 
 ---
 
@@ -152,13 +153,14 @@ Minimal probes for locked-down corporate PCs: can `.cmd`, `.ps1`, and `.psm1` ex
 
 ## kpi-analytics/kpi_modules
 
-Python package implementing scoring, RCM quantifiers, synthesis, and CLI.
+Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, and CLI.
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 1.5.1). |
+| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 1.6.0). |
 | [__main__.py](./kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
-| [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `score`, `generate`, `validate-score`. |
+| [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score`, `generate`, `validate-score`; diagnostics gate. |
+| [diagnostics.py](./kpi-analytics/kpi_modules/diagnostics.py) | module | Enterprise runtime/import dry-run, durable pass/fail report, operational gate helpers. |
 | [config.py](./kpi-analytics/kpi_modules/config.py) | module | Loads and validates JSON config; resolves healthy vs chaos weight sets. |
 | [config_default.json](./kpi-analytics/kpi_modules/config_default.json) | config | Default field maps, weights, thresholds, and KPI quantifier settings. |
 | [io_csv.py](./kpi-analytics/kpi_modules/io_csv.py) | module | Stdlib CSV read/write helpers shared by score and generate paths. |
@@ -168,8 +170,20 @@ Python package implementing scoring, RCM quantifiers, synthesis, and CLI.
 | [kpi_quantifiers.py](./kpi-analytics/kpi_modules/kpi_quantifiers.py) | module | Portfolio KPIs plus per-claim static share and resolution-delta (`kpi_q_*`) columns. |
 | [summary_report.py](./kpi-analytics/kpi_modules/summary_report.py) | module | Builds the vertical summary CSV (metric rows with values, formulas, explanations). |
 | [synthesize.py](./kpi-analytics/kpi_modules/synthesize.py) | module | Generates synthetic professional-billing WQ rows for demos and local tests. |
-| [probe.py](./kpi-analytics/kpi_modules/probe.py) | module | Environment and path preflight (Python version, imports, optional CSV paths). |
+| [probe.py](./kpi-analytics/kpi_modules/probe.py) | module | Optional path preflight (Python version, imports, optional CSV paths); does not satisfy gate. |
 | [validate_score.py](./kpi-analytics/kpi_modules/validate_score.py) | module | Integrity checks on scores/KPI Q plus optional golden-fixture comparison. |
+
+---
+
+## kpi-analytics/diagnostics
+
+Enterprise dry-run certificate folder. Generated reports are gitignored.
+
+| Path | Type | Summary |
+|------|------|---------|
+| [README.md](./kpi-analytics/diagnostics/README.md) | doc | Explains certificate purpose, privacy, and re-run commands. |
+| `last_diagnostics.json` | generated | Machine-readable pass certificate (gate reads this; not tracked). |
+| `last_diagnostics.txt` | generated | Human PASS/FAIL listing for IT (not tracked). |
 
 ---
 
@@ -210,6 +224,7 @@ These paths are produced at runtime or by the interpreter. They are listed for o
 | Path | Note |
 |------|------|
 | `output\` | Scored CSVs, summary CSVs, synthetic data, and Excel workbooks from toolkit runs. |
+| `kpi-analytics\diagnostics\last_diagnostics.*` | Regenerable enterprise diagnostics certificates. |
 | `**/__pycache__\` / `*.pyc` | Python bytecode cache under `kpi_modules` and elsewhere. |
 | `.venv\` / `venv\` | Local virtual environments if created (not required; stdlib-only runtime). |
 
@@ -230,3 +245,4 @@ excel-toolkit.cmd export-csv -CsvPath ..\output\wq_scored.csv -OutputPath ..\out
 | Version | Notes |
 |---------|--------|
 | 1.0.0 | Initial path-level inventory for root, excel-toolkit, kpi-analytics, fixtures, and templates |
+| 1.1.0 | `diagnostics.py`, `diagnostics/` folder, toolkit version 1.6.0 gate certificate |
