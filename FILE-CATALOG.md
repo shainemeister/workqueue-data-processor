@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.1.1"
+version: "1.1.2"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-22"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.1.1  
+**Document version:** 1.1.2  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -49,15 +49,16 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 1. [Summary](#summary)
 2. [Repository layout](#repository-layout)
 3. [Root](#root)
-4. [excel-toolkit](#excel-toolkit)
-5. [excel-toolkit/sample-test](#excel-toolkitsample-test)
-6. [kpi-analytics](#kpi-analytics)
-7. [kpi-analytics/kpi_modules](#kpi-analyticskpi_modules)
-8. [kpi-analytics/diagnostics](#kpi-analyticsdiagnostics)
-9. [kpi-analytics/fixtures](#kpi-analyticsfixtures)
-10. [templates](#templates)
-11. [Generated and ignored paths](#generated-and-ignored-paths)
-12. [Document history](#document-history)
+4. [import](#import)
+5. [excel-toolkit](#excel-toolkit)
+6. [excel-toolkit/sample-test](#excel-toolkitsample-test)
+7. [kpi-analytics](#kpi-analytics)
+8. [kpi-analytics/kpi_modules](#kpi-analyticskpi_modules)
+9. [kpi-analytics/diagnostics](#kpi-analyticsdiagnostics)
+10. [kpi-analytics/fixtures](#kpi-analyticsfixtures)
+11. [templates](#templates)
+12. [Generated and ignored paths](#generated-and-ignored-paths)
+13. [Document history](#document-history)
 
 ---
 
@@ -69,6 +70,7 @@ workqueue-data-processor/
   wq_schema.json, wq_schema.csv, wq_data.csv
   WQ_Priority_Matrix_Concept.md
   Start-ExcelMenu.cmd
+  import/                 # tracked input CSVs (synthetic / non-PHI extracts)
   excel-toolkit/          # PowerShell Excel COM toolkit
   kpi-analytics/          # Python KPI + priority scoring
   templates/              # Markdown document skeletons
@@ -88,9 +90,19 @@ workqueue-data-processor/
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
-| [wq_data.csv](./wq_data.csv) | data | Sample WQ fact table; column headers use schema `field_name` values. |
+| [wq_data.csv](./wq_data.csv) | data | Small sample WQ fact table; column headers use schema `field_name` values (also generate template). |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
 | [.gitignore](./.gitignore) | config | Excludes `output\`, Python caches, local env dirs, and common editor noise. |
+
+---
+
+## import
+
+Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-identified data only—**no real PHI**. Scored results still go under `output\` (gitignored).
+
+| Path | Type | Summary |
+|------|------|---------|
+| [wq_synthetic_data.csv](./import/wq_synthetic_data.csv) | data | Synthetic professional-billing WQ extract (~250 rows); default `score` / `generate` path for kpi-analytics. |
 
 ---
 
@@ -158,7 +170,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 1.7.0). |
+| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 1.8.0). |
 | [__main__.py](./kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score`, `generate`, `validate-score`; diagnostics gate. |
 | [diagnostics.py](./kpi-analytics/kpi_modules/diagnostics.py) | module | Enterprise runtime/import dry-run, durable pass/fail report, operational gate helpers. |
@@ -225,7 +237,7 @@ These paths are produced at runtime or by the interpreter. They are listed for o
 
 | Path | Note |
 |------|------|
-| `output\` | Scored CSVs, summary CSVs, synthetic data, and Excel workbooks from toolkit runs. |
+| `output\` | Scored CSVs, summary CSVs, and Excel workbooks from toolkit runs (not tracked inputs). |
 | `kpi-analytics\diagnostics\last_diagnostics.*` | Regenerable enterprise diagnostics certificates. |
 | `**/__pycache__\` / `*.pyc` | Python bytecode cache under `kpi_modules` and elsewhere. |
 | `.venv\` / `venv\` | Local virtual environments if created (not required; stdlib-only runtime). |
@@ -234,8 +246,8 @@ To regenerate typical demo artifacts:
 
 ```bat
 cd kpi-analytics
-kpi-analytics.cmd generate --rows 100 --output ..\output\wq_data_synthetic.csv
-kpi-analytics.cmd score --csv ..\output\wq_data_synthetic.csv --output ..\output\wq_scored.csv
+kpi-analytics.cmd score --output ..\output\wq_scored.csv
+rem optional refresh of tracked input: generate (defaults to import\wq_synthetic_data.csv)
 cd ..\excel-toolkit
 excel-toolkit.cmd export-csv -CsvPath ..\output\wq_scored.csv -OutputPath ..\output\wq_scored.xlsx
 ```
@@ -249,3 +261,4 @@ excel-toolkit.cmd export-csv -CsvPath ..\output\wq_scored.csv -OutputPath ..\out
 | 1.0.0 | Initial path-level inventory for root, excel-toolkit, kpi-analytics, fixtures, and templates |
 | 1.1.0 | `diagnostics.py`, `diagnostics/` folder, toolkit version 1.6.0 gate certificate |
 | 1.1.1 | `privacy.py` score-output PHI masking; toolkit version 1.7.0 |
+| 1.1.2 | `import\` tracked inputs; default score/generate paths; toolkit 1.8.0 |
