@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.1.0"
+version: "1.1.1"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-22"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.1.0  
+**Document version:** 1.1.1  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -158,7 +158,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 1.6.0). |
+| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 1.7.0). |
 | [__main__.py](./kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score`, `generate`, `validate-score`; diagnostics gate. |
 | [diagnostics.py](./kpi-analytics/kpi_modules/diagnostics.py) | module | Enterprise runtime/import dry-run, durable pass/fail report, operational gate helpers. |
@@ -167,6 +167,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 | [io_csv.py](./kpi-analytics/kpi_modules/io_csv.py) | module | Stdlib CSV read/write helpers shared by score and generate paths. |
 | [metrics.py](./kpi-analytics/kpi_modules/metrics.py) | module | Raw Priority Matrix V1 metrics (AR days, disparity, balances, appeal urgency, WQ age). |
 | [normalize.py](./kpi-analytics/kpi_modules/normalize.py) | module | Normalizes raw metrics to [0, 1] via minmax or percentile ranks. |
+| [privacy.py](./kpi-analytics/kpi_modules/privacy.py) | module | Score-output PHI masking for patient name / DOB (prefix+token; configurable omit). |
 | [score_v1.py](./kpi-analytics/kpi_modules/score_v1.py) | module | Orchestrates metrics → queue mode → weights → norms → contributions → final score. |
 | [kpi_quantifiers.py](./kpi-analytics/kpi_modules/kpi_quantifiers.py) | module | Portfolio KPIs plus per-claim static share and resolution-delta (`kpi_q_*`) columns. |
 | [summary_report.py](./kpi-analytics/kpi_modules/summary_report.py) | module | Builds the vertical summary CSV (metric rows with values, formulas, explanations). |
@@ -247,3 +248,4 @@ excel-toolkit.cmd export-csv -CsvPath ..\output\wq_scored.csv -OutputPath ..\out
 |---------|--------|
 | 1.0.0 | Initial path-level inventory for root, excel-toolkit, kpi-analytics, fixtures, and templates |
 | 1.1.0 | `diagnostics.py`, `diagnostics/` folder, toolkit version 1.6.0 gate certificate |
+| 1.1.1 | `privacy.py` score-output PHI masking; toolkit version 1.7.0 |
