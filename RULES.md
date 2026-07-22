@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.1.0"
+version: "1.2.0"
 status: current
 audience:
   - developers
@@ -14,6 +14,7 @@ related:
   - MARKDOWN-STANDARD.md
   - excel-toolkit/ENTERPRISE-SECURITY.md
   - kpi-analytics/ENTERPRISE-SECURITY.md
+  - kpi-analytics/.pylintrc
 last_updated: "2026-07-22"
 ---
 
@@ -21,9 +22,9 @@ last_updated: "2026-07-22"
 
 Fundamental rules for maintaining **workqueue-data-processor** as a professional, auditable dual-toolkit repository. These rules govern documentation, code boundaries, data contracts, git hygiene, and verification—not product tutorials.
 
-**Document version:** 1.1.0  
+**Document version:** 1.2.0  
 
-**Related:** [README.md](./README.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md)
+**Related:** [README.md](./README.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc)
 
 ---
 
@@ -42,7 +43,8 @@ This repository is a **Work Queue data contract** plus two independent toolkits:
 |------|----------|
 | Update canonical docs with behavior changes | Commit `output\`, caches, secrets, or real PHI |
 | Use conventional commit messages that match staged files | Mix unrelated toolkits or leave CLI/security docs stale |
-| Keep toolkits independent at the runtime layer | Add pip packages or network clients to product code |
+| Keep toolkits independent at the runtime layer | Add pip packages or network clients to **product** code |
+| Run **pylint** on `kpi_modules` after Python product changes | Treat pylint as a runtime install requirement for end users |
 | Preserve explainable score / dual KPI attribution | Force-kill Excel or permanently alter ExecutionPolicy |
 | Verify before sharing scoring or COM changes | Silently rename schema fields or scored columns |
 
@@ -53,7 +55,7 @@ This repository is a **Work Queue data contract** plus two independent toolkits:
 1. [Summary](#summary)
 2. [Authority map](#authority-map)
 3. [Documentation rules](#documentation-rules)
-4. [Formatting and style](#formatting-and-style)
+4. [Formatting and style](#formatting-and-style) (includes [Python style gate (pylint)](#python-style-gate-pylint))
 5. [Architecture and boundaries](#architecture-and-boundaries)
 6. [Data and schema rules](#data-and-schema-rules)
 7. [Security and enterprise constraints](#security-and-enterprise-constraints)
@@ -88,6 +90,7 @@ Update the **owner** document for a change. Cross-link; do not duplicate full co
 | Sample fact rows | [wq_data.csv](./wq_data.csv) |
 | Default score config | [kpi-analytics/kpi_modules/config_default.json](./kpi-analytics/kpi_modules/config_default.json) |
 | Golden tests | [kpi-analytics/fixtures/](./kpi-analytics/fixtures/) |
+| KPI Python style / PEP-8 gate | [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc) (dev tooling only) |
 
 **Rule:** Adding, removing, or renaming intentional source files requires a same-change update to [FILE-CATALOG.md](./FILE-CATALOG.md).
 
@@ -118,8 +121,25 @@ Update the **owner** document for a change. Cross-link; do not duplicate full co
 | Links | Relative from the file’s directory (`./CLI-GUIDE.md`, `../README.md`) |
 | Paths in prose | Consistent separators within a file; Windows-style examples are fine |
 | PowerShell | Target **5.1**; no PowerShell 7-only syntax in `excel-toolkit\` |
-| Python | Target **3.13**; **standard library only** in `kpi-analytics\` |
+| Python | Target **3.13**; **standard library only** in product `kpi-analytics\` code |
+| Python style | PEP-8 via **pylint** against [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc) — see [Python style gate (pylint)](#python-style-gate-pylint) |
 | Examples | Prefer placeholders (`C:\path\to\...`) plus one concrete repo-relative example |
+
+### Python style gate (pylint)
+
+All product Python under `kpi-analytics\kpi_modules\` must stay **pylint-clean** under the repo gate config before sharing scoring or packaging changes.
+
+| Item | Rule |
+|------|------|
+| **Config** | [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc) — PEP-8–aligned conventions (line length 100, docstrings, names, unused imports/vars, selected errors) |
+| **Scope** | `kpi_modules` package only |
+| **Command** | From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules` (or `python -m pylint kpi_modules`) |
+| **Pass criteria** | Exit code **0** and score **10.00/10** under that config |
+| **When to run** | After any edit to `kpi_modules\*.py`, `.pylintrc`, or related packaging that can affect style |
+| **Product dependency** | **No.** Pylint is **developer tooling** only. Do **not** add pylint (or any pip package) to product runtime, launchers, or enterprise install steps. End users run scoring with stdlib Python only. |
+| **Out of gate** | Design/refactor metrics (`too-many-*`, large-file complexity) are intentionally relaxed in `.pylintrc`; do not “fix” them by silent API rewrites. Full default pylint without the config is informational only. |
+
+If pylint is not installed on a developer machine, install it into the **developer environment** (user/global Python), never into a product `requirements.txt` or toolkit path meant for locked-down PCs.
 
 ---
 
@@ -296,6 +316,7 @@ A remote is optional. When one exists, do not assume write access to `main`/`mas
 | Change type | Minimum verification |
 |-------------|----------------------|
 | KPI scoring, columns, config | `kpi-analytics.cmd validate-score` (fixtures) |
+| KPI Python product code style | From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules` (must pass; see [Python style gate](#python-style-gate-pylint)) |
 | KPI environment / packaging | `kpi-analytics.cmd probe` |
 | KPI enterprise first-run / gate | `kpi-analytics.cmd diagnostics` (certificate under `diagnostics\`) |
 | Excel COM / export path | `excel-toolkit.cmd probe` and/or `Test-ExcelCom.ps1 -DryRun` |
@@ -304,7 +325,7 @@ A remote is optional. When one exists, do not assume write access to `main`/`mas
 | Docs only | [Author checklist](./MARKDOWN-STANDARD.md#author-checklist); relative links resolve |
 | New/removed source files | [FILE-CATALOG.md](./FILE-CATALOG.md) updated |
 
-Do not claim a scoring or export change is complete if the relevant probe/validation was skipped.
+Do not claim a scoring or export change is complete if the relevant probe/validation was skipped. Do not claim a Python product change is complete if the pylint gate was skipped or failed.
 
 ---
 
@@ -314,6 +335,7 @@ Do not claim a scoring or export change is complete if the relevant probe/valida
 |---------|--------|
 | Every source path add/remove/rename | Update [FILE-CATALOG.md](./FILE-CATALOG.md) |
 | Every release-worthy toolkit behavior change | Bump code version; refresh CLI guide and status blocks |
+| Every `kpi_modules` Python edit | Run pylint gate; keep exit 0 / 10.00 score |
 | Security-relevant change | Update matching ENTERPRISE-SECURITY; re-run sample-test or probe |
 | Fixture failure after intentional math change | Refresh expected JSON only with methodology note |
 | Stale `last_updated` on heavily edited docs | Set ISO date when merging |
@@ -324,7 +346,9 @@ Do not claim a scoring or export change is complete if the relevant probe/valida
 
 | Avoid | Prefer |
 |-------|--------|
-| `pip install` “just this once” in kpi-analytics | Stdlib solution or redesign the requirement |
+| `pip install` “just this once” in **product** kpi-analytics | Stdlib solution or redesign the requirement |
+| Shipping pylint as a product runtime dependency | Keep pylint developer-only; product remains stdlib-only |
+| Skipping pylint after Python edits | Run `py -3.13 -m pylint kpi_modules` from `kpi-analytics\` |
 | Force-killing Excel to “clean up” | Quit → wait → one retry → warn user |
 | Committing `output\wq_scored*.csv` or `.xlsx` | Document regenerate commands in README / catalog |
 | Silent field or `v1_*` / `kpi_q_*` rename | Coordinated contract bump + fixtures + docs |
@@ -347,6 +371,7 @@ Before you commit or share a change:
 - [ ] [FILE-CATALOG.md](./FILE-CATALOG.md) updated if paths changed  
 - [ ] Versions and `last_updated` bumped where contracts changed  
 - [ ] Required **verification** from the table above has been run  
+- [ ] If `kpi_modules` Python changed: **pylint gate** passed (`py -3.13 -m pylint kpi_modules` from `kpi-analytics\`)  
 - [ ] No secrets, PHI, `output\`, caches, or diagnostics certificates staged  
 - [ ] Markdown follows [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) when docs were edited  
 - [ ] Commit message uses `type(scope):` format and matches the staged files  
@@ -360,3 +385,4 @@ Before you commit or share a change:
 |---------|--------|
 | 1.0.0 | Initial maintenance rules: authority map, docs, format, architecture, data, security, versioning, git, verification |
 | 1.1.0 | Git commit message format, documentation-consistency rules, and commit workflow |
+| 1.2.0 | Python PEP-8 style gate via pylint (`.pylintrc`); verification and checklist requirements |
