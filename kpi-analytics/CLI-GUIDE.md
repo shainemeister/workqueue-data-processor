@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "1.5.1"
+version: "1.6.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-22"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 1.5.1 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 1.6.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -28,18 +28,19 @@ Professional reference for the command-line interface used by automation, Task S
 | **Toolkit folder** | `kpi-analytics\` |
 | **CLI module** | `python -m kpi_modules` |
 | **Windows shim** | `kpi-analytics.cmd` |
-| **Library** | `kpi_modules` (`score_v1`, `kpi_quantifiers`, `summary_report`, `synthesize`, …) |
+| **Library** | `kpi_modules` (`score_v1`, `kpi_quantifiers`, `summary_report`, `synthesize`, `diagnostics`, …) |
 
 ## Summary
 
-This guide is the authoritative **command-line contract** for KPI Analytics. It documents how to invoke `kpi-analytics.cmd` / `python -m kpi_modules`, each verb (`version`, `probe`, `score`, `generate`, `validate-score`), global flags (`--json`, `--quiet`), exit codes (**0** / **1** / **2**), and illustrative JSON shapes for automation.
+This guide is the authoritative **command-line contract** for KPI Analytics. It documents how to invoke `kpi-analytics.cmd` / `python -m kpi_modules`, each verb (`version`, `probe`, `diagnostics`, `score`, `generate`, `validate-score`), flags (`--json`, `--quiet`, diagnostics gate options), exit codes (**0** / **1** / **2**), and illustrative JSON shapes for automation.
 
 | Command | Produces |
 |---------|----------|
+| `diagnostics` | Enterprise dry-run report under `diagnostics\last_diagnostics.json` / `.txt` (gate certificate) |
 | `score` | Claim-level scored CSV (`v1_*` + `kpi_q_*`) and optional vertical **summary** CSV |
 | `generate` | Synthetic professional-billing WQ CSV (de-identified) |
 | `validate-score` | Integrity checks on priority contributions and KPI Q checksums (optional golden fixtures) |
-| `probe` | Environment readiness (Python 3.13, stdlib, paths) |
+| `probe` | Optional path preflight (does **not** satisfy the diagnostics gate) |
 
 Use **Import-Module-style** Python APIs when already in-process; use this CLI for Task Scheduler, cmd, and cross-language orchestration. Security constraints are summarized in [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md); scoring math is in [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md).
 
@@ -68,8 +69,9 @@ Use **Import-Module-style** Python APIs when already in-process; use this CLI fo
 kpi-analytics.cmd
     → python -m kpi_modules
         → kpi_modules.cli
+            → diagnostics gate (score | generate | validate-score)
             → score_v1 / kpi_quantifiers / summary_report
-            → synthesize / probe / validate_score / config
+            → synthesize / probe / diagnostics / validate_score / config
 ```
 
 ---
@@ -93,6 +95,7 @@ The CLI is a thin wrapper around package functions.
 cd /d C:\path\to\workqueue-data-processor\kpi-analytics
 
 kpi-analytics.cmd version
+kpi-analytics.cmd diagnostics --json
 kpi-analytics.cmd probe --csv ..\wq_data.csv --json
 kpi-analytics.cmd score --csv ..\wq_data.csv --output ..\output\wq_scored.csv --json
 kpi-analytics.cmd validate-score --json
@@ -117,7 +120,7 @@ python -m kpi_modules <command> [options]
 
 | Part | Description |
 |------|-------------|
-| `<command>` | `version` · `probe` · `score` · `generate` · `validate-score` · `help` |
+| `<command>` | `version` · `probe` · `diagnostics` · `score` · `generate` · `validate-score` · `help` |
 | `[options]` | Command-specific (below) |
 
 ---
@@ -151,17 +154,17 @@ Prefer **`--json`** stdout for machine-readable details.
 python -m kpi_modules version [--json]
 ```
 
-Without `--json`, prints the bare version string (e.g. `1.5.1`).
+Without `--json`, prints the bare version string (e.g. `1.6.0`).
 
 ```json
-{"Success":true,"Version":"1.5.1","Command":"version"}
+{"Success":true,"Version":"1.6.0","Command":"version"}
 ```
 
 ---
 
 ### 5.2 `probe`
 
-Environment preflight: Python version, stdlib imports, temp write, default config, optional paths.
+Optional path/environment preflight: Python version, a few stdlib imports, temp write, default config, optional paths.
 
 ```text
 python -m kpi_modules probe [--csv <path>] [--config <path>] [--schema <path>] [--json] [--quiet]
@@ -169,9 +172,76 @@ python -m kpi_modules probe [--csv <path>] [--config <path>] [--schema <path>] [
 
 Exit **0** if all checks pass; **1** otherwise.
 
+**Note:** `probe` does **not** write the enterprise diagnostics certificate and does **not** satisfy the operational gate. Use `diagnostics` for first-run enterprise readiness.
+
 ---
 
-### 5.3 `score`
+### 5.3 `diagnostics`
+
+Enterprise dry-run: runtime and import surface checks for the toolkit. Always refreshes the durable report under `diagnostics\`.
+
+```text
+python -m kpi_modules diagnostics [--force] [--json] [--quiet]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--force` | Explicit re-run alias (command always re-runs when invoked) |
+| `--json` | JSON result on stdout |
+| `--quiet` | Minimal host text |
+
+**Writes:**
+
+| File | Role |
+|------|------|
+| `diagnostics\last_diagnostics.json` | Gate certificate (machine-readable) |
+| `diagnostics\last_diagnostics.txt` | Human PASS/FAIL list for IT |
+
+**Suite (critical unless noted):** Python 3.13+, executable path, each stdlib module used by the package, each `kpi_modules` submodule import, default config load, write access to `diagnostics\`. Advisory checks record platform/cwd.
+
+**Privacy:** report contains environment metadata only — no claim rows or PHI.
+
+Exit **0** if `OverallPass`; **1** if any critical check fails.
+
+```json
+{
+  "Success": true,
+  "OverallPass": true,
+  "Command": "diagnostics",
+  "Version": "1.6.0",
+  "ToolkitVersion": "1.6.0",
+  "PythonVersion": "3.13.0",
+  "ReportJsonPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.json",
+  "ReportTextPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.txt",
+  "CriticalFailed": [],
+  "Checks": [{"Name": "PythonVersion", "Passed": true, "Severity": "critical", "Detail": "..."}]
+}
+```
+
+---
+
+### 5.4 Diagnostics gate (operational commands)
+
+Before `score`, `generate`, and `validate-score`, the CLI ensures a **valid pass certificate**:
+
+| Condition | Behavior |
+|-----------|----------|
+| Valid pass for current `ToolkitVersion` + Python version | Proceed (`DiagnosticsGate`: `cached`) |
+| Missing, failed, or stale certificate | **Auto-run** diagnostics; proceed only if pass (`ran`) |
+| Auto-run fails | Exit **1**; point to `last_diagnostics.txt` (`blocked`) |
+
+**Not gated:** `version`, `help`, `probe`, `diagnostics`.
+
+| Flag (on gated commands) | Meaning |
+|--------------------------|---------|
+| `--force-diagnostics` | Re-run diagnostics before the command |
+| `--skip-diagnostics-gate` | Bypass gate (emergency/support only; warns on stderr) |
+
+Successful gated JSON may include `DiagnosticsGate` (`cached` \| `ran` \| `skipped`) and report path fields.
+
+---
+
+### 5.5 `score`
 
 Scores a data CSV:
 
@@ -193,6 +263,8 @@ python -m kpi_modules score --csv <path> [--output <path>]
 | `--no-summary` | No | off | Skip summary file |
 | `--config` | No | package default | Weights / KPI config |
 | `--dry-run` | No | off | No file writes |
+| `--force-diagnostics` | No | off | Refresh diagnostics certificate first |
+| `--skip-diagnostics-gate` | No | off | Emergency bypass of diagnostics gate |
 | `--json` | No | off | JSON on stdout |
 | `--quiet` | No | off | Minimal host text |
 
@@ -212,7 +284,7 @@ kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv ^
 {
   "Success": true,
   "Command": "score",
-  "Version": "1.5.1",
+  "Version": "1.6.0",
   "InputPath": "C:\\...\\wq_data.csv",
   "OutputPath": "C:\\...\\output\\wq_scored.csv",
   "SummaryPath": "C:\\...\\output\\wq_scored_summary.csv",
@@ -225,6 +297,7 @@ kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv ^
   "ScoreMax": 0.80,
   "ScoreMean": 0.25,
   "ScoreColumn": "v1_priority_score",
+  "DiagnosticsGate": "cached",
   "KpiTotals": {
     "kpi_total_ar": 284235.94,
     "kpi_days_in_ar": 55.5,
@@ -251,7 +324,7 @@ kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv ^
 
 ---
 
-### 5.4 `generate`
+### 5.6 `generate`
 
 Synthetic professional-billing WQ CSV (de-identified).
 
@@ -275,7 +348,7 @@ Patients: `Doe,John{N}` / `Doe,Jane{N}`. DOB: Excel serial with day-of-month **0
 
 ---
 
-### 5.5 `validate-score`
+### 5.7 `validate-score`
 
 Checks:
 
@@ -310,7 +383,7 @@ kpi-analytics.cmd validate-score --scored-csv ..\output\wq_scored_pro250_v151.cs
 
 ---
 
-### 5.6 `help`
+### 5.8 `help`
 
 Prints built-in help (`kpi-analytics.cmd help`).
 
@@ -318,21 +391,29 @@ Prints built-in help (`kpi-analytics.cmd help`).
 
 ## 6. Example use cases
 
-### 6.1 Score production extract + summary
+### 6.1 First-run enterprise diagnostics
+
+```bat
+cd /d C:\path\to\workqueue-data-processor\kpi-analytics
+kpi-analytics.cmd diagnostics --json
+rem Share diagnostics\last_diagnostics.txt with IT if any FAIL lines
+```
+
+### 6.2 Score production extract + summary
 
 ```bat
 cd /d C:\path\to\workqueue-data-processor\kpi-analytics
 kpi-analytics.cmd score --csv D:\exports\wq_export.csv --output ..\output\wq_scored.csv --json
 ```
 
-### 6.2 Synthetic volume then score
+### 6.3 Synthetic volume then score
 
 ```bat
 kpi-analytics.cmd generate --rows 250 --seed 42 --output ..\output\wq_data_synthetic_pro250.csv
 kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv --output ..\output\wq_scored_pro250.csv --json
 ```
 
-### 6.3 PowerShell orchestration
+### 6.4 PowerShell orchestration
 
 ```powershell
 $cli = Join-Path $PSScriptRoot 'kpi-analytics.cmd'
@@ -342,14 +423,14 @@ if ($LASTEXITCODE -ne 0) { throw "kpi-analytics failed: $LASTEXITCODE" }
 Pop-Location
 ```
 
-### 6.4 Export scored data with excel-toolkit
+### 6.5 Export scored data with excel-toolkit
 
 ```bat
 cd ..\excel-toolkit
 excel-toolkit.cmd export-csv -CsvPath ..\output\wq_scored.csv -OutputPath ..\output\wq_scored.xlsx -Json
 ```
 
-### 6.5 Task Scheduler
+### 6.6 Task Scheduler
 
 Program: path to `python.exe` (3.13).  
 Arguments: `-m kpi_modules score --csv "C:\data\wq.csv" --output "C:\data\out\wq_scored.csv" --json`  
@@ -390,6 +471,7 @@ One metric per **row** (not one metric per wide column). Sections: Run, Portfoli
 | Network | Not used |
 | Excel automation | Not used |
 | Machine policy | Not changed |
+| Diagnostics report | Environment/import results only; no PHI |
 
 See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
@@ -399,15 +481,18 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 | Symptom | Check |
 |---------|--------|
+| Exit 1 on `diagnostics` | Read `diagnostics\last_diagnostics.txt` FAIL lines |
+| Exit 1 on gated command with DiagnosticsGate blocked | Fix environment; re-run `diagnostics --force` |
 | Exit 1 on `probe` | Python 3.13+? Paths valid? |
-| Exit 1 on `score` | `--csv` set? Config valid? File not locked? |
+| Exit 1 on `score` | `--csv` set? Config valid? File not locked? Gate passed? |
 | Exit 1 on `validate-score` | Fixture expected outdated? Use `--no-expected` for integrity only |
 | `No module named kpi_modules` | Start in `kpi-analytics\` |
 | Days in AR unrealistic | Set `kpi_quantifiers.adc`; read `adc_source` in summary |
 | Permission denied writing CSV | Close workbook in Excel |
+| Cannot write diagnostics folder | ACL on `kpi-analytics\diagnostics\`; temporary `--skip-diagnostics-gate` |
 
 ---
 
 ## 10. Version
 
-CLI and package version are aligned at **1.5.1**. Bump when changing verbs, exit codes, JSON field names, or `kpi_q_*` / summary contracts.
+CLI and package version are aligned at **1.6.0**. Bump when changing verbs, exit codes, JSON field names, diagnostics gate behavior, or `kpi_q_*` / summary contracts.
