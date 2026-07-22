@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.0.0"
+version: "1.1.0"
 status: current
 audience:
   - developers
@@ -21,7 +21,7 @@ last_updated: "2026-07-22"
 
 Fundamental rules for maintaining **workqueue-data-processor** as a professional, auditable dual-toolkit repository. These rules govern documentation, code boundaries, data contracts, git hygiene, and verification—not product tutorials.
 
-**Document version:** 1.0.0  
+**Document version:** 1.1.0  
 
 **Related:** [README.md](./README.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md)
 
@@ -41,6 +41,7 @@ This repository is a **Work Queue data contract** plus two independent toolkits:
 | Must | Must not |
 |------|----------|
 | Update canonical docs with behavior changes | Commit `output\`, caches, secrets, or real PHI |
+| Use conventional commit messages that match staged files | Mix unrelated toolkits or leave CLI/security docs stale |
 | Keep toolkits independent at the runtime layer | Add pip packages or network clients to product code |
 | Preserve explainable score / dual KPI attribution | Force-kill Excel or permanently alter ExecutionPolicy |
 | Verify before sharing scoring or COM changes | Silently rename schema fields or scored columns |
@@ -199,18 +200,90 @@ Additional rules:
 | Schema, sample data, fixtures | `__pycache__\`, `*.pyc` |
 | Docs, templates, `.gitignore` | `.venv\`, `venv\`, `.env` |
 | | Secrets, IDE-only folders already ignored |
+| | `kpi-analytics\diagnostics\last_diagnostics.*` (regenerable certificates) |
 
 Respect [.gitignore](./.gitignore). Do not force-add ignored generated artifacts “for convenience.”
 
 ### Commits and history
 
-1. **Review before commit:** `git status` and `git diff`. Confirm no accidental large CSVs, workbooks, or credentials.  
+1. **Review before commit:** `git status` and `git diff`. Confirm no accidental large CSVs, workbooks, credentials, or regenerable diagnostics certificates.  
 2. **Small, focused commits** preferred over mixed unrelated changes.  
-3. **Messages:** imperative, specific subjects (e.g. `Document KPI Q dual attribution in methodology`). Optional body for *why*.  
+3. **Messages** follow [Commit message format](#commit-message-format) below.  
 4. **Do not rewrite published shared history** (`push --force` to a shared default branch) without explicit coordination.  
 5. **Branches (recommended):** `feature/…`, `fix/…`, `docs/…` when work is non-trivial.  
 6. **Contract-breaking changes:** prefer review (PR) when a remote exists; call out migration notes in the commit or PR body.  
 7. **No secrets in history.** If leaked, rotate credentials and treat history cleanup as an incident—not a casual amend.
+
+### Commit message format
+
+Use a **Conventional Commits–style** subject so history stays scannable and aligned with how this repo documents work.
+
+```text
+<type>(<scope>): <imperative summary>
+```
+
+| Part | Rule |
+|------|------|
+| **type** | One of the types in the table below |
+| **scope** | Toolkit or area: `kpi-analytics`, `excel-toolkit`, or omit for repo-wide files (`RULES.md`, `FILE-CATALOG.md`, root README, schema) |
+| **summary** | Imperative mood, specific, ≤ ~72 characters; no trailing period |
+| **body** (optional) | Why the change matters; migration notes; link to canonical doc if non-obvious |
+
+| type | Use when |
+|------|----------|
+| `feat` | User-visible behavior: new CLI verb/flag, scoring output, export capability, diagnostics gate |
+| `fix` | Correct wrong behavior without changing the intended contract |
+| `docs` | Documentation only (README, CLI-GUIDE, methodology, security, catalog, templates) |
+| `chore` | Version bumps, `.gitignore`, packaging/layout hygiene with no product behavior change |
+| `refactor` | Internal structure only; same CLI/score/export contracts |
+| `test` | Fixtures, validation harness, sample-test probes (no product API change) |
+
+**Examples (match this voice):**
+
+```text
+feat(kpi-analytics): add enterprise diagnostics module and gate helpers
+feat(kpi-analytics): wire diagnostics command and operational gate in CLI
+chore(kpi-analytics): bump package version to 1.6.0
+docs(kpi-analytics): document diagnostics command, gate flags, and CLI contract
+docs: catalog diagnostics module and diagnostics folder
+chore: gitignore enterprise diagnostics certificate files
+fix(excel-toolkit): retry Excel Quit before warning the user
+```
+
+### Documentation consistency in commits
+
+Commit messages and **what is staged** must stay consistent with the documentation authority map.
+
+| Situation | Commit practice |
+|-----------|-----------------|
+| Behavior / CLI / scoring / security model changes | Update the **canonical** doc in the **same change set** (same commit or consecutive commits in the same branch/PR). Do not ship code that leaves CLI-GUIDE, methodology, or ENTERPRISE-SECURITY stale. |
+| Prefer readability of history | Prefer **one logical surface per commit** (e.g. one module, one doc file, or one tightly coupled pair such as version bump alone). Avoid “mega-commits” that mix unrelated toolkits. |
+| Code + matching docs for one feature | Either (a) one commit that includes code **and** its canonical doc updates, or (b) a short stack: code → version → each doc file, with subjects that name the same feature. |
+| Path add/remove/rename | Include [FILE-CATALOG.md](./FILE-CATALOG.md) in the same change set; subject may be `docs: catalog …` if catalog-only, or mention catalog in the body if bundled. |
+| Toolkit version bump | Subject uses `chore(<toolkit>): bump … to X.Y.Z`. Docs that cite the product version get `docs(<toolkit>): …` commits (or the same commit) so cited versions stay aligned. |
+| Docs-only edits | Use `docs` / `docs(<scope>)`. Do not use `feat` for documentation. |
+| Message content | Subject describes **what changed in the staged files**, not a vague “updates”. Prefer the same nouns as the docs (`diagnostics`, `kpi_q_*`, `validate-score`, `CLI-GUIDE`). |
+
+**Pre-commit message check:**
+
+1. Does the subject type match the staged content (`docs` only if no product code/config behavior)?  
+2. If CLI verbs, flags, exit codes, or JSON shapes changed, is [CLI-GUIDE](./kpi-analytics/CLI-GUIDE.md) / [excel-toolkit CLI-GUIDE](./excel-toolkit/CLI-GUIDE.md) updated in this change set?  
+3. If trust/execution model changed, is the matching ENTERPRISE-SECURITY updated?  
+4. If formulas or `v1_*` / `kpi_q_*` contracts changed, are methodology + fixtures updated?  
+5. Would a reviewer find the subject by searching the feature name used in the README?
+
+### Suggested commit workflow
+
+```bat
+git status
+git diff
+rem Stage one focused surface (or one logical pair), then:
+git add path\to\file
+git commit -m "type(scope): imperative summary of this file or surface"
+git status
+```
+
+For a multi-file feature, a typical stack is: implementation → package version → docs (CLI, README, security, methodology as needed) → FILE-CATALOG / RULES if those inventories or policies changed.
 
 ### Remotes
 
@@ -260,6 +333,9 @@ Do not claim a scoring or export change is complete if the relevant probe/valida
 | Merging Excel and Python into one process | Keep runtimes separate; compose via files/CLI |
 | Absolute machine-only paths as the only example | Placeholder + one repo-relative example |
 | Orphan files missing from the catalog | Update FILE-CATALOG in the same change |
+| Vague commits (`update stuff`, `wip`) | Conventional `type(scope):` subject naming the real surface |
+| Code without CLI/methodology/security docs | Same change set as the canonical doc per authority map |
+| `feat` commit that only edits markdown | Use `docs` / `docs(scope)` |
 
 ---
 
@@ -271,9 +347,10 @@ Before you commit or share a change:
 - [ ] [FILE-CATALOG.md](./FILE-CATALOG.md) updated if paths changed  
 - [ ] Versions and `last_updated` bumped where contracts changed  
 - [ ] Required **verification** from the table above has been run  
-- [ ] No secrets, PHI, `output\`, or caches staged  
+- [ ] No secrets, PHI, `output\`, caches, or diagnostics certificates staged  
 - [ ] Markdown follows [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) when docs were edited  
-- [ ] Commit message explains the change clearly  
+- [ ] Commit message uses `type(scope):` format and matches the staged files  
+- [ ] Canonical docs for any behavior change are in the same change set  
 
 ---
 
@@ -282,3 +359,4 @@ Before you commit or share a change:
 | Version | Notes |
 |---------|--------|
 | 1.0.0 | Initial maintenance rules: authority map, docs, format, architecture, data, security, versioning, git, verification |
+| 1.1.0 | Git commit message format, documentation-consistency rules, and commit workflow |
