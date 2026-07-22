@@ -9,6 +9,7 @@ For consistent, professional markdown across this repository (any toolkit or des
 | Path | Purpose |
 |------|---------|
 | [`MARKDOWN-STANDARD.md`](./MARKDOWN-STANDARD.md) | Canonical formatting standard, content order, frontmatter, checklist |
+| [`RULES.md`](./RULES.md) | Repository maintenance rules (docs, git, boundaries, verification) |
 | [`FILE-CATALOG.md`](./FILE-CATALOG.md) | Concise purpose inventory of every intentional source file |
 | [`templates/`](./templates/) | Copy-paste skeletons (README, CLI, methodology, security, concept, generic) |
 

@@ -11,6 +11,7 @@ doc_type: other
 related:
   - README.md
   - MARKDOWN-STANDARD.md
+  - RULES.md
 last_updated: "2026-07-22"
 ---
 
@@ -21,7 +22,7 @@ Concise, path-level inventory of intentional source files in **workqueue-data-pr
 **Document version:** 1.0.0  
 **Baseline layout:** repository root  
 
-**Related:** [README.md](./README.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md)
+**Related:** [README.md](./README.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
 
 ---
 
@@ -37,6 +38,7 @@ Each row below states **what the file is for** in one sentence. Runtime contract
 | Excel automation CLI | `excel-toolkit\excel-toolkit.cmd` |
 | KPI score / generate / validate | `kpi-analytics\kpi-analytics.cmd` |
 | Markdown conventions | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) |
+| Maintenance policy | [RULES.md](./RULES.md) |
 
 Generated artifacts under `output\` and Python `__pycache__\` are intentionally **not** cataloged as source.
 
@@ -62,7 +64,7 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 
 ```text
 workqueue-data-processor/
-  README.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md
+  README.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md
   wq_schema.json, wq_schema.csv, wq_data.csv
   WQ_Priority_Matrix_Concept.md
   Start-ExcelMenu.cmd
@@ -81,6 +83,7 @@ workqueue-data-processor/
 | [README.md](./README.md) | doc | Repository overview: WQ two-file data model, toolkit map, and synthetic → score → Excel flow. |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, and author checklist. |
+| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, formatting, architecture, data, git, and verification. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
