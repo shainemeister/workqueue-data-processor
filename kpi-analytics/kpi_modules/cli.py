@@ -102,6 +102,7 @@ def _add_gate_flags(p: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the kpi-analytics argparse CLI."""
     parser = argparse.ArgumentParser(
         prog="kpi-analytics",
         description=(
@@ -226,7 +227,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--start-index",
         type=int,
         default=1,
-        help="Starting patient index for Doe,John/Jane{N} (default: 1; ignored if --append finds existing)",
+        help=(
+            "Starting patient index for Doe,John/Jane{N} "
+            "(default: 1; ignored if --append finds existing)"
+        ),
     )
     p_gen.add_argument(
         "--dry-run",
@@ -340,6 +344,7 @@ def _apply_gate(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point; returns process exit code 0 / 1 / 2."""
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = build_parser()
 
