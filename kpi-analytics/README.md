@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics
 description: Python 3.13 stdlib toolkit for Work Queue priority scoring, RCM claim-level KPI impacts, synthetic data, and validation.
-version: "1.5.1"
+version: "1.6.0"
 status: current
 audience:
   - users
@@ -23,9 +23,10 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 2. **RCM KPI claim impact** — portfolio KPIs plus per-claim static share and exact resolution impact (`kpi_q_*`).  
 3. **Vertical summary CSV** — run metrics, KPIs, and plain-language explanations as rows.  
 4. **Synthetic data** — de-identified professional billing test CSVs.  
-5. **Validation** — integrity checks and golden fixtures.
+5. **Validation** — integrity checks and golden fixtures.  
+6. **Enterprise diagnostics** — first-run runtime/import dry-run with a durable pass/fail report and a gate on operational commands.
 
-**Toolkit version:** 1.5.1  
+**Toolkit version:** 1.6.0  
 **Product folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\` (implementation; name differs from the product folder on purpose)
 
@@ -42,10 +43,11 @@ Column **order** always comes from your data CSV. Scoring appends fields; it doe
 
 ## Summary
 
-KPI Analytics is a local, offline Python toolkit for professional billing Work Queue files. It scores each claim for **work priority** (`v1_priority_score` and audit columns), attaches **RCM claim-impact measures** (`kpi_q_*` static share and exact resolution deltas), and writes a **vertical summary CSV** that explains portfolio KPIs (Total AR, Days in AR, aging %) in plain language. Optional commands generate de-identified synthetic data and validate results against fixtures. The runtime is **Python 3.13 standard library only**—no pip packages, no network, no Excel automation (use sibling `excel-toolkit` for `.xlsx` export).
+KPI Analytics is a local, offline Python toolkit for professional billing Work Queue files. It scores each claim for **work priority** (`v1_priority_score` and audit columns), attaches **RCM claim-impact measures** (`kpi_q_*` static share and exact resolution deltas), and writes a **vertical summary CSV** that explains portfolio KPIs (Total AR, Days in AR, aging %) in plain language. Optional commands generate de-identified synthetic data and validate results against fixtures. On first operational use (or when the certificate is missing/stale), **enterprise diagnostics** auto-runs a runtime/import dry-run and writes a pass/fail report under `diagnostics\`. The runtime is **Python 3.13 standard library only**—no pip packages, no network, no Excel automation (use sibling `excel-toolkit` for `.xlsx` export).
 
 | You want… | Start here |
 |-----------|------------|
+| First-run on a locked-down PC | `kpi-analytics.cmd diagnostics` · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md) |
 | Run scoring end-to-end | [Recommended workflow](#recommended-workflow) |
 | CLI syntax & automation | [CLI-GUIDE.md](./CLI-GUIDE.md) |
 | Formulas & validation | [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) |
@@ -93,6 +95,7 @@ KPI Analytics is a local, offline Python toolkit for professional billing Work Q
 cd /d C:\path\to\workqueue-data-processor\kpi-analytics
 
 kpi-analytics.cmd version
+kpi-analytics.cmd diagnostics --json
 kpi-analytics.cmd probe --csv ..\wq_data.csv --json
 
 rem Optional: synthetic professional-billing volume
@@ -108,8 +111,11 @@ Outputs (by default):
 
 | File | Content |
 |------|---------|
+| `diagnostics\last_diagnostics.json` / `.txt` | Enterprise pass/fail certificate (auto-created on first operational run) |
 | `..\output\wq_scored.csv` | One row per claim: source fields + `v1_*` + `kpi_q_*` |
 | `..\output\wq_scored_summary.csv` | Vertical summary: section, metric, value, unit, formula, explanation |
+
+`score`, `generate`, and `validate-score` require a valid diagnostics **pass** for this toolkit + Python version. If the certificate is missing, failed, or stale, diagnostics **auto-runs** and the command proceeds only when critical checks pass. Use `diagnostics --force` to re-check; `--skip-diagnostics-gate` is emergency/support only.
 
 The launcher prefers `py -3.13`, then `python`. It does not install packages or change machine policy.
 
@@ -199,7 +205,8 @@ kpi-analytics.cmd generate --rows 200 --append --output ..\output\wq_data_synthe
 kpi-analytics/
   kpi-analytics.cmd          Windows CLI shim
   kpi_modules/               Python package
-    cli.py                   version | probe | score | generate | validate-score
+    cli.py                   version | probe | diagnostics | score | generate | validate-score
+    diagnostics.py           Enterprise runtime/import dry-run + gate certificate
     score_v1.py              Priority orchestration + KPI attach
     kpi_quantifiers.py       RCM static + exact Δ (kpi_q_*)
     summary_report.py        Vertical summary CSV
@@ -207,6 +214,7 @@ kpi-analytics/
     synthesize.py            Synthetic WQ generator
     validate_score.py        Integrity + golden fixtures
     config_default.json
+  diagnostics/               Pass/fail reports (generated; see diagnostics/README.md)
   fixtures/                  Hand-calc and RCM §6 examples
   *.md                       Documentation (this set)
 ```
@@ -265,10 +273,11 @@ Full detail: **[CLI-GUIDE.md](./CLI-GUIDE.md)**.
 | Command | Purpose |
 |---------|---------|
 | `version` | Print toolkit version |
-| `probe` | Environment / path preflight |
-| `score` | Priority + `kpi_q_*` + summary CSV |
-| `generate` | Synthetic WQ CSV |
-| `validate-score` | Priority integrity, KPI Q checksums, optional golden |
+| `diagnostics` | Enterprise dry-run; writes `diagnostics\last_diagnostics.*` |
+| `probe` | Optional path preflight (does **not** satisfy the gate) |
+| `score` | Priority + `kpi_q_*` + summary CSV (gated) |
+| `generate` | Synthetic WQ CSV (gated) |
+| `validate-score` | Priority integrity, KPI Q checksums, optional golden (gated) |
 
 | Exit code | Meaning |
 |-----------|---------|
@@ -317,6 +326,7 @@ kpi-analytics.cmd validate-score --csv fixtures\rcm_impact_example.csv --config 
 | Network | Not used |
 | Office | Not automated |
 | Files | User-chosen CSV/config paths; default outputs under repo `output\` |
+| First-run gate | `diagnostics` certificate under `diagnostics\`; auto-run on operational commands |
 
 Full write-up: **[ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)**.
 
@@ -328,6 +338,8 @@ Full write-up: **[ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)**.
 |---------|-------------|
 | Python not found | Install CPython 3.13; ensure `py -3.13` or `python` on PATH |
 | `No module named kpi_modules` | `cd` into `kpi-analytics\` or set `PYTHONPATH` |
+| Diagnostics gate blocked | Open `diagnostics\last_diagnostics.txt`; fix FAIL lines; `diagnostics --force` |
+| Cannot write diagnostics report | Ensure write access to `kpi-analytics\diagnostics\` (or temporary `--skip-diagnostics-gate`) |
 | Days in AR looks off | Set `kpi_quantifiers.adc` to practice ADC; check `adc_source` in summary |
 | All priority scores ≈ 0.5 | Single-row batch or flat metrics — norms collapse under minmax |
 | File permission denied | Close the CSV in Excel and re-run |
