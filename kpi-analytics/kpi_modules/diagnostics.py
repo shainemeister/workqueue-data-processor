@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
+from .config import DEFAULT_CONFIG_PATH, load_config
 
 REPORT_VERSION = 1
 
@@ -57,19 +58,23 @@ GATED_COMMANDS = frozenset({"score", "generate", "validate-score"})
 
 
 def toolkit_root() -> Path:
+    """Return the kpi-analytics toolkit root directory."""
     # kpi-analytics/kpi_modules/diagnostics.py → parents[1] = kpi-analytics
     return Path(__file__).resolve().parents[1]
 
 
 def diagnostics_dir() -> Path:
+    """Return the diagnostics report directory under the toolkit root."""
     return toolkit_root() / "diagnostics"
 
 
 def report_json_path() -> Path:
+    """Path to the machine-readable diagnostics certificate JSON."""
     return diagnostics_dir() / "last_diagnostics.json"
 
 
 def report_text_path() -> Path:
+    """Path to the human-readable diagnostics PASS/FAIL text report."""
     return diagnostics_dir() / "last_diagnostics.txt"
 
 
@@ -80,6 +85,7 @@ def _check(
     *,
     severity: str = "critical",
 ) -> dict[str, Any]:
+    """Build one diagnostics check result dict."""
     return {
         "Name": name,
         "Passed": bool(passed),
@@ -170,15 +176,16 @@ def _run_checks() -> list[dict[str, Any]]:
         label = "kpi_modules" if mod_name == "kpi_modules" else short or "kpi_modules"
         try:
             importlib.import_module(mod_name)
-            detail = f"import ok (toolkit {__version__})" if mod_name == "kpi_modules" else "import ok"
+            if mod_name == "kpi_modules":
+                detail = f"import ok (toolkit {__version__})"
+            else:
+                detail = "import ok"
             checks.append(_check(f"PackageImport.{label}", True, detail))
         except Exception as exc:
             checks.append(_check(f"PackageImport.{label}", False, str(exc)))
 
     # --- Default config (required by operational paths) ---
     try:
-        from .config import DEFAULT_CONFIG_PATH, load_config
-
         load_config(None)
         checks.append(
             _check(
@@ -283,7 +290,7 @@ def run_diagnostics(*, write: bool = True) -> dict[str, Any]:
         for c in checks
         if c.get("Severity") == "critical" and not c.get("Passed")
     ]
-    overall = len(critical_failed) == 0
+    overall = not critical_failed
     finished = _utc_now_iso()
 
     result: dict[str, Any] = {
