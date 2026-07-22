@@ -435,7 +435,7 @@ kpi-analytics.cmd score --output ..\output\wq_scored.csv --json
 ```powershell
 $cli = Join-Path $PSScriptRoot 'kpi-analytics.cmd'
 Push-Location (Split-Path $cli)
-& .\kpi-analytics.cmd score --csv ..\wq_data.csv --output ..\output\wq_scored.csv --json
+& .\kpi-analytics.cmd score --output ..\output\wq_scored.csv --json
 if ($LASTEXITCODE -ne 0) { throw "kpi-analytics failed: $LASTEXITCODE" }
 Pop-Location
 ```
