@@ -1,0 +1,94 @@
+# Developer tooling only — not a product runtime dependency.
+# Product code remains Python 3.13 standard library only (see RULES.md).
+#
+# From kpi-analytics\:
+#   py -3.13 -m pylint kpi_modules
+
+[MAIN]
+jobs = 1
+py-version = 3.13
+ignore = __pycache__
+[MESSAGES CONTROL]
+# PEP-8 / style gate only. Design/refactor (too-many-*, consider-using-*) out of scope.
+# import-outside-toplevel intentionally omitted (smoke-check patterns).
+disable = all
+
+enable =
+    line-too-long,
+    missing-function-docstring,
+    missing-class-docstring,
+    missing-module-docstring,
+    invalid-name,
+    trailing-whitespace,
+    missing-final-newline,
+    multiple-statements,
+    bad-indentation,
+    wrong-import-order,
+    ungrouped-imports,
+    wrong-import-position,
+    unused-import,
+    unused-variable,
+    unused-argument,
+    redefined-builtin,
+    use-implicit-booleaness-not-comparison-to-zero,
+    use-implicit-booleaness-not-comparison-to-string,
+    syntax-error,
+    undefined-variable,
+    used-before-assignment,
+    no-member,
+    not-callable,
+    assignment-from-no-return,
+    assignment-from-none,
+    unexpected-keyword-arg,
+    too-many-function-args,
+    no-value-for-parameter
+
+[FORMAT]
+max-line-length = 100
+indent-string = "    "
+expected-line-ending-format =
+
+[BASIC]
+good-names =
+    i,
+    j,
+    k,
+    n,
+    x,
+    _,
+    T,
+    N,
+    T_safe,
+    id,
+    db,
+    ex,
+    Run,
+    fh,
+    tf,
+    cp,
+    sp,
+    p,
+    ok,
+    cfg,
+    kq,
+    thr,
+    oi,
+    bi,
+    ar,
+    ss,
+    ds,
+    cs,
+    eps,
+    exp,
+    act,
+    mid
+
+[DESIGN]
+max-args = 8
+max-locals = 40
+max-branches = 20
+max-statements = 120
+
+[REPORTS]
+reports = no
+score = yes
