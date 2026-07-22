@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import sys
 import tempfile
 from pathlib import Path
@@ -9,11 +10,13 @@ from typing import Any
 
 from . import __version__
 from .config import DEFAULT_CONFIG_PATH, load_config
+from .io_csv import read_csv_rows
+
+_STDLIB_SMOKE = ("csv", "json", "argparse", "statistics")
 
 
-def _check(
-    name: str, passed: bool, detail: str
-) -> dict[str, Any]:
+def _check(name: str, passed: bool, detail: str) -> dict[str, Any]:
+    """Build one probe check result dict."""
     return {"Name": name, "Passed": passed, "Detail": detail}
 
 
@@ -39,12 +42,11 @@ def run_probe(
 
     # Stdlib import smoke
     try:
-        import csv  # noqa: F401
-        import json  # noqa: F401
-        import argparse  # noqa: F401
-        import statistics  # noqa: F401
-
-        checks.append(_check("StdlibImports", True, "csv, json, argparse, statistics"))
+        for mod_name in _STDLIB_SMOKE:
+            importlib.import_module(mod_name)
+        checks.append(
+            _check("StdlibImports", True, ", ".join(_STDLIB_SMOKE))
+        )
     except Exception as exc:  # pragma: no cover
         checks.append(_check("StdlibImports", False, str(exc)))
 
@@ -90,8 +92,6 @@ def run_probe(
             checks.append(_check("CsvPath", False, f"Not found: {p}"))
         else:
             try:
-                from .io_csv import read_csv_rows
-
                 fields, rows = read_csv_rows(p)
                 checks.append(
                     _check(
@@ -116,8 +116,7 @@ def run_probe(
 
     # Package importable
     try:
-        import kpi_modules  # noqa: F401
-
+        importlib.import_module("kpi_modules")
         checks.append(
             _check("PackageImport", True, f"kpi_modules {__version__}")
         )
