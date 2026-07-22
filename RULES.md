@@ -120,7 +120,7 @@ Update the **owner** document for a change. Cross-link; do not duplicate full co
 | Markdown structure | Per [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md); language-tagged code fences |
 | Links | Relative from the file’s directory (`./CLI-GUIDE.md`, `../README.md`) |
 | Paths in prose | Consistent separators within a file; Windows-style examples are fine |
-| PowerShell | Target **5.1**; no PowerShell 7-only syntax in `excel-toolkit\` |
+| PowerShell | Target **5.1**; no PowerShell 7-only syntax in `excel-toolkit\`. Save product `.ps1`/`.psm1` as **UTF-8 with BOM** (or pure ASCII). PowerShell 5.1 reads BOM-less UTF-8 as system ANSI and can **fail to parse** on Unicode punctuation (arrows, em dashes). |
 | Python | Target **3.13**; **standard library only** in product `kpi-analytics\` code |
 | Python style | PEP-8 via **pylint** against [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc) — see [Python style gate (pylint)](#python-style-gate-pylint) |
 | Examples | Prefer placeholders (`C:\path\to\...`) plus one concrete repo-relative example |

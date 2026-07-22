@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     High-level Excel Toolkit operations for PowerShell and CLI consumers.
@@ -274,7 +274,7 @@ function Export-ExcelFromCsv {
 
     .PARAMETER Force
         Overwrite the exact OutputPath if it already exists. Without -Force, an
-        existing path is not replaced: a free sibling path is chosen (name_1.ext, …).
+        existing path is not replaced: a free sibling path is chosen (name_1.ext, ...).
 
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -SchemaPath .\schema.json -UseDisplayNames -OutputPath .\out.xlsx -DryRun
@@ -523,7 +523,7 @@ function Import-CsvFromExcel {
 
     .PARAMETER Force
         Overwrite the exact OutputPath if it already exists. Without -Force, an
-        existing path is not replaced: a free sibling path is chosen (name_1.csv, …).
+        existing path is not replaced: a free sibling path is chosen (name_1.csv, ...).
 
     .OUTPUTS
         PSCustomObject with Success, ExcelPath, OutputPath, RequestedOutputPath,

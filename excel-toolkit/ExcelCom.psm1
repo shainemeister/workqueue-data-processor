@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     Excel COM automation toolkit for Windows PowerShell 5.1.
@@ -30,7 +30,7 @@
     HUMAN EDIT: New-ExcelApplication -Visible defaults; close timeouts below.
 
 .CHANGELOG
-    1.0.0  Initial release — lifecycle, cells, sheets, format, CSV, preflight
+    1.0.0  Initial release - lifecycle, cells, sheets, format, CSV, preflight
     1.1.0  Enterprise harden: remove P/Invoke + force-kill; graceful Quit/retry/notify
     1.2.0  Optional workbook open/save password; support protected import/export fixtures
 #>
@@ -58,7 +58,7 @@ function ConvertTo-ExcelColumnLetter {
     $columnName = ''
     while ($dividend -gt 0) {
         $modulo = ($dividend - 1) % 26
-        # Cast char to string first — PS 5.1 treats [char]+'' as numeric, not concat
+        # Cast char to string first - PS 5.1 treats [char]+'' as numeric, not concat
         $columnName = ([string][char](65 + $modulo)) + $columnName
         $dividend = [int][math]::Floor(($dividend - $modulo) / 26)
     }
@@ -176,7 +176,7 @@ function ConvertFrom-SecureStringPlain {
 function ConvertTo-SecureStringPlain {
     <#
     .SYNOPSIS
-        Build a SecureString from a plain password string (CLI edge). Empty/null → $null.
+        Build a SecureString from a plain password string (CLI edge). Empty/null -> $null.
     #>
     [CmdletBinding()]
     param(
@@ -261,7 +261,7 @@ function New-ExcelApplication {
         throw ("Failed to create Excel.Application. Is Microsoft Excel installed? {0}" -f $_.Exception.Message)
     }
 
-    # Automation defaults — reduce popups and UI churn
+    # Automation defaults - reduce popups and UI churn
     $app.Visible = [bool]$Visible
     $app.DisplayAlerts = $DisplayAlerts
     $app.ScreenUpdating = $ScreenUpdating
@@ -497,7 +497,7 @@ function Close-ExcelWorkbook {
     }
 
     Write-Verbose 'Closing workbook...'
-    # Close(SaveChanges) — we already handled save above
+    # Close(SaveChanges) - we already handled save above
     $Workbook.Close($false)
     Release-ComObjectSafe -ComObject $Workbook
 }
@@ -630,7 +630,7 @@ function Stop-ExcelApplication {
     [GC]::Collect()
     [GC]::WaitForPendingFinalizers()
 
-    # Only warn when Quit did not succeed cleanly (do not scan all EXCEL processes —
+    # Only warn when Quit did not succeed cleanly (do not scan all EXCEL processes -
     # the user may have a legitimate workbook open).
     if (-not $quitOk) {
         $msg = 'Excel did not report a clean Quit. If a file is locked, close Excel yourself. These tools do not force-kill Excel.'
@@ -795,7 +795,7 @@ function Rename-ExcelWorksheet {
 
     Write-Verbose ("Renaming sheet to: {0}" -f $NewName)
     $Worksheet.Name = $NewName
-    # Do not return the COM worksheet — callers already hold $Worksheet, and
+    # Do not return the COM worksheet - callers already hold $Worksheet, and
     # returning it dumps a huge property list to the host when uncaptured.
 }
 
@@ -872,7 +872,7 @@ function Set-ExcelCell {
 
     .NOTES
         Uses Cells.Item(row,col) assignment rather than Range.Value2 setter.
-        PowerShell's COM binder can throw InvalidCastException (Int32→String)
+        PowerShell's COM binder can throw InvalidCastException (Int32->String)
         when assigning numbers to Range.Value2 in some module/StrictMode contexts.
     #>
     [CmdletBinding()]
@@ -1346,7 +1346,7 @@ function Export-WorksheetToCsv {
                 throw 'Worksheet has no UsedRange to export.'
             }
             $addr = $used.Address($false, $false)
-            # Address may be like $A$1:$C$10 or Sheet!$A$1:$C$10 — strip $
+            # Address may be like $A$1:$C$10 or Sheet!$A$1:$C$10 - strip $
             $clean = $addr -replace '\$', ''
             if ($clean -match '([^!]+!)?([A-Za-z]+\d+):([A-Za-z]+\d+)') {
                 $data = Get-ExcelRange -Worksheet $Worksheet -StartAddress $Matches[2] -EndAddress $Matches[3]

@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     Export a CSV file to Excel (wrapper around Export-ExcelFromCsv).

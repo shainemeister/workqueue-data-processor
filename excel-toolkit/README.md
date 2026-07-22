@@ -47,7 +47,7 @@ PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including
 
 | Option | What it does |
 |--------|----------------|
-| **1** | **Score CSV → Excel (KPI pipeline)** — select one or more CSVs under `import\`, run sibling `kpi-analytics` score, export scored + summary workbooks under `output\` |
+| **1** | **Score CSV -> Excel (KPI pipeline)** - select one or more CSVs under `import\`, run sibling `kpi-analytics` score, export scored + summary workbooks under `output\` |
 | **2** | Export CSV → Excel (data CSV headers) |
 | **3** | Export CSV → Excel (schema display headers) |
 | **4** | Import Excel → CSV (password prompt if needed; default CSV under `import\`) |

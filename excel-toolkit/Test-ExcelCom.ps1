@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
     Dry-run preflight and full smoke tests for ExcelCom.psm1.

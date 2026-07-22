@@ -243,3 +243,4 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.2 | `import-excel` / `Import-CsvFromExcel`; optional workbook open password on open/save; password never logged or written to JSON |
 | 1.2.1 | Refuse overwrite of existing output files unless `-Force` (or interactive menu confirm) |
 | 1.3.0 | Default collision policy: unique numerical suffix (`name_N.ext`) instead of refuse; menu Score→Excel may subprocess local `kpi-analytics.cmd`; `-Force` still exact-path replace only |
+| 1.3.0a | Product scripts saved UTF-8 **with BOM** / ASCII-safe punctuation so Windows PowerShell 5.1 `-File` parses reliably (BOM-less UTF-8 + Unicode arrows/dashes caused menu parse failures) |

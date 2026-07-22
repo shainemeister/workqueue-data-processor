@@ -1,7 +1,7 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
-    Interactive menu for Excel CSV export, Excel→CSV import, schema, and diagnostics.
+    Interactive menu for Excel CSV export, Excel->CSV import, schema, and diagnostics.
 
 .DESCRIPTION
     Double-click Start-ExcelMenu.cmd (recommended) or run this script under
@@ -173,7 +173,7 @@ function Get-SchemaFieldsForDisplay {
     .SYNOPSIS
         Load schema fields for menu preview. Always returns a flat object[].
     .NOTES
-        Do not use "return ,$array" — the unary comma nests the array so callers
+        Do not use "return ,$array" - the unary comma nests the array so callers
         see Count=1 and cannot read .field_name on rows.
     #>
     param(
@@ -225,7 +225,7 @@ function Get-SchemaFieldsForDisplay {
         }
     }
 
-    # Flat array — never wrap with unary comma
+    # Flat array - never wrap with unary comma
     return @($list.ToArray())
 }
 
@@ -266,7 +266,7 @@ function Invoke-ToolScript {
 
     $argList = New-Object System.Collections.Generic.List[string]
     # Child is a new process (needs its own process-scoped policy).
-    # Bypass here is process-only — does not change machine policy.
+    # Bypass here is process-only - does not change machine policy.
     $argList.Add('-NoLogo')
     $argList.Add('-NoProfile')
     $argList.Add('-ExecutionPolicy')
@@ -512,7 +512,7 @@ function Select-CsvInputsForPipeline {
             Write-Host ("  {0,2}) {1}  ({2:N0} bytes, {3})" -f ($i + 1), $item.Name, $item.Length, $item.LastWriteTime)
         }
         Write-Host ''
-        Write-Host 'Enter number(s) e.g. 1 or 1,2 — or a full path to a CSV:' -ForegroundColor DarkGray
+        Write-Host 'Enter number(s) e.g. 1 or 1,2 - or a full path to a CSV:' -ForegroundColor DarkGray
         $raw = Read-Host 'Selection'
     }
     else {
@@ -564,7 +564,7 @@ function Select-CsvInputsForPipeline {
 
 function Invoke-KpiScoreExportMenu {
     Write-Host ''
-    Write-Host 'Score CSV → Excel (KPI pipeline)' -ForegroundColor Cyan
+    Write-Host 'Score CSV -> Excel (KPI pipeline)' -ForegroundColor Cyan
     Write-Host 'Runs kpi-analytics score, then exports scored + summary CSVs to Excel.' -ForegroundColor DarkGray
     Write-Host 'Engines stay separate: Python scores; Excel COM formats workbooks.' -ForegroundColor DarkGray
     Write-Host 'Existing outputs are kept; new files use a free numerical suffix when needed.' -ForegroundColor DarkGray
@@ -1075,7 +1075,7 @@ function Show-Menu {
     Write-Host '================================================' -ForegroundColor Cyan
     Write-Host '  Excel Data Tools' -ForegroundColor Cyan
     Write-Host '================================================' -ForegroundColor Cyan
-    Write-Host '  1) Score CSV → Excel (KPI pipeline)'
+    Write-Host '  1) Score CSV -> Excel (KPI pipeline)'
     Write-Host '  2) Export CSV to Excel'
     Write-Host '  3) Export CSV to Excel (schema display headers)'
     Write-Host '  4) Import Excel to CSV (password prompt if needed)'
