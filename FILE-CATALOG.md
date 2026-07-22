@@ -148,6 +148,7 @@ Minimal probes for locked-down corporate PCs: can `.cmd`, `.ps1`, and `.psm1` ex
 | [SCORE-METHODOLOGY.md](./kpi-analytics/SCORE-METHODOLOGY.md) | doc | Implementation methodology: V1 priority columns, `kpi_q_*` impacts, and summary CSV. |
 | [RCM_KPI_Claim_Impact_Methodology.md](./kpi-analytics/RCM_KPI_Claim_Impact_Methodology.md) | doc | Dual-attribution theory for Days in AR and aging-percentage claim impacts. |
 | [kpi-analytics.cmd](./kpi-analytics/kpi-analytics.cmd) | launcher | Shim: prefer `py -3.13 -m kpi_modules`, else `python -m kpi_modules`. |
+| [.pylintrc](./kpi-analytics/.pylintrc) | config | **Dev tooling only** — PEP-8 style gate for `kpi_modules` (not a product runtime dependency). |
 
 ---
 
