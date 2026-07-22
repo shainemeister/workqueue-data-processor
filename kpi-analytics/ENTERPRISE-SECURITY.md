@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Enterprise Security
 description: Security review notes and execution restrictions for KPI Analytics on controlled corporate PCs.
-version: "1.5.1"
+version: "1.6.0"
 status: current
 audience:
   - security
@@ -11,6 +11,7 @@ doc_type: security
 related:
   - README.md
   - CLI-GUIDE.md
+  - diagnostics/README.md
 last_updated: "2026-07-22"
 ---
 
@@ -18,18 +19,20 @@ last_updated: "2026-07-22"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate desktops.
 
-**Toolkit version:** 1.5.1  
+**Toolkit version:** 1.6.0  
 **Toolkit folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\`  
 **Runtime:** Python **3.13** standard library only (no third-party packages)
 
-**Related docs:** [README.md](./README.md) · [CLI-GUIDE.md](./CLI-GUIDE.md)
+**Related docs:** [README.md](./README.md) · [CLI-GUIDE.md](./CLI-GUIDE.md) · [diagnostics/README.md](./diagnostics/README.md)
 
 ## Summary
 
-KPI Analytics is designed for **locked-down corporate desktops**. It processes Work Queue CSVs **locally** with **Python 3.13 standard library only**: no pip installs, no network calls, no credential access, no privilege elevation, and no Microsoft Office automation. Allowed behavior is limited to reading user-supplied data/config, writing scored/summary/synthetic CSVs under user-chosen paths, and optional process-local CLI launch via `kpi-analytics.cmd`.
+KPI Analytics is designed for **locked-down corporate desktops**. It processes Work Queue CSVs **locally** with **Python 3.13 standard library only**: no pip installs, no network calls, no credential access, no privilege elevation, and no Microsoft Office automation. Allowed behavior is limited to reading user-supplied data/config, writing scored/summary/synthetic CSVs under user-chosen paths, writing an optional **enterprise diagnostics certificate** under `kpi-analytics\diagnostics\`, and process-local CLI launch via `kpi-analytics.cmd`.
 
-This document states the **trust boundary**, lists high-risk patterns the toolkit **does not** use (download-and-run, force-kill, policy bypass, etc.), what IT still must allow (Python + script path), and a minimal validation sequence for security review. Sibling Excel export risks live under `excel-toolkit\ENTERPRISE-SECURITY.md`, not here.
+Operational commands (`score`, `generate`, `validate-score`) are **gated** on a valid diagnostics pass for the current toolkit and Python version. Diagnostics auto-run when the certificate is missing or stale and document each check as PASS/FAIL for IT without reading claim PHI.
+
+This document states the **trust boundary**, lists high-risk patterns the toolkit **does not** use (download-and-run, force-kill, policy bypass, etc.), what IT still must allow (Python + script path + write to `diagnostics\`), and a minimal validation sequence for security review. Sibling Excel export risks live under `excel-toolkit\ENTERPRISE-SECURITY.md`, not here.
 
 ---
 
@@ -71,12 +74,13 @@ This is a design audit, not a penetration-test report. It mirrors the trust mode
 | **Policy** | Does **not** change execution policy, GPO, or registry policy. |
 | **Network** | No downloads, HTTP clients, remote modules, or package index access. |
 | **Identity** | Does not read credentials, tokens, or browser stores. |
-| **Scope of files** | Reads user-supplied CSV/config/schema; writes scored, summary, and synthetic CSVs under chosen paths (default repo `output\`); may use `%TEMP%` for probe checks. |
+| **Scope of files** | Reads user-supplied CSV/config/schema; writes scored, summary, and synthetic CSVs under chosen paths (default repo `output\`); writes diagnostics certificates under `kpi-analytics\diagnostics\`; may use `%TEMP%` for probe checks. |
 | **Office** | **Does not** automate Microsoft Excel or other Office apps. |
 | **Dependencies** | **Standard library only** for Python 3.13. |
-| **Surfaces** | CLI (`kpi-analytics.cmd` / `python -m kpi_modules`), importable package, fixtures under `fixtures\`. |
+| **Surfaces** | CLI (`kpi-analytics.cmd` / `python -m kpi_modules`), importable package, fixtures under `fixtures\`, diagnostics under `diagnostics\`. |
+| **Diagnostics privacy** | Certificate records environment and import results only — **no claim rows or PHI**. |
 
-Processing includes priority scoring, RCM claim-impact columns, vertical summary reporting, synthetic data generation, and local validation—all offline.
+Processing includes priority scoring, RCM claim-impact columns, vertical summary reporting, synthetic data generation, enterprise diagnostics, and local validation—all offline.
 
 ---
 
@@ -107,6 +111,7 @@ Synthetic `generate` creates **fake** WQ rows (`Doe,John*` / `Doe,Jane*`, DOB da
 | Local import of `kpi_modules` | Load package | Path allowlisting if AppLocker/WDAC is strict |
 | Read CSV / JSON | Inputs | User file ACLs |
 | Write scored / summary / synthetic CSV | Outputs | Write access to output folder |
+| Write `kpi-analytics\diagnostics\` | Enterprise pass/fail certificate | Write access to toolkit diagnostics folder |
 | Optional `.cmd` launcher | Convenience | Batch allowlisting if restricted |
 
 ---
@@ -147,15 +152,20 @@ KPI Analytics does not depend on PowerShell execution policy. The `.cmd` shim on
 
 ```bat
 kpi-analytics.cmd version
+kpi-analytics.cmd diagnostics --json
+rem If OverallPass is false, collect diagnostics\last_diagnostics.txt for IT
 kpi-analytics.cmd probe --csv ..\wq_data.csv --json
 kpi-analytics.cmd validate-score --json
 kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\rcm_impact_config.json --output ..\output\rcm_demo_scored.csv --json
 ```
 
 3. Confirm:  
+   - `diagnostics\last_diagnostics.txt` shows **OverallPass: PASS** (or auto-created on first gated command)  
    - Detail CSV contains `v1_priority_score` and `kpi_q_*`  
    - Summary CSV is vertical (section / metric / value / explanation)  
    - Optional: `validate-score` against `fixtures\rcm_impact_expected.json`  
+
+**Diagnostics gate:** `score` / `generate` / `validate-score` auto-run diagnostics when the certificate is missing or does not match the current toolkit/Python versions. They do not proceed when critical checks fail. Emergency bypass: `--skip-diagnostics-gate` (support only).  
 
 ---
 
@@ -172,12 +182,13 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | Vertical summary CSV | Audit-friendly KPI explanations without wide sheets |
 | Full priority audit columns | Reconstructable scores |
 | Exit codes 0 / 1 / 2 | Aligns with `excel-toolkit` automation style |
+| Enterprise diagnostics + gate | First-run proof of runtime/imports; durable IT-friendly PASS/FAIL report |
 
 ---
 
 ## 8. What to tell IT / security reviewers
 
-> KPI Analytics scores and analyzes Work Queue CSV data locally using only the Python 3.13 standard library. It runs as the logged-on user, does not elevate, does not install packages, does not download code, does not access credentials, and does not automate Microsoft Office. Implementation lives under `kpi-analytics\kpi_modules\` with a thin CLI. Outputs are scored claim CSVs, optional vertical summary CSVs, and optional synthetic test data. Excel export, if required, is a separate documented step via `excel-toolkit\`.
+> KPI Analytics scores and analyzes Work Queue CSV data locally using only the Python 3.13 standard library. It runs as the logged-on user, does not elevate, does not install packages, does not download code, does not access credentials, and does not automate Microsoft Office. Implementation lives under `kpi-analytics\kpi_modules\` with a thin CLI. On first operational use it can write an enterprise diagnostics report under `kpi-analytics\diagnostics\` (environment and import checks only—no claim PHI). Outputs are scored claim CSVs, optional vertical summary CSVs, optional synthetic test data, and that diagnostics certificate. Excel export, if required, is a separate documented step via `excel-toolkit\`.
 
 ---
 
@@ -192,6 +203,7 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | `kpi-analytics\kpi_modules\` | Python package |
 | `kpi-analytics\kpi-analytics.cmd` | Windows shim |
 | `kpi-analytics\fixtures\` | Validation fixtures |
+| `kpi-analytics\diagnostics\` | Enterprise dry-run certificate (generated reports gitignored) |
 | `excel-toolkit\ENTERPRISE-SECURITY.md` | Sibling Excel toolkit notes |
 | This file | Security / restriction reference |
 
@@ -207,3 +219,4 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | 1.3.0–1.4.0 | Portfolio `kpi_q_*` evolution |
 | 1.5.0 | RCM dual-attribution alignment (static + exact Δ; Days in AR; balance-weighted aging) |
 | 1.5.1 | Vertical summary CSV; documentation refresh |
+| 1.6.0 | Enterprise `diagnostics` command, durable pass/fail report, operational command gate |
