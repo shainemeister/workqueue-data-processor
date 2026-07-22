@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.1.0"
+version: "1.2.1"
 status: current
 audience:
   - security
@@ -18,7 +18,7 @@ last_updated: "2026-07-22"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.1.0  
+**Toolkit version:** 1.2.1  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
@@ -28,7 +28,7 @@ Reference for security reviews, AppLocker/WDAC discussions, and controlled corpo
 
 ## Summary
 
-The Excel Toolkit is designed for **locked-down corporate desktops**. It converts user-supplied CSV data to formatted Excel workbooks **locally** via Microsoft Excel COM: no downloads, no credential access, no privilege elevation, and no permanent execution-policy changes. Allowed behavior is limited to reading user-chosen CSV/schema paths, writing workbooks under user-chosen paths, process-scoped launcher Bypass on `.cmd` entry points, and local module import.
+The Excel Toolkit is designed for **locked-down corporate desktops**. It converts user-supplied CSV data to formatted Excel workbooks **and** can import Excel workbooks back to CSV **locally** via Microsoft Excel COM: no downloads, no credential store access, no privilege elevation, and no permanent execution-policy changes. Allowed behavior is limited to reading user-chosen CSV/schema/Excel paths, writing workbooks or CSVs under user-chosen paths, optional workbook open-password handling in process memory only, process-scoped launcher Bypass on `.cmd` entry points, and local module import.
 
 This document states the **trust boundary**, lists high-risk patterns the toolkit **does not** use (force-kill Office, P/Invoke, download-and-run, silent MOTW unblock, etc.), what IT still must allow (PowerShell + Excel COM + script path), and a minimal validation sequence for security review. Sibling KPI analytics risks live under `kpi-analytics\ENTERPRISE-SECURITY.md`, not here.
 
@@ -71,10 +71,11 @@ This is not a formal penetration-test report; it is a design audit of the PowerS
 | **Privilege** | Runs as the **current user**. No UAC elevation, no admin rights required. |
 | **Policy** | Does **not** permanently change `ExecutionPolicy`, GPO, or registry policy. |
 | **Network** | No downloads, no HTTP clients, no remote modules. |
-| **Identity** | Does not read credentials, tokens, or browser stores. |
-| **Scope of files** | Reads user-supplied CSV/schema paths; writes workbooks under chosen output paths (default repo `output\` or caller path) and uses `%TEMP%` for tests. |
+| **Identity** | Does not read credentials, tokens, or browser stores. Workbook open passwords are accepted only via interactive SecureString prompt or optional CLI `-Password` for automation. |
+| **Scope of files** | Reads user-supplied CSV/schema/Excel paths; writes export workbooks under chosen paths (default repo `output\`); writes **import-excel** CSVs under chosen paths (default repo `import\`); uses `%TEMP%` for tests. |
 | **Office** | Automates **local** Microsoft Excel via COM when installed for the user. |
 | **Surfaces** | Interactive menu, **CLI** (`ExcelToolkit.ps1` / `excel-toolkit.cmd`), and **modules** (`ExcelToolkit.psm1`, `ExcelCom.psm1`). |
+| **Passwords** | Held in process memory only for the COM open/save call; **never** written to JSON, logs, host success messages, or disk. |
 
 ---
 
@@ -92,7 +93,8 @@ These are commonly flagged by enterprise security reviews, EDR, AppLocker/WDAC, 
 | **Download-and-run** (`Invoke-WebRequest`, `WebClient`, etc.) | Supply-chain / malware delivery pattern | **Not present.** |
 | **Permanent `Set-ExecutionPolicy`** | Changes host trust policy | **Not present.** Process-scoped flags only from launchers (menu + CLI `.cmd`). |
 | **HKLM / machine configuration writes** | Requires admin; policy surface | **Not present.** |
-| **Credential access / secret scraping** | Credential theft pattern | **Not present.** |
+| **Credential access / secret scraping** | Credential theft pattern | **Not present** for OS/browser credential stores. Optional workbook open password is user-supplied only for Excel COM open/save. |
+| **Logging secrets** | Password leakage via logs/telemetry | Passwords are **never** logged or included in `-Json` output (`PasswordUsed` is boolean only). |
 | **`FinalReleaseComObject` thrash + forced process hide** | Obscure COM abuse patterns | Simple `ReleaseComObject` + light GC only for RCW cleanup. |
 
 ### Excel process lifecycle (current design)
@@ -122,7 +124,8 @@ These are **intentional** and required for the product to work. They are not obf
 | **Local `Import-Module` of `.psm1`** | Load `ExcelCom.psm1` / `ExcelToolkit.psm1` | Script/module allowlisting if AppLocker/WDAC is strict |
 | **Process-scoped `-ExecutionPolicy Bypass` on `.cmd` launchers** | Double-click menu and CLI without changing machine policy | GPO may override; allowlist or signing may still be required |
 | **Child `powershell.exe -File ...` from the menu/CLI** | Run export/tests in an isolated process | Same script allowlisting as parent |
-| **Read/write CSV and `.xlsx` under user-chosen paths** | Data export | Normal user file ACLs |
+| **Read/write CSV and `.xlsx` under user-chosen paths** | Data export and import | Normal user file ACLs |
+| **Workbook open password (COM)** | Open/save password-protected workbooks | User or operator supplies password; process memory only |
 | **`AutomationSecurity` force-disable macros when opening files** | Reduce macro risk during automation | Generally **security-positive**; keep |
 
 ---
@@ -209,7 +212,7 @@ Then:
 
 **Short statement you can reuse:**
 
-> The Excel Toolkit automates the user's installed Excel via COM to convert CSV data to `.xlsx`. It runs as the logged-on user, does not elevate, does not change machine execution policy, does not download code, and does not force-kill Office processes. Scripts are plain PowerShell 5.1 under `excel-toolkit\`, with an interactive menu, a high-level module, and a thin CLI for automation. Close behavior is Quit with a single retry and a user warning if Excel remains open. Process-scoped Bypass is used only so double-click launch works where GPO allows; AppLocker/WDAC still applies.
+> The Excel Toolkit automates the user's installed Excel via COM to convert CSV data to `.xlsx` and to import Excel workbooks to CSV. It runs as the logged-on user, does not elevate, does not change machine execution policy, does not download code, and does not force-kill Office processes. Workbook open passwords (when needed) stay in process memory only and are never logged. Scripts are plain PowerShell 5.1 under `excel-toolkit\`, with an interactive menu, a high-level module, and a thin CLI for automation. Close behavior is Quit with a single retry and a user warning if Excel remains open. Process-scoped Bypass is used only so double-click launch works where GPO allows; AppLocker/WDAC still applies.
 
 ---
 
@@ -220,7 +223,7 @@ Then:
 | `excel-toolkit\README.md` | User guide + module consumer notes |
 | `excel-toolkit\CLI-GUIDE.md` | CLI syntax and automation examples |
 | `excel-toolkit\ExcelCom.psm1` | Low-level COM module |
-| `excel-toolkit\ExcelToolkit.psm1` | High-level export/version API |
+| `excel-toolkit\ExcelToolkit.psm1` | High-level export/import/version API |
 | `excel-toolkit\ExcelToolkit.ps1` / `excel-toolkit.cmd` | CLI entry points |
 | `excel-toolkit\Start-ExcelMenu.cmd` | Interactive launcher |
 | `sample-test\` | Execution-only probes for locked-down PCs |
@@ -236,3 +239,5 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 |---------|--------|
 | 1.0 | Initial findings after enterprise audit; folder renamed to `excel-toolkit`; force-kill and P/Invoke removed |
 | 1.1 | CLI + `ExcelToolkit.psm1`; docs use YAML frontmatter; enterprise close path unchanged; no force-kill / auto-unblock |
+| 1.2 | `import-excel` / `Import-CsvFromExcel`; optional workbook open password on open/save; password never logged or written to JSON |
+| 1.2.1 | Refuse overwrite of existing output files unless `-Force` (or interactive menu confirm) |

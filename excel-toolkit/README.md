@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, interactive menu, module API, and CLI.
-version: "1.1.0"
+version: "1.2.1"
 status: current
 audience:
   - users
@@ -15,14 +15,14 @@ last_updated: "2026-07-22"
 
 # Excel Toolkit (`excel-toolkit`)
 
-PowerShell 5.1 toolkit: export CSV data to Excel, readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
+PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.1.0  
+**Toolkit version:** 1.2.1  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
-**Column layout is always driven by your CSV file.** An optional JSON schema can supply display labels. No column names are hard-coded in the engine.
+**Column layout for export is always driven by your CSV file.** An optional JSON schema can supply display labels. No column names are hard-coded in the engine. Import reads the worksheet used range as-is.
 
 ---
 
@@ -31,7 +31,7 @@ PowerShell 5.1 toolkit: export CSV data to Excel, readiness checks, and Excel CO
 | Audience | Entry point |
 |----------|-------------|
 | Interactive users | `Start-ExcelMenu.cmd` (or root `Start-ExcelMenu.cmd`) |
-| Other PowerShell scripts | `Import-Module .\ExcelToolkit.psm1` → `Export-ExcelFromCsv` |
+| Other PowerShell scripts | `Import-Module .\ExcelToolkit.psm1` → `Export-ExcelFromCsv` / `Import-CsvFromExcel` |
 | Python / Task Scheduler / cmd | CLI: `excel-toolkit.cmd` / `ExcelToolkit.ps1` — see [CLI-GUIDE.md](./CLI-GUIDE.md) |
 | Smoke / self-test | `Test-ExcelCom.ps1` (menu option 2, or run directly) |
 
@@ -45,16 +45,16 @@ PowerShell 5.1 toolkit: export CSV data to Excel, readiness checks, and Excel CO
 
 | Option | What it does |
 |--------|----------------|
-| **1** | Check readiness (dry-run smoke) |
-| **2** | Run full self-test |
-| **3** | Export CSV → Excel (data CSV headers) |
-| **4** | Export CSV → Excel (schema display headers) |
-| **5** | Open the `output` folder |
-| **6** | Show environment / policy info |
-| **7** | Schema: show source, preview fields, switch JSON/CSV |
+| **1** | Export CSV → Excel (data CSV headers) |
+| **2** | Export CSV → Excel (schema display headers) |
+| **3** | Import Excel → CSV (prompts for password when needed; default CSV under `import\`) |
+| **4** | Open the `output` folder |
+| **5** | Show environment / policy info |
+| **6** | Schema: show source, preview fields, switch JSON/CSV |
+| **7** | Diagnostics… (readiness dry-run / full self-test) |
 | **0** | Exit |
 
-3. Open the `.xlsx` file under **`output\`**.
+3. Open export workbooks under **`output\`**; imported CSVs default under **`import\`**.
 
 The `.cmd` launcher starts PowerShell with a **process-only** execution policy setting for that window. It does **not** permanently change organization policy.
 
@@ -73,6 +73,8 @@ Designed for controlled PCs (no admin, no permanent policy change). Full write-u
 | Excel close | `Quit` → wait → **one** reattempt → **notify user** if still open |
 | Force-kill | **Never** kills `EXCEL.EXE` |
 | P/Invoke / `Add-Type` | **Not used** |
+| Workbook passwords | Interactive SecureString prompt or optional CLI `-Password`; never logged or written to JSON |
+| Overwrite safety | Existing output files are **not** replaced unless `-Force` (CLI/module) or the user confirms in the menu |
 | Auto Unblock-File | **Not used** (unblock manually if Windows marks files from the internet) |
 | Network / downloads | Not used |
 | Macros | Automation sets Excel to not run macros when opening files |
@@ -87,7 +89,7 @@ If Excel stays open after a run, close it yourself (or via Task Manager), then r
 |------|--------|
 | Windows PowerShell 5.1 | Built into Windows (`powershell.exe`) |
 | Microsoft Excel | Desktop Excel for the current user (COM automation) |
-| Your data files | A `.csv` (required for export); optional JSON/CSV schema for display names |
+| Your data files | A `.csv` for export, and/or `.xlsx` under `import\` for import; optional JSON/CSV schema for export display names |
 
 ---
 
@@ -98,7 +100,7 @@ If Excel stays open after a run, close it yourself (or via Task Manager), then r
 | **Data CSV** | Source of truth for column **order** and technical header names |
 | **Schema** (optional JSON **or** CSV) | Maps `field_name` → display label only; does not add/remove columns |
 
-Use **menu option 7** to preview the schema, see the file path, and switch between **JSON** and **CSV** schema formats for the session (options 3/4 honor that choice).
+Use **menu option 6** to preview the schema, see the file path, and switch between **JSON** and **CSV** schema formats for the session (options 1/2 honor that choice).
 
 **JSON schema** — `fields` array with `field_name` plus a label property.
 
@@ -123,9 +125,9 @@ Extra data-CSV columns not listed in the schema are still exported. Schema-only 
 | `Start-ExcelMenu.cmd` | Double-click menu launcher |
 | `Start-ExcelMenu.ps1` | Interactive menu |
 | `excel-toolkit.cmd` | CLI shim for automation |
-| `ExcelToolkit.ps1` | CLI (`version`, `probe`, `export-csv`) |
-| `ExcelToolkit.psm1` | High-level module (`Export-ExcelFromCsv`, version) |
-| `ExcelCom.psm1` | Low-level Excel COM primitives |
+| `ExcelToolkit.ps1` | CLI (`version`, `probe`, `export-csv`, `import-excel`) |
+| `ExcelToolkit.psm1` | High-level module (`Export-ExcelFromCsv`, `Import-CsvFromExcel`, version) |
+| `ExcelCom.psm1` | Low-level Excel COM primitives (including optional workbook passwords) |
 | `Export-CsvToExcel.ps1` | Thin export wrapper (menu / legacy) |
 | `Export-WqDataToExcel.ps1` | Compatibility forwarder |
 | `Test-ExcelCom.ps1` | Smoke tests |
@@ -158,6 +160,12 @@ $r = Export-ExcelFromCsv `
     -UseDisplayNames
 
 if (-not $r.Success) { throw $r.Message }
+
+# Excel → CSV (prompts for password when the workbook requires one; prefer import\ paths)
+$in = Import-CsvFromExcel `
+    -ExcelPath (Join-Path $PSScriptRoot '..\import\wq_synthetic_data.xlsx') `
+    -OutputPath (Join-Path $PSScriptRoot '..\import\from_xlsx_smoke.csv')
+if (-not $in.Success) { throw $in.Message }
 ```
 
 ### `Export-ExcelFromCsv` result object
@@ -173,6 +181,21 @@ if (-not $r.Success) { throw $r.Message }
 | `HeadersSample` | string[] | First few header labels (display or technical) |
 | `SheetName` | string | Worksheet tab name |
 | `SchemaFormat` | string | Resolved schema format when applicable |
+
+### `Import-CsvFromExcel` result object
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Success` | bool | `$true` if the operation succeeded |
+| `ExcelPath` | string | Source workbook path |
+| `OutputPath` | string | Destination CSV path |
+| `RowCount` | int | Data rows imported (excluding header) |
+| `ColumnCount` | int | Column count |
+| `SheetName` | string | Worksheet used |
+| `DryRun` | bool | `$true` if no file was written |
+| `Message` | string | Human-readable status or error |
+| `HeadersSample` | string[] | First few header labels |
+| `PasswordUsed` | bool | `$true` if a password was supplied or prompted (**value never returned**) |
 
 Low-level cell/workbook control:
 
@@ -202,17 +225,18 @@ cd excel-toolkit
 excel-toolkit.cmd version
 excel-toolkit.cmd probe -CsvPath ..\wq_data.csv -Json
 excel-toolkit.cmd export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx -Json
+excel-toolkit.cmd import-excel -ExcelPath ..\import\wq_synthetic_data.xlsx -OutputPath ..\import\from_xlsx_smoke.csv -Json
 ```
 
 | Exit code | Meaning |
 |-----------|---------|
 | 0 | Success |
-| 1 | Validation / preflight |
+| 1 | Validation / preflight / missing password in non-interactive mode |
 | 2 | Runtime (COM/save) |
 
 ### Using from Python
 
-See **CLI-GUIDE.md § 6.3 Python orchestration**. Pattern: Python writes CSV → subprocess CLI `export-csv` → `.xlsx`.
+See **CLI-GUIDE.md § 6.3 Python orchestration**. Pattern: Python writes CSV → subprocess CLI `export-csv` → `.xlsx`, or `import-excel` → CSV.
 
 ---
 
