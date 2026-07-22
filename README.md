@@ -40,7 +40,7 @@ Data is defined by a small contract: [wq_schema.json](./wq_schema.json) describe
 | Sample data | `wq_data.csv` | Example WQ rows (headers match schema `field_name`) |
 | Design (optional reading) | `WQ_Priority_Matrix_Concept.md` | Priority matrix roadmap (V1–V3); V1 is implemented |
 
-Outputs from runs typically go under `output\` (regenerable; not the source of truth).
+Tracked **inputs** (e.g. synthetic demo CSV) live under `import\`. Run **outputs** (scored CSVs, Excel) go under `output\` (regenerable; not the source of truth).
 
 ## Prerequisites
 
@@ -59,15 +59,19 @@ From the repository root, a common flow is: **generate test data → score → e
 ```bat
 cd kpi-analytics
 kpi-analytics.cmd diagnostics
-kpi-analytics.cmd generate --rows 100 --output ..\output\wq_data_synthetic.csv
-kpi-analytics.cmd score --csv ..\output\wq_data_synthetic.csv --output ..\output\wq_scored.csv
+rem Score the tracked synthetic input (default --csv is import\wq_synthetic_data.csv)
+kpi-analytics.cmd score --output ..\output\wq_scored.csv
+
+rem Optional: refresh synthetic input under import\
+kpi-analytics.cmd generate --rows 250 --seed 42
 
 cd ..\excel-toolkit
 excel-toolkit.cmd export-csv -CsvPath ..\output\wq_scored.csv -OutputPath ..\output\wq_scored.xlsx
 ```
 
 - Interactive Excel menu: `Start-ExcelMenu.cmd` (root) or `excel-toolkit\Start-ExcelMenu.cmd`
-- Score your own extract: point `--csv` at your file (see [kpi-analytics CLI guide](./kpi-analytics/CLI-GUIDE.md))
+- Score your own extract: `score --csv path\to\file.csv` (see [kpi-analytics CLI guide](./kpi-analytics/CLI-GUIDE.md))
+- Input folder: [import/](./import/) · sample schema row file: [wq_data.csv](./wq_data.csv)
 
 ## Your data
 

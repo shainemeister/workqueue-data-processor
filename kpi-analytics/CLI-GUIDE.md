@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "1.7.0"
+version: "1.8.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-22"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 1.7.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 1.8.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -96,8 +96,9 @@ cd /d C:\path\to\workqueue-data-processor\kpi-analytics
 
 kpi-analytics.cmd version
 kpi-analytics.cmd diagnostics --json
-kpi-analytics.cmd probe --csv ..\wq_data.csv --json
-kpi-analytics.cmd score --csv ..\wq_data.csv --output ..\output\wq_scored.csv --json
+kpi-analytics.cmd probe --json
+kpi-analytics.cmd score --output ..\output\wq_scored.csv --json
+kpi-analytics.cmd score --csv ..\import\wq_synthetic_data.csv --output ..\output\wq_scored.csv --json
 kpi-analytics.cmd validate-score --json
 ```
 
@@ -107,7 +108,8 @@ kpi-analytics.cmd validate-score --json
 
 ```bat
 cd /d C:\path\to\workqueue-data-processor\kpi-analytics
-py -3.13 -m kpi_modules score --csv ..\wq_data.csv --output ..\output\wq_scored.csv --json
+py -3.13 -m kpi_modules score --output ..\output\wq_scored.csv --json
+py -3.13 -m kpi_modules score --csv ..\import\wq_synthetic_data.csv --output ..\output\wq_scored.csv --json
 ```
 
 Working directory should be **`kpi-analytics\`** (so `kpi_modules` imports), or set `PYTHONPATH`.
@@ -154,10 +156,10 @@ Prefer **`--json`** stdout for machine-readable details.
 python -m kpi_modules version [--json]
 ```
 
-Without `--json`, prints the bare version string (e.g. `1.7.0`).
+Without `--json`, prints the bare version string (e.g. `1.8.0`).
 
 ```json
-{"Success":true,"Version":"1.7.0","Command":"version"}
+{"Success":true,"Version":"1.8.0","Command":"version"}
 ```
 ---
 
@@ -207,8 +209,8 @@ Exit **0** if `OverallPass`; **1** if any critical check fails.
   "Success": true,
   "OverallPass": true,
   "Command": "diagnostics",
-  "Version": "1.7.0",
-  "ToolkitVersion": "1.7.0",
+  "Version": "1.8.0",
+  "ToolkitVersion": "1.8.0",
   "PythonVersion": "3.13.0",
   "ReportJsonPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.json",
   "ReportTextPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.txt",
@@ -249,7 +251,7 @@ Scores a data CSV:
 - Vertical **summary** CSV (default on)
 
 ```text
-python -m kpi_modules score --csv <path> [--output <path>]
+python -m kpi_modules score [--csv <path>] [--output <path>]
     [--config <path>] [--summary <path>] [--no-summary]
     [--privacy | --no-privacy]
     [--dry-run] [--json] [--quiet]
@@ -257,7 +259,7 @@ python -m kpi_modules score --csv <path> [--output <path>]
 
 | Option | Required | Default | Description |
 |--------|----------|---------|-------------|
-| `--csv` | **Yes** | — | Input data CSV |
+| `--csv` | No | `\<repo>\import\wq_synthetic_data.csv` | Input data CSV (tracked synthetic demo when present) |
 | `--output` | No | `\<repo>\output\wq_scored.csv` | Claim-level scored CSV |
 | `--summary` | No | `<output_stem>_summary.csv` | Vertical summary CSV |
 | `--no-summary` | No | off | Skip summary file |
@@ -275,13 +277,14 @@ python -m kpi_modules score --csv <path> [--output <path>]
 **Examples**
 
 ```bat
-kpi-analytics.cmd score --csv ..\wq_data.csv --output ..\output\wq_scored.csv --json
+kpi-analytics.cmd score --json
 
-kpi-analytics.cmd score --csv ..\wq_data.csv --output ..\output\wq_scored.csv --no-privacy --json
+kpi-analytics.cmd score --csv ..\import\wq_synthetic_data.csv --output ..\output\wq_scored.csv --json
 
-kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv ^
-  --output ..\output\wq_scored_pro250.csv ^
-  --summary ..\output\wq_scored_pro250_summary.csv --privacy --json
+kpi-analytics.cmd score --no-privacy --json
+
+kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
+  --output ..\output\wq_scored.csv --privacy --json
 ```
 
 **JSON shape (illustrative)**
@@ -290,8 +293,8 @@ kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv ^
 {
   "Success": true,
   "Command": "score",
-  "Version": "1.7.0",
-  "InputPath": "C:\\...\\wq_data.csv",
+  "Version": "1.8.0",
+  "InputPath": "C:\\...\\import\\wq_synthetic_data.csv",
   "OutputPath": "C:\\...\\output\\wq_scored.csv",
   "SummaryPath": "C:\\...\\output\\wq_scored_summary.csv",
   "RowCount": 250,
@@ -350,14 +353,15 @@ python -m kpi_modules generate [--rows <n>] [--output <path>]
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--rows` | `100` | Data rows to create |
-| `--output` | `\<repo>\output\wq_data_synthetic.csv` | Destination |
+| `--output` | `\<repo>\import\wq_synthetic_data.csv` | Destination (tracked **input** folder; refresh carefully) |
 | `--schema` | `\<repo>\wq_schema.json` | Field list / types |
 | `--template-csv` | `wq_data.csv` if present | Column **order** only |
 | `--seed` | `42` | Reproducible RNG |
 | `--append` | off | Append; continues Doe name index |
 | `--dry-run` | off | No write |
 
-Patients: `Doe,John{N}` / `Doe,Jane{N}`. DOB: Excel serial with day-of-month **01**.
+Patients: `Doe,John{N}` / `Doe,Jane{N}`. DOB: Excel serial with day-of-month **01**.  
+Use a path under `output\` only for one-off dumps you do not intend to track.
 
 ---
 
@@ -422,8 +426,8 @@ kpi-analytics.cmd score --csv D:\exports\wq_export.csv --output ..\output\wq_sco
 ### 6.3 Synthetic volume then score
 
 ```bat
-kpi-analytics.cmd generate --rows 250 --seed 42 --output ..\output\wq_data_synthetic_pro250.csv
-kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv --output ..\output\wq_scored_pro250.csv --json
+kpi-analytics.cmd generate --rows 250 --seed 42
+kpi-analytics.cmd score --output ..\output\wq_scored.csv --json
 ```
 
 ### 6.4 PowerShell orchestration
@@ -499,7 +503,7 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 | Exit 1 on `diagnostics` | Read `diagnostics\last_diagnostics.txt` FAIL lines |
 | Exit 1 on gated command with DiagnosticsGate blocked | Fix environment; re-run `diagnostics --force` |
 | Exit 1 on `probe` | Python 3.13+? Paths valid? |
-| Exit 1 on `score` | `--csv` set? Config valid? File not locked? Gate passed? |
+| Exit 1 on `score` | Default `import\wq_synthetic_data.csv` present, or pass `--csv`? Config valid? File not locked? Gate passed? |
 | Exit 1 on `validate-score` | Fixture expected outdated? Use `--no-expected` for integrity only |
 | `No module named kpi_modules` | Start in `kpi-analytics\` |
 | Days in AR unrealistic | Set `kpi_quantifiers.adc`; read `adc_source` in summary |
@@ -510,4 +514,4 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and package version are aligned at **1.7.0**. Bump when changing verbs, exit codes, JSON field names, diagnostics gate behavior, privacy defaults, or `kpi_q_*` / summary contracts.
+CLI and package version are aligned at **1.8.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, or `kpi_q_*` / summary contracts.

@@ -166,7 +166,8 @@ If pylint is not installed on a developer machine, install it into the **develop
 5. **Fixtures** under `kpi-analytics\fixtures\` are golden. Scoring changes must keep `validate-score` green or deliberately refresh expected JSON with a documented reason.  
 6. **No real PHI/PII, credentials, tokens, or production dumps** in the repository. Samples are synthetic or non-sensitive illustrations.  
 7. **Synthetic data** remains obviously non-production (existing de-identification conventions in `synthesize.py`).  
-8. **`output\`** is regenerable workspace only—not source of truth and not versioned.
+8. **`import\`** holds tracked **input** CSVs (synthetic demos or deliberately shared non-PHI extracts). Prefer synthetic data; **never** commit real PHI/PII there. Default `score` / `generate` paths target `import\wq_synthetic_data.csv`.  
+9. **`output\`** is regenerable workspace only (scored CSVs, summaries, Excel)—not source of truth and not versioned.
 
 ---
 
@@ -218,6 +219,7 @@ Additional rules:
 |-------|----------------|
 | Source (`.py`, `.ps1`, `.psm1`, `.cmd`) | `output\` |
 | Schema, sample data, fixtures | `__pycache__\`, `*.pyc` |
+| `import\` synthetic / non-PHI inputs | Real PHI/PII extracts under `import\` (or anywhere) |
 | Docs, templates, `.gitignore` | `.venv\`, `venv\`, `.env` |
 | | Secrets, IDE-only folders already ignored |
 | | `kpi-analytics\diagnostics\last_diagnostics.*` (regenerable certificates) |

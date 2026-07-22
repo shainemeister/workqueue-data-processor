@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics
 description: Python 3.13 stdlib toolkit for Work Queue priority scoring, RCM claim-level KPI impacts, synthetic data, and validation.
-version: "1.7.0"
+version: "1.8.0"
 status: current
 audience:
   - users
@@ -27,7 +27,7 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 6. **Enterprise diagnostics** — first-run runtime/import dry-run with a durable pass/fail report and a gate on operational commands.  
 7. **PHI field masking** — optional score-output masking of patient name and DOB (config-driven; default on).
 
-**Toolkit version:** 1.7.0  
+**Toolkit version:** 1.8.0  
 **Product folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\` (implementation; name differs from the product folder on purpose)
 
@@ -97,23 +97,24 @@ cd /d C:\path\to\workqueue-data-processor\kpi-analytics
 
 kpi-analytics.cmd version
 kpi-analytics.cmd diagnostics --json
-kpi-analytics.cmd probe --csv ..\wq_data.csv --json
+kpi-analytics.cmd probe --json
 
-rem Optional: synthetic professional-billing volume
-kpi-analytics.cmd generate --rows 250 --seed 42 --output ..\output\wq_data_synthetic.csv
+rem Optional: refresh tracked synthetic input under import\
+kpi-analytics.cmd generate --rows 250 --seed 42
 
-rem Score: detail CSV + vertical summary CSV
-kpi-analytics.cmd score --csv ..\output\wq_data_synthetic.csv --output ..\output\wq_scored.csv --json
+rem Score: default --csv is ..\import\wq_synthetic_data.csv
+kpi-analytics.cmd score --output ..\output\wq_scored.csv --json
 
 kpi-analytics.cmd validate-score --json
 ```
 
-Outputs (by default):
+Paths (by default):
 
 | File | Content |
 |------|---------|
+| `..\import\wq_synthetic_data.csv` | Tracked synthetic **input** (default for `score` / `generate`) |
 | `diagnostics\last_diagnostics.json` / `.txt` | Enterprise pass/fail certificate (auto-created on first operational run) |
-| `..\output\wq_scored.csv` | One row per claim: source fields (patient/DOB masked by default) + `v1_*` + `kpi_q_*` |
+| `..\output\wq_scored.csv` | Scored **output**: source fields (patient/DOB masked by default) + `v1_*` + `kpi_q_*` |
 | `..\output\wq_scored_summary.csv` | Vertical summary: section, metric, value, unit, formula, explanation |
 
 `score`, `generate`, and `validate-score` require a valid diagnostics **pass** for this toolkit + Python version. If the certificate is missing, failed, or stale, diagnostics **auto-runs** and the command proceeds only when critical checks pass. Use `diagnostics --force` to re-check; `--skip-diagnostics-gate` is emergency/support only.
@@ -196,8 +197,10 @@ De-identified **professional billing** style rows for testing:
 | Aging | Includes inventory through **365–730** days |
 
 ```bat
-kpi-analytics.cmd generate --rows 250 --seed 42 --output ..\output\wq_data_synthetic.csv
-kpi-analytics.cmd generate --rows 200 --append --output ..\output\wq_data_synthetic.csv
+kpi-analytics.cmd generate --rows 250 --seed 42
+kpi-analytics.cmd generate --rows 200 --append
+rem one-off dump elsewhere:
+kpi-analytics.cmd generate --rows 100 --output ..\output\wq_data_synthetic_tmp.csv
 ```
 
 ---
@@ -333,7 +336,7 @@ kpi-analytics.cmd validate-score --csv fixtures\rcm_impact_example.csv --config 
 | Dependencies | Stdlib only — no pip |
 | Network | Not used |
 | Office | Not automated |
-| Files | User-chosen CSV/config paths; default outputs under repo `output\` |
+| Files | Default input under repo `import\`; default score outputs under `output\` |
 | First-run gate | `diagnostics` certificate under `diagnostics\`; auto-run on operational commands |
 
 Full write-up: **[ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)**.

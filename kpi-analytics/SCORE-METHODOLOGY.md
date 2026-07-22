@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "1.7.0"
+version: "1.8.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 1.7.0  
+**Toolkit version:** 1.8.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -105,7 +105,7 @@ Data CSV
 
 ```bat
 cd kpi-analytics
-kpi-analytics.cmd score --csv ..\output\wq_data_synthetic_pro250.csv --output ..\output\wq_scored.csv --json
+kpi-analytics.cmd score --csv ..\import\wq_synthetic_data.csv --output ..\output\wq_scored.csv --json
 kpi-analytics.cmd validate-score
 ```
 
@@ -459,3 +459,4 @@ Checks include:
 | 1.5.1 | Vertical summary CSV; documentation refresh |
 | 1.6.0 | Toolkit version align; enterprise diagnostics gate (no formula change) |
 | 1.7.0 | Score-output PHI masking (`privacy`); patient prefix+token; DOB omit; `--privacy` / `--no-privacy` CLI |
+| 1.8.0 | Default score/generate paths use tracked `import\wq_synthetic_data.csv` (no formula change) |
