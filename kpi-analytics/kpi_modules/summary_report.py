@@ -104,7 +104,8 @@ def build_summary_rows(
                 "config",
                 str(config_path),
                 explanation=(
-                    "JSON config for priority weights and RCM KPI settings (ADC, aging thresholds, etc.)."
+                    "JSON config for priority weights and RCM KPI settings "
+                    "(ADC, aging thresholds, etc.)."
                 ),
             )
         )
@@ -136,7 +137,8 @@ def build_summary_rows(
             summary.get("column_count"),
             unit="columns",
             explanation=(
-                "Number of columns in the scored detail CSV (source data plus score and KPI fields)."
+                "Number of columns in the scored detail CSV "
+                "(source data plus score and KPI fields)."
             ),
         )
     )
@@ -150,8 +152,9 @@ def build_summary_rows(
             unit="currency",
             formula="Total AR = sum of claim balances",
             explanation=(
-                "Portfolio total outstanding AR at the snapshot. By default each claim uses out_ins_amt "
-                "(outstanding insurance). Negative balances may be excluded depending on credit_policy."
+                "Portfolio total outstanding AR at the snapshot. "
+                "By default each claim uses out_ins_amt (outstanding insurance). "
+                "Negative balances may be excluded depending on credit_policy."
             ),
         )
     )
@@ -228,7 +231,8 @@ def build_summary_rows(
                 formula="Sum of each claim's share of total AR (%)",
                 explanation=(
                     "Audit total of claim-level kpi_q_share_total_ar_pct. "
-                    "Should be about 100 when the portfolio has positive total AR—confirms shares add up."
+                    "Should be about 100 when the portfolio has positive total AR—"
+                    "confirms shares add up."
                 ),
             )
         )
@@ -242,7 +246,8 @@ def build_summary_rows(
                 formula="Sum of each claim's Days-in-AR impact (balance / ADC)",
                 explanation=(
                     "Audit total of claim-level kpi_q_days_in_ar (pos + neg). "
-                    "Must match kpi_days_in_ar above—confirms per-claim quantifiers rebuild the portfolio KPI."
+                    "Must match kpi_days_in_ar above—confirms per-claim quantifiers "
+                    "rebuild the portfolio KPI."
                 ),
             )
         )
@@ -260,7 +265,8 @@ def build_summary_rows(
                 ),
                 explanation=(
                     f"Audit total of kpi_q_aged{thr}_contrib_pct across all claims. "
-                    f"Must match the portfolio KPI kpi_ar_over_{thr}_pct—confirms dollar-weighted aging adds up."
+                    f"Must match the portfolio KPI kpi_ar_over_{thr}_pct—"
+                    "confirms dollar-weighted aging adds up."
                 ),
             )
         )
@@ -288,7 +294,8 @@ def build_summary_rows(
             formula="If claim age >= T: same as share of total AR; otherwise 0",
             explanation=(
                 "This claim's current dollar weight inside the AR-over-T problem. "
-                "Only aged claims get a non-zero value. Adding these across claims rebuilds AR-over-T %."
+                "Only aged claims get a non-zero value. "
+                "Adding these across claims rebuilds AR-over-T %."
             ),
         )
     )
@@ -300,9 +307,10 @@ def build_summary_rows(
             unit="days",
             formula="Claim balance / ADC (split into positive and negative parts)",
             explanation=(
-                "How many Days in AR this claim accounts for. If the balance is paid to zero, "
-                "portfolio Days in AR improves by about this amount. "
-                "Pos holds favorable (usual) amounts; neg is used if balances can be negative."
+                "How many Days in AR this claim accounts for. "
+                "If the balance is paid to zero, portfolio Days in AR improves "
+                "by about this amount. Pos holds favorable (usual) amounts; "
+                "neg is used if balances can be negative."
             ),
         )
     )
@@ -312,12 +320,16 @@ def build_summary_rows(
             "kpi_q_aged{T}_delta_pp_pos / _neg",
             "",
             unit="percentage points",
-            formula="Closed-form change in AR-over-T % if this claim balance goes to 0",
+            formula=(
+                "Closed-form change in AR-over-T % if this claim balance goes to 0"
+            ),
             explanation=(
-                "Estimated movement in the AR-over-T percentage if this claim is fully resolved today. "
-                "Aged claims usually show a positive impact (metric improves). "
-                "Younger claims can show a negative impact (paying them can raise the aged % by shrinking total AR). "
-                "These deltas do not add up to the aging % itself—they answer 'what if we resolve this claim?'"
+                "Estimated movement in the AR-over-T percentage if this claim is "
+                "fully resolved today. Aged claims usually show a positive impact "
+                "(metric improves). Younger claims can show a negative impact "
+                "(paying them can raise the aged % by shrinking total AR). "
+                "These deltas do not add up to the aging % itself—"
+                "they answer 'what if we resolve this claim?'"
             ),
         )
     )
@@ -341,8 +353,9 @@ def build_summary_rows(
             "v1_raw_* / v1_norm_* / v1_weight_* / v1_contrib_*",
             "",
             explanation=(
-                "Priority score audit trail: original metric values, values scaled 0-1 within the batch, "
-                "weights applied this run, and each metric's contribution to v1_priority_score."
+                "Priority score audit trail: original metric values, "
+                "values scaled 0-1 within the batch, weights applied this run, "
+                "and each metric's contribution to v1_priority_score."
             ),
         )
     )
@@ -435,7 +448,10 @@ def build_summary_rows(
                     "mean_ar_days",
                     chaos.get("mean_ar_days"),
                     unit="days",
-                    explanation="Average claim age (AR days) in the batch; used when deciding chaos mode.",
+                    explanation=(
+                        "Average claim age (AR days) in the batch; "
+                        "used when deciding chaos mode."
+                    ),
                 )
             )
         for key in ("share_ar_ge_60", "share_ar_ge_90", "share_ar_ge_120"):
@@ -449,7 +465,8 @@ def build_summary_rows(
                         unit="fraction (0-1)",
                         explanation=(
                             f"Fraction of claims aged {bucket}+ days. "
-                            "High values can trigger chaos mode and raise permanent-loss priority weights."
+                            "High values can trigger chaos mode and raise "
+                            "permanent-loss priority weights."
                         ),
                     )
                 )
@@ -473,8 +490,9 @@ def build_summary_rows(
             "rcm_methodology",
             "RCM_KPI_Claim_Impact_Methodology.md",
             explanation=(
-                "Full RCM theory: Days in AR, aging percentages, static share vs exact impact "
-                "when a claim is resolved (including why young claims can show a negative aging impact)."
+                "Full RCM theory: Days in AR, aging percentages, static share vs "
+                "exact impact when a claim is resolved (including why young claims "
+                "can show a negative aging impact)."
             ),
         )
     )
@@ -484,7 +502,8 @@ def build_summary_rows(
             "score_methodology",
             "SCORE-METHODOLOGY.md",
             explanation=(
-                "How priority scoring works and how kpi_q_* columns are named and implemented in this toolkit."
+                "How priority scoring works and how kpi_q_* columns are named "
+                "and implemented in this toolkit."
             ),
         )
     )
