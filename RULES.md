@@ -224,6 +224,7 @@ A remote is optional. When one exists, do not assume write access to `main`/`mas
 |-------------|----------------------|
 | KPI scoring, columns, config | `kpi-analytics.cmd validate-score` (fixtures) |
 | KPI environment / packaging | `kpi-analytics.cmd probe` |
+| KPI enterprise first-run / gate | `kpi-analytics.cmd diagnostics` (certificate under `diagnostics\`) |
 | Excel COM / export path | `excel-toolkit.cmd probe` and/or `Test-ExcelCom.ps1 -DryRun` |
 | Enterprise execution risk | `excel-toolkit\sample-test\` probes as appropriate |
 | Schema or sample data | Headers match schema; score and/or export still consume sample paths |
