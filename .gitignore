@@ -7,6 +7,10 @@ __pycache__/
 # Generated toolkit outputs
 output/
 
+# Enterprise diagnostics certificates (regenerable on each machine)
+kpi-analytics/diagnostics/last_diagnostics.json
+kpi-analytics/diagnostics/last_diagnostics.txt
+
 # OS / editor
 Thumbs.db
 Desktop.ini
