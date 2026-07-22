@@ -145,6 +145,73 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     kq.setdefault("emit_exact_delta", True)
     kq.setdefault("dual_sign_columns", True)
 
+    # PHI field masking on score output (patient / DOB); not Safe Harbor.
+    privacy = out.setdefault("privacy", {})
+    if not isinstance(privacy, dict):
+        raise ValueError("privacy must be an object")
+    privacy.setdefault("enabled", True)
+    privacy.setdefault("patient_field", "patient")
+    privacy.setdefault("dob_field", "dob")
+
+    p_patient = privacy.setdefault("patient", {})
+    if not isinstance(p_patient, dict):
+        raise ValueError("privacy.patient must be an object")
+    p_patient.setdefault("mode", "prefix_token")
+    p_mode = str(p_patient["mode"]).lower()
+    if p_mode not in ("prefix_token", "omit", "passthrough"):
+        raise ValueError(
+            "privacy.patient.mode must be "
+            "'prefix_token', 'omit', or 'passthrough'"
+        )
+    p_patient["mode"] = p_mode
+    p_patient.setdefault("name_order", "last_first")
+    name_order = str(p_patient["name_order"]).lower()
+    if name_order not in ("last_first", "first_last"):
+        raise ValueError(
+            "privacy.patient.name_order must be "
+            "'last_first' or 'first_last'"
+        )
+    p_patient["name_order"] = name_order
+    p_patient.setdefault("prefix_len", 3)
+    p_patient["prefix_len"] = int(p_patient["prefix_len"])
+    if p_patient["prefix_len"] < 1:
+        raise ValueError("privacy.patient.prefix_len must be >= 1")
+    p_patient.setdefault("token_digits", 3)
+    p_patient["token_digits"] = int(p_patient["token_digits"])
+    if p_patient["token_digits"] < 1:
+        raise ValueError("privacy.patient.token_digits must be >= 1")
+    p_patient.setdefault("token_mode", "alpha_order")
+    token_mode = str(p_patient["token_mode"]).lower()
+    if token_mode not in ("alpha_order",):
+        raise ValueError(
+            "privacy.patient.token_mode must be 'alpha_order'"
+        )
+    p_patient["token_mode"] = token_mode
+    p_patient.setdefault("uppercase", True)
+    p_patient["uppercase"] = bool(p_patient["uppercase"])
+    p_patient.setdefault("pad_char", "X")
+    pad = str(p_patient.get("pad_char") or "X")
+    p_patient["pad_char"] = pad[:1] if pad else "X"
+    p_patient.setdefault("empty_policy", "leave_empty")
+    empty_pol = str(p_patient["empty_policy"]).lower()
+    if empty_pol not in ("leave_empty", "placeholder"):
+        raise ValueError(
+            "privacy.patient.empty_policy must be "
+            "'leave_empty' or 'placeholder'"
+        )
+    p_patient["empty_policy"] = empty_pol
+
+    p_dob = privacy.setdefault("dob", {})
+    if not isinstance(p_dob, dict):
+        raise ValueError("privacy.dob must be an object")
+    p_dob.setdefault("mode", "omit")
+    d_mode = str(p_dob["mode"]).lower()
+    if d_mode not in ("omit", "passthrough"):
+        raise ValueError(
+            "privacy.dob.mode must be 'omit' or 'passthrough'"
+        )
+    p_dob["mode"] = d_mode
+
     return out
 
 

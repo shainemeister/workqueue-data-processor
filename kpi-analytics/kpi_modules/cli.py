@@ -180,6 +180,22 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not write the vertical summary CSV",
     )
+    privacy_group = p_score.add_mutually_exclusive_group()
+    privacy_group.add_argument(
+        "--privacy",
+        dest="privacy_override",
+        action="store_const",
+        const=True,
+        default=None,
+        help="Force PHI field masking on scored output (overrides config)",
+    )
+    privacy_group.add_argument(
+        "--no-privacy",
+        dest="privacy_override",
+        action="store_const",
+        const=False,
+        help="Disable PHI field masking on scored output (overrides config)",
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -427,6 +443,7 @@ def main(argv: list[str] | None = None) -> int:
                 dry_run=bool(getattr(args, "dry_run", False)),
                 summary_path=getattr(args, "summary_path", None),
                 write_summary=not bool(getattr(args, "no_summary", False)),
+                privacy_enabled=getattr(args, "privacy_override", None),
             )
             result["Version"] = __version__
             if gate:

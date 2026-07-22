@@ -71,5 +71,23 @@
     "emit_static_share": true,
     "emit_exact_delta": true,
     "dual_sign_columns": true
+  },
+  "privacy": {
+    "enabled": true,
+    "patient_field": "patient",
+    "dob_field": "dob",
+    "patient": {
+      "mode": "prefix_token",
+      "name_order": "last_first",
+      "prefix_len": 3,
+      "token_digits": 3,
+      "token_mode": "alpha_order",
+      "uppercase": true,
+      "pad_char": "X",
+      "empty_policy": "leave_empty"
+    },
+    "dob": {
+      "mode": "omit"
+    }
   }
 }

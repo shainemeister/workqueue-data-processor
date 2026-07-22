@@ -130,6 +130,51 @@ def build_summary_rows(
             explanation="How many claim rows were included in this batch.",
         )
     )
+    privacy = summary.get("privacy") or {}
+    rows.append(
+        _row(
+            "Run",
+            "privacy_enabled",
+            privacy.get("enabled"),
+            explanation=(
+                "Whether score output masked patient/DOB fields. "
+                "Operational PHI masking only — not a HIPAA Safe Harbor claim. "
+                "Input CSV is never modified."
+            ),
+        )
+    )
+    if privacy.get("enabled"):
+        rows.append(
+            _row(
+                "Run",
+                "privacy_patient_mode",
+                privacy.get("patient_mode"),
+                explanation=(
+                    "Patient name mode: prefix_token (e.g. DOE001,JOH001), "
+                    "omit, or passthrough. Tokens are batch-relative."
+                ),
+            )
+        )
+        rows.append(
+            _row(
+                "Run",
+                "privacy_dob_mode",
+                privacy.get("dob_mode"),
+                explanation="DOB mode on scored output: omit (blank) or passthrough.",
+            )
+        )
+        rows.append(
+            _row(
+                "Run",
+                "privacy_unique_patients",
+                privacy.get("unique_patients"),
+                unit="persons",
+                explanation=(
+                    "Count of distinct normalized patient names that received "
+                    "alpha-order tokens in this batch."
+                ),
+            )
+        )
     rows.append(
         _row(
             "Run",

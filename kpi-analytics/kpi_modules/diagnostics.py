@@ -46,6 +46,7 @@ PACKAGE_MODULES: tuple[str, ...] = (
     "kpi_modules.kpi_quantifiers",
     "kpi_modules.metrics",
     "kpi_modules.normalize",
+    "kpi_modules.privacy",
     "kpi_modules.probe",
     "kpi_modules.score_v1",
     "kpi_modules.summary_report",

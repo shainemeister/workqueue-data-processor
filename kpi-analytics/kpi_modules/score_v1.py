@@ -11,6 +11,7 @@ from .io_csv import read_csv_rows, write_csv_rows
 from .kpi_quantifiers import apply_quantifiers_to_rows
 from .metrics import compute_raw_metrics, detect_chaos_mode, resolve_as_of
 from .normalize import normalize_all
+from .privacy import apply_privacy_to_rows
 from .summary_report import default_summary_path, write_summary_csv
 
 
@@ -105,6 +106,9 @@ def score_rows(
     # Portfolio KPI quantifiers (sum across rows = dataset KPI; not priority)
     kpi_cols, kpi_totals = apply_quantifiers_to_rows(out_rows, raw_list, cfg)
 
+    # PHI masking on output only (after metrics / KPI Q; input CSV unchanged)
+    privacy_stats = apply_privacy_to_rows(out_rows, cfg)
+
     out_fields = list(fieldnames)
     for col in audit_cols + kpi_cols:
         if col not in out_fields:
@@ -125,6 +129,7 @@ def score_rows(
         "score_column": score_col,
         "kpi_totals": kpi_totals,
         "kpi_columns": kpi_cols,
+        "privacy": privacy_stats,
     }
     return out_fields, out_rows, summary
 
@@ -137,15 +142,25 @@ def score_csv(
     dry_run: bool = False,
     summary_path: str | Path | None = None,
     write_summary: bool = True,
+    privacy_enabled: bool | None = None,
 ) -> dict[str, Any]:
     """
     Score a data CSV and write an enriched CSV.
 
     Also writes a vertical summary CSV (metrics as rows) unless write_summary is False.
 
+    privacy_enabled: if not None, overrides config privacy.enabled (CLI --privacy /
+    --no-privacy). None keeps the JSON config value.
+
     Returns a result dict suitable for CLI JSON output.
     """
     cfg = load_config(config_path)
+    if privacy_enabled is not None:
+        privacy = cfg.setdefault("privacy", {})
+        if not isinstance(privacy, dict):
+            privacy = {}
+            cfg["privacy"] = privacy
+        privacy["enabled"] = bool(privacy_enabled)
     fieldnames, rows = read_csv_rows(csv_path)
     out_fields, out_rows, summary = score_rows(fieldnames, rows, cfg)
 
@@ -177,6 +192,19 @@ def score_csv(
         "Chaos": summary["chaos"],
         "KpiTotals": summary.get("kpi_totals") or {},
         "KpiColumns": summary.get("kpi_columns") or [],
+        "PrivacyEnabled": bool((summary.get("privacy") or {}).get("enabled")),
+        "PrivacyPatientMode": (summary.get("privacy") or {}).get(
+            "patient_mode"
+        ),
+        "PrivacyDobMode": (summary.get("privacy") or {}).get("dob_mode"),
+        "PrivacyUniquePatients": (summary.get("privacy") or {}).get(
+            "unique_patients"
+        ),
+        "PrivacyCliOverride": (
+            None
+            if privacy_enabled is None
+            else bool(privacy_enabled)
+        ),
         "Message": "Dry-run only; no file written." if dry_run else "Score complete.",
     }
 

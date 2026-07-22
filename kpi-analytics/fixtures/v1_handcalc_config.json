@@ -70,5 +70,8 @@
     "emit_static_share": true,
     "emit_exact_delta": true,
     "dual_sign_columns": true
+  },
+  "privacy": {
+    "enabled": false
   }
 }
