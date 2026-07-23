@@ -1,15 +1,24 @@
 # Work Queue Data Processor
 
-Score and prioritize Work Queue (WQ) denial and follow-up work on your own PC—then optionally open the results in Excel. Everything runs **offline** under your Windows user account: no cloud install, no pip packages for scoring, and no elevation.
+Local tools for professional-billing **Work Queue (WQ)** extracts: rank denial and follow-up items with an explainable priority score, attach RCM claim-level impact measures, and optionally export results to Excel.
+
+Runs offline on Windows under your user account. Scoring uses Python 3.13 standard library only (no pip packages). Excel export uses PowerShell and desktop Excel. No elevation and no cloud install.
 
 ## Summary
 
-This repository is a **simple CSV data contract** plus **two independent toolkits**. They work together through files (not one shared program):
+A WQ export is typically a wide CSV of open denials and follow-ups. This repository helps process that file locally in two steps:
 
-| Toolkit | What it does for you | You need |
-|---------|----------------------|----------|
-| **[kpi-analytics](./kpi-analytics/)** | Ranks work with explainable priority scores and RCM claim-impact columns; can generate safe demo data | Python **3.13** (standard library only) |
-| **[excel-toolkit](./excel-toolkit/)** | Turns a CSV into a formatted Excel workbook (or imports Excel back to CSV) | Windows PowerShell **5.1** + desktop **Microsoft Excel** |
+1. **Score** each row for work priority and for how the claim contributes to common RCM portfolio measures (for example total AR and aging buckets), with intermediate columns kept so the result can be checked.
+2. **Export** the scored (or any) CSV to a formatted Excel workbook when you need a spreadsheet for review or distribution.
+
+Implementation is a **shared column contract** (schema + sample rows) plus **two toolkits** that do not share a process; they exchange CSV (and Excel) files only:
+
+| Toolkit | Role | Runtime |
+|---------|------|---------|
+| **[kpi-analytics](./kpi-analytics/)** | Priority scores (`v1_*`), RCM claim-impact columns (`kpi_q_*`), synthetic demo data, validation, first-run diagnostics | Python **3.13** stdlib only |
+| **[excel-toolkit](./excel-toolkit/)** | CSV → formatted `.xlsx` (and Excel → CSV), menu and CLI, first-run diagnostics | PowerShell **5.1** + desktop Excel |
+
+Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single menu option runs that pipeline; each toolkit can also be used alone.
 
 | You want to… | Start here |
 |--------------|------------|
