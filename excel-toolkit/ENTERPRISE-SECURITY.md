@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.3.0"
+version: "1.4.0"
 status: current
 audience:
   - security
@@ -189,8 +189,10 @@ Use `sample-test\` first (hand-typeable probes):
 Then:
 
 1. Double-click `excel-toolkit\Start-ExcelMenu.cmd`, or  
-2. Run `excel-toolkit\excel-toolkit.cmd probe -Json`, then  
+2. Run `excel-toolkit\excel-toolkit.cmd diagnostics` (writes `diagnostics\last_diagnostics.*` pass/fail certificate), or `probe -Json` for a quick check, then  
 3. `export-csv` (dry-run then real) per [CLI-GUIDE.md](./CLI-GUIDE.md)
+
+**First-run gate:** `export-csv` / `import-excel` auto-run readiness diagnostics when no valid pass certificate exists for the current toolkit version. Delete the certificate files to force a re-run. Reports record environment/module/COM readiness only (no claim rows or PHI).
 
 ---
 

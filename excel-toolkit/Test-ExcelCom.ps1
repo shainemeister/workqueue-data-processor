@@ -62,6 +62,19 @@ if (-not (Test-Path -LiteralPath $modulePath)) {
 
 Import-Module -Name $modulePath -Force -ErrorAction Stop
 
+# Prefer ExcelToolkit diagnostics helpers when available (shared readiness + pass certificate)
+$toolkitModulePath = Join-Path $scriptDir 'ExcelToolkit.psm1'
+$useToolkitDiagnostics = $false
+if (Test-Path -LiteralPath $toolkitModulePath) {
+    try {
+        Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+        $useToolkitDiagnostics = $true
+    }
+    catch {
+        $useToolkitDiagnostics = $false
+    }
+}
+
 $results = New-Object System.Collections.Generic.List[object]
 $tempRoot = $null
 $excelPidBefore = @()
@@ -100,42 +113,51 @@ Write-Host ''
 #region Shared: environment + exports
 
 Write-Host 'Preflight' -ForegroundColor Cyan
-$envResult = Test-ExcelComEnvironment -CsvPath $sampleCsv -SchemaPath $sampleSchema
-foreach ($c in $envResult.Checks) {
-    Add-Result -Name ("Env:{0}" -f $c.Name) -Passed $c.Passed -Detail $c.Detail
-}
 
-$expectedFunctions = @(
-    'New-ExcelApplication',
-    'New-ExcelWorkbook',
-    'Open-ExcelWorkbook',
-    'Save-ExcelWorkbook',
-    'Close-ExcelWorkbook',
-    'Stop-ExcelApplication',
-    'Invoke-ExcelSafe',
-    'Get-ExcelWorksheet',
-    'Add-ExcelWorksheet',
-    'Rename-ExcelWorksheet',
-    'Get-ExcelCell',
-    'Set-ExcelCell',
-    'Get-ExcelRange',
-    'Set-ExcelRange',
-    'Set-ExcelHeaderStyle',
-    'Set-ExcelAutoFit',
-    'Import-CsvToWorksheet',
-    'Export-WorksheetToCsv',
-    'Test-ExcelComEnvironment'
-)
-
-$exported = @(Get-Command -Module ExcelCom | ForEach-Object { $_.Name })
-$missing = @($expectedFunctions | Where-Object { $exported -notcontains $_ })
-if ($missing.Count -eq 0) {
-    $exportDetail = "{0} functions exported" -f $exported.Count
+if ($useToolkitDiagnostics -and (Get-Command -Name Invoke-ExcelToolkitReadinessChecks -ErrorAction SilentlyContinue)) {
+    $readiness = @(Invoke-ExcelToolkitReadinessChecks -CsvPath $sampleCsv -SchemaPath $sampleSchema)
+    foreach ($c in $readiness) {
+        Add-Result -Name $c.Name -Passed ([bool]$c.Passed) -Detail ([string]$c.Detail)
+    }
 }
 else {
-    $exportDetail = "Missing: {0}" -f ($missing -join ', ')
+    $envResult = Test-ExcelComEnvironment -CsvPath $sampleCsv -SchemaPath $sampleSchema
+    foreach ($c in $envResult.Checks) {
+        Add-Result -Name ("Env:{0}" -f $c.Name) -Passed $c.Passed -Detail $c.Detail
+    }
+
+    $expectedFunctions = @(
+        'New-ExcelApplication',
+        'New-ExcelWorkbook',
+        'Open-ExcelWorkbook',
+        'Save-ExcelWorkbook',
+        'Close-ExcelWorkbook',
+        'Stop-ExcelApplication',
+        'Invoke-ExcelSafe',
+        'Get-ExcelWorksheet',
+        'Add-ExcelWorksheet',
+        'Rename-ExcelWorksheet',
+        'Get-ExcelCell',
+        'Set-ExcelCell',
+        'Get-ExcelRange',
+        'Set-ExcelRange',
+        'Set-ExcelHeaderStyle',
+        'Set-ExcelAutoFit',
+        'Import-CsvToWorksheet',
+        'Export-WorksheetToCsv',
+        'Test-ExcelComEnvironment'
+    )
+
+    $exported = @(Get-Command -Module ExcelCom | ForEach-Object { $_.Name })
+    $missing = @($expectedFunctions | Where-Object { $exported -notcontains $_ })
+    if ($missing.Count -eq 0) {
+        $exportDetail = "{0} functions exported" -f $exported.Count
+    }
+    else {
+        $exportDetail = "Missing: {0}" -f ($missing -join ', ')
+    }
+    Add-Result -Name 'ModuleExports' -Passed ($missing.Count -eq 0) -Detail $exportDetail
 }
-Add-Result -Name 'ModuleExports' -Passed ($missing.Count -eq 0) -Detail $exportDetail
 
 if ($DryRun) {
     Write-Host ''
@@ -143,6 +165,23 @@ if ($DryRun) {
     $failed = @($results | Where-Object { -not $_.Passed })
     Write-Host ''
     Write-Host ("Summary: {0} passed, {1} failed" -f ($results.Count - $failed.Count), $failed.Count) -ForegroundColor Cyan
+
+    # Stamp enterprise pass certificate when toolkit diagnostics are available
+    if ($useToolkitDiagnostics -and (Get-Command -Name Invoke-ExcelToolkitDiagnostics -ErrorAction SilentlyContinue)) {
+        try {
+            $diag = Invoke-ExcelToolkitDiagnostics -Write $true -CsvPath $sampleCsv -SchemaPath $sampleSchema
+            if ($diag.OverallPass) {
+                Write-Host ("Pass certificate: {0}" -f $diag.ReportTextPath) -ForegroundColor DarkGray
+            }
+            else {
+                Write-Host ("Diagnostics certificate recorded failure: {0}" -f $diag.ReportTextPath) -ForegroundColor Yellow
+            }
+        }
+        catch {
+            Write-Host ("Could not write diagnostics certificate: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+        }
+    }
+
     if ($failed.Count -gt 0) {
         exit 1
     }

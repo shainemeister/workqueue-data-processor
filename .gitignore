@@ -10,6 +10,8 @@ output/
 # Enterprise diagnostics certificates (regenerable on each machine)
 kpi-analytics/diagnostics/last_diagnostics.json
 kpi-analytics/diagnostics/last_diagnostics.txt
+excel-toolkit/diagnostics/last_diagnostics.json
+excel-toolkit/diagnostics/last_diagnostics.txt
 
 # OS / editor
 Thumbs.db

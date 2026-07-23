@@ -87,6 +87,20 @@ if ($Visible) { $params['Visible'] = $true }
 if ($DryRun) { $params['DryRun'] = $true }
 if ($Force) { $params['Force'] = $true }
 
+# First-run diagnostics gate (pass certificate under diagnostics\)
+$gate = Assert-ExcelToolkitDiagnosticsPass
+if (-not $gate.GateOk) {
+    Write-Host ''
+    Write-Host ("FAIL: {0}" -f $gate.Message) -ForegroundColor Red
+    if (-not [string]::IsNullOrWhiteSpace([string]$gate.ReportTextPath)) {
+        Write-Host ("  See: {0}" -f $gate.ReportTextPath) -ForegroundColor Yellow
+    }
+    exit 1
+}
+if ($gate.GateMode -eq 'ran') {
+    Write-Host ("Diagnostics auto-ran and passed. Report: {0}" -f $gate.ReportTextPath) -ForegroundColor DarkGray
+}
+
 $r = Export-ExcelFromCsv @params
 
 if ($r.Success) {

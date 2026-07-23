@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.1.4"
+version: "1.1.5"
 status: current
 audience:
   - developers
@@ -119,8 +119,9 @@ Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-
 | [CLI-GUIDE.md](./excel-toolkit/CLI-GUIDE.md) | doc | CLI contract: verbs, exit codes, JSON shapes, and automation examples. |
 | [ENTERPRISE-SECURITY.md](./excel-toolkit/ENTERPRISE-SECURITY.md) | doc | Trust boundary, disallowed patterns, and execution-policy guidance for COM automation. |
 | [ExcelCom.psm1](./excel-toolkit/ExcelCom.psm1) | module | Low-level Excel COM lifecycle, range I/O, CSV sheet import/export, optional workbook passwords, and safe Quit (no force-kill). |
-| [ExcelToolkit.psm1](./excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, `Resolve-ExcelToolkitUniquePath`, schema header maps, `Export-ExcelFromCsv`, and `Import-CsvFromExcel` (unique suffix unless `-Force`). |
-| [ExcelToolkit.ps1](./excel-toolkit/ExcelToolkit.ps1) | script | CLI entry: `version` / `probe` / `export-csv` / `import-excel` / `help` over `ExcelToolkit.psm1`. |
+| [ExcelToolkit.psm1](./excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, unique paths, export/import, and enterprise diagnostics gate (`Assert-ExcelToolkitDiagnosticsPass`, readiness suite). |
+| [ExcelToolkit.ps1](./excel-toolkit/ExcelToolkit.ps1) | script | CLI entry: `version` / `probe` / `diagnostics` / `export-csv` / `import-excel` / `help` over `ExcelToolkit.psm1`. |
+| [diagnostics/README.md](./excel-toolkit/diagnostics/README.md) | doc | Explains pass certificate files and first-run gate (json/txt are gitignored). |
 | [excel-toolkit.cmd](./excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](./excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
 | [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: **Score CSV → Excel** (option 1; multi-select CSV, subprocess `kpi-analytics` score, dual XLSX export), export, import (CSV defaults under `import\`), schema, Diagnostics; unique output paths (`name_N.ext`) by default. |
@@ -271,3 +272,4 @@ rem Existing destinations require -Force to overwrite
 | 1.1.2 | `import\` tracked inputs; default score/generate paths; toolkit 1.8.0 |
 | 1.1.3 | Synthetic import `.xlsx` fixtures; excel-toolkit 1.2.0 `import-excel` |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
+| 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |

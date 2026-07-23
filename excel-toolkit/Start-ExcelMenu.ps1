@@ -47,6 +47,35 @@ $modulePath   = Join-Path $scriptDir 'ExcelCom.psm1'
 $sessionSchemaFormat = 'Auto'   # Auto | Json | Csv
 $sessionSchemaPath   = $null    # full path; null = auto-resolve from format
 
+function Ensure-ExcelMenuDiagnosticsPass {
+    <#
+    .SYNOPSIS
+        First-run Excel diagnostics gate for menu Excel operations.
+        Returns $true if the operation may proceed.
+    #>
+    [CmdletBinding()]
+    param()
+
+    if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
+        Write-Host ("ExcelToolkit.psm1 not found: {0}" -f $toolkitModulePath) -ForegroundColor Red
+        return $false
+    }
+
+    Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+    $gate = Assert-ExcelToolkitDiagnosticsPass
+    if (-not $gate.GateOk) {
+        Write-Host ("FAIL: {0}" -f $gate.Message) -ForegroundColor Red
+        if (-not [string]::IsNullOrWhiteSpace([string]$gate.ReportTextPath)) {
+            Write-Host ("  See: {0}" -f $gate.ReportTextPath) -ForegroundColor Yellow
+        }
+        return $false
+    }
+    if ($gate.GateMode -eq 'ran') {
+        Write-Host ("Diagnostics auto-ran and passed. Report: {0}" -f $gate.ReportTextPath) -ForegroundColor DarkGray
+    }
+    return $true
+}
+
 function Wait-ForEnter {
     param([string]$Prompt = 'Press Enter to return to the menu...')
     Write-Host ''
@@ -321,6 +350,9 @@ function Invoke-ImportExcelMenu {
     if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
         throw ("ExcelToolkit.psm1 not found: {0}" -f $toolkitModulePath)
     }
+    if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
+        return
+    }
 
     if (-not (Test-Path -LiteralPath $importDir)) {
         New-Item -ItemType Directory -Path $importDir -Force | Out-Null
@@ -590,8 +622,13 @@ function Invoke-KpiScoreExportMenu {
     }
 
     Write-Host ''
-    Write-Host ("Selected {0} file(s). First KPI run may run diagnostics (one-time gate)." -f $inputs.Count) -ForegroundColor DarkGray
+    Write-Host ("Selected {0} file(s). First KPI score may run Python diagnostics; first Excel export may run Excel diagnostics (one-time gates)." -f $inputs.Count) -ForegroundColor DarkGray
     Write-Host ''
+
+    # Excel COM gate once per menu action (before any export)
+    if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
+        return
+    }
 
     $okCount = 0
     $failCount = 0
@@ -720,7 +757,7 @@ function Invoke-DiagnosticsMenu {
         Write-Host '================================================' -ForegroundColor Cyan
         Write-Host '  Diagnostics' -ForegroundColor Cyan
         Write-Host '================================================' -ForegroundColor Cyan
-        Write-Host '  1) Check readiness (dry-run)'
+        Write-Host '  1) Check readiness (dry-run + pass certificate)'
         Write-Host '  2) Run full self-test'
         Write-Host '  0) Back to main menu'
         Write-Host '================================================' -ForegroundColor Cyan
@@ -728,7 +765,37 @@ function Invoke-DiagnosticsMenu {
         $sub = Read-Host 'Select a diagnostics option'
         switch -Regex ($sub) {
             '^[1]$' {
-                $null = Invoke-ToolScript -Path $testScript -Arguments @{ DryRun = $true }
+                # Stamp enterprise pass certificate (same suite as first-run gate)
+                if (Test-Path -LiteralPath $toolkitModulePath) {
+                    try {
+                        Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+                        Write-Host 'Excel Toolkit diagnostics (readiness)...' -ForegroundColor Cyan
+                        $diag = Invoke-ExcelToolkitDiagnostics -Write $true
+                        foreach ($c in @($diag.Checks)) {
+                            $tag = if ($c.Passed) { 'PASS' } else { 'FAIL' }
+                            $color = if ($c.Passed) { 'Green' } else { 'Red' }
+                            Write-Host ("  [{0}] {1}: {2}" -f $tag, $c.Name, $c.Detail) -ForegroundColor $color
+                        }
+                        if ($diag.OverallPass) {
+                            Write-Host 'OK — pass certificate written.' -ForegroundColor Green
+                            if ($diag.ReportTextPath) {
+                                Write-Host ("  Report: {0}" -f $diag.ReportTextPath) -ForegroundColor DarkGray
+                            }
+                        }
+                        else {
+                            Write-Host 'FAIL — certificate records failure; fix issues before export.' -ForegroundColor Red
+                            if ($diag.ReportTextPath) {
+                                Write-Host ("  Report: {0}" -f $diag.ReportTextPath) -ForegroundColor Yellow
+                            }
+                        }
+                    }
+                    catch {
+                        Write-Host ("Diagnostics error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                    }
+                }
+                else {
+                    $null = Invoke-ToolScript -Path $testScript -Arguments @{ DryRun = $true }
+                }
                 Wait-ForEnter
             }
             '^[2]$' {

@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.3.0"
+version: "1.4.0"
 status: current
 audience:
   - developers
@@ -10,6 +10,7 @@ doc_type: cli
 related:
   - README.md
   - ENTERPRISE-SECURITY.md
+  - diagnostics/README.md
 last_updated: "2026-07-22"
 ---
 
@@ -17,7 +18,7 @@ last_updated: "2026-07-22"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.3.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.4.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -33,12 +34,13 @@ Professional reference for the **command-line interface** used by automation, Ta
 
 ## Summary
 
-This guide is the authoritative **command-line contract** for the Excel Toolkit. It documents how to invoke `excel-toolkit.cmd` / `ExcelToolkit.ps1`, each verb (`version`, `probe`, `export-csv`, `import-excel`, `help`), global flags (`-Json`, `-Quiet`), exit codes (**0** / **1** / **2**), and illustrative JSON shapes for automation.
+This guide is the authoritative **command-line contract** for the Excel Toolkit. It documents how to invoke `excel-toolkit.cmd` / `ExcelToolkit.ps1`, each verb (`version`, `probe`, `diagnostics`, `export-csv`, `import-excel`, `help`), global flags (`-Json`, `-Quiet`), exit codes (**0** / **1** / **2**), and illustrative JSON shapes for automation.
 
 | Command | Produces |
 |---------|----------|
 | `version` | Toolkit version string (or JSON with version fields) |
 | `probe` | Environment readiness (PowerShell, Excel COM, paths) |
+| `diagnostics` | Enterprise readiness suite; writes `diagnostics\last_diagnostics.json` / `.txt` (gate certificate) |
 | `export-csv` | Formatted `.xlsx` workbook from a CSV (optional schema display names; optional open password) |
 | `import-excel` | CSV from a local `.xlsx` / `.xls` (password-aware; interactive prompt when needed) |
 
@@ -54,7 +56,7 @@ Use **Import-Module** APIs when already in-process PowerShell; use this CLI for 
 4. [Invocation](#2-invocation)
 5. [Exit codes](#3-exit-codes)
 6. [Global options](#4-global-options)
-7. [Commands](#5-commands) (`version`, `probe`, `export-csv`, `import-excel`, `help`)
+7. [Commands](#5-commands) (`version`, `probe`, `diagnostics`, `export-csv`, `import-excel`, `help`)
 8. [Example use cases](#6-example-use-cases)
 9. [Data contract](#7-data-contract-export-csv--import-excel)
 10. [Enterprise constraints](#8-enterprise-constraints-cli)
@@ -178,13 +180,13 @@ excel-toolkit.cmd version -Json
 {"Success":true,"Version":"1.3.0","Command":"version"}
 ```
 
-Without `-Json`, stdout is the bare version string (for example `1.3.0`).
+Without `-Json`, stdout is the bare version string (for example `1.4.0`).
 
 ---
 
 ### 5.2 `probe`
 
-Runs environment preflight (PowerShell readiness, temp write, optional path checks, Excel COM create/quit).
+Runs environment preflight (PowerShell readiness, temp write, optional path checks, Excel COM create/quit). Does **not** write the diagnostics certificate (use `diagnostics` for that).
 
 **Syntax**
 
@@ -224,7 +226,7 @@ OK
 {
   "Success": true,
   "Command": "probe",
-  "Version": "1.3.0",
+  "Version": "1.4.0",
   "Message": "Preflight passed.",
   "Checks": [
     { "Name": "ExcelCom", "Passed": true, "Detail": "Excel version 16.0" }
@@ -233,6 +235,54 @@ OK
 ```
 
 **Exit codes:** `0` if all checks pass; `1` if any check fails.
+
+---
+
+### 5.2b `diagnostics`
+
+Enterprise readiness suite (module exports, Excel COM create/quit, diagnostics folder writable). Always refreshes `diagnostics\last_diagnostics.json` and `.txt` when it can write.
+
+**Syntax**
+
+```text
+ExcelToolkit.ps1 diagnostics [-Force] [-CsvPath <path>] [-SchemaPath <path>] [-Json] [-Quiet]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `-Force` | No | Accepted for symmetry (diagnostics always re-runs and overwrites the certificate) |
+| `-CsvPath` / `-SchemaPath` | No | Optional path checks |
+| `-Json` / `-Quiet` | No | Output style |
+
+**Certificate files** (gitignored; regenerable per machine):
+
+| File | Role |
+|------|------|
+| `diagnostics\last_diagnostics.json` | Gate certificate (machine-readable) |
+| `diagnostics\last_diagnostics.txt` | Human PASS/FAIL list for IT |
+
+**Gate behavior (export-csv / import-excel):**
+
+| Situation | Result |
+|-----------|--------|
+| No valid pass cert | Auto-run diagnostics; continue only if pass (`DiagnosticsGate=ran`) |
+| Valid cert for current toolkit version | Skip suite (`DiagnosticsGate=cached`) |
+| Cert deleted or version changed | Auto-run again |
+| Critical check fails | Block command (`DiagnosticsGate=blocked`); exit **1** |
+
+| Flag on gated commands | Meaning |
+|------------------------|---------|
+| `-ForceDiagnostics` | Re-run diagnostics before this command |
+| `-SkipDiagnosticsGate` | Emergency/support only — do not require a pass cert |
+
+**Examples**
+
+```bat
+excel-toolkit.cmd diagnostics
+excel-toolkit.cmd diagnostics -Json
+```
+
+**Exit codes:** `0` if OverallPass; `1` if any critical check fails.
 
 ---
 
@@ -558,8 +608,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 | Symptom | What to check |
 |---------|----------------|
 | Exit code 1 on `probe` | Excel installed? FullLanguage? Paths valid? |
-| Exit code 1 on `export-csv` | `-CsvPath` set? Schema required if `-UseDisplayNames`? Unique-path cap exceeded? |
-| Exit code 1 on `import-excel` | `-ExcelPath` set? Password required with `-Json`? Wrong password? Unique-path cap exceeded? |
+| Exit code 1 on `diagnostics` | Read `diagnostics\last_diagnostics.txt` FAIL lines |
+| Exit code 1 on `export-csv` | Gate blocked? See diagnostics report. Or `-CsvPath` set? Schema required if `-UseDisplayNames`? Unique-path cap exceeded? |
+| Exit code 1 on `import-excel` | Gate blocked? Or `-ExcelPath` set? Password required with `-Json`? Wrong password? Unique-path cap exceeded? |
 | Unexpected new `name_N` file | Destination already existed; check `PathAdjusted` / `RequestedOutputPath` in JSON |
 | Exit code 2 | Excel COM/save failure; file locked - close Excel and retry |
 | Empty JSON / parse error in Python | Ensure `-Json` and read **stdout** only; check `returncode` first |
@@ -570,6 +621,8 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.3.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.4.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.4.0 notes:** `diagnostics` command and first-run **diagnostics gate** for `export-csv` / `import-excel` (pass certificate under `diagnostics\last_diagnostics.*`; delete cert to force re-run). JSON on gated commands includes `DiagnosticsGate` and report paths.
 
 **1.3.0 notes:** default collision policy is unique numerical suffix (not refuse). JSON adds `RequestedOutputPath` and `PathAdjusted`. Interactive menu option **Score CSV → Excel** is documented in [README.md](./README.md) (workflow composition with `kpi-analytics`; not a CLI verb).

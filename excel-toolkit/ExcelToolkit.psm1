@@ -19,7 +19,8 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.3.0'
+$script:ExcelToolkitVersion = '1.4.0'
+$script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
 if (-not (Test-Path -LiteralPath $excelComPath)) {
@@ -774,9 +775,477 @@ function Import-CsvFromExcel {
 
 #endregion Import
 
+#region Enterprise diagnostics gate
+
+function Get-ExcelToolkitDiagnosticsDir {
+    <#
+    .SYNOPSIS
+        Return the excel-toolkit\diagnostics directory path.
+    #>
+    [CmdletBinding()]
+    param()
+    return (Join-Path $PSScriptRoot 'diagnostics')
+}
+
+function Get-ExcelToolkitDiagnosticsReportPaths {
+    <#
+    .SYNOPSIS
+        Return paths for the machine certificate JSON and human text report.
+    #>
+    [CmdletBinding()]
+    param()
+    $dir = Get-ExcelToolkitDiagnosticsDir
+    return [pscustomobject]@{
+        Directory = $dir
+        JsonPath  = (Join-Path $dir 'last_diagnostics.json')
+        TextPath  = (Join-Path $dir 'last_diagnostics.txt')
+    }
+}
+
+function Get-ExcelToolkitUtcNowIso {
+    return ([datetime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss+00:00'))
+}
+
+function New-ExcelToolkitDiagnosticsCheck {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+
+        [Parameter(Mandatory = $true)]
+        [bool]$Passed,
+
+        [string]$Detail = '',
+
+        [ValidateSet('critical', 'advisory')]
+        [string]$Severity = 'critical'
+    )
+    return [pscustomobject]@{
+        Name     = $Name
+        Passed   = [bool]$Passed
+        Severity = $Severity
+        Detail   = $Detail
+    }
+}
+
+function Invoke-ExcelToolkitReadinessChecks {
+    <#
+    .SYNOPSIS
+        Run DryRun-style readiness checks (env, module exports, Excel COM).
+
+    .DESCRIPTION
+        Shared suite for diagnostics certificate and Test-ExcelCom -DryRun.
+        Does not write permanent workbooks. Excel COM uses graceful Quit path.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$CsvPath,
+
+        [string]$SchemaPath,
+
+        [switch]$SkipExcelProbe
+    )
+
+    $checks = New-Object System.Collections.Generic.List[object]
+
+    # Reuse COM environment preflight (PS version, temp, optional paths, Excel COM)
+    $envResult = Test-ExcelComEnvironment -CsvPath $CsvPath -SchemaPath $SchemaPath -SkipExcelProbe:$SkipExcelProbe
+    foreach ($c in @($envResult.Checks)) {
+        $checks.Add((New-ExcelToolkitDiagnosticsCheck -Name $c.Name -Passed ([bool]$c.Passed) -Detail ([string]$c.Detail) -Severity 'critical'))
+    }
+
+    # Module surface (ExcelCom) — same spirit as Test-ExcelCom.ps1 DryRun
+    $expectedFunctions = @(
+        'New-ExcelApplication',
+        'New-ExcelWorkbook',
+        'Open-ExcelWorkbook',
+        'Save-ExcelWorkbook',
+        'Close-ExcelWorkbook',
+        'Stop-ExcelApplication',
+        'Invoke-ExcelSafe',
+        'Get-ExcelWorksheet',
+        'Add-ExcelWorksheet',
+        'Rename-ExcelWorksheet',
+        'Get-ExcelCell',
+        'Set-ExcelCell',
+        'Get-ExcelRange',
+        'Set-ExcelRange',
+        'Set-ExcelHeaderStyle',
+        'Set-ExcelAutoFit',
+        'Import-CsvToWorksheet',
+        'Export-WorksheetToCsv',
+        'Test-ExcelComEnvironment'
+    )
+    $exported = @()
+    try {
+        $exported = @(Get-Command -Module ExcelCom -ErrorAction Stop | ForEach-Object { $_.Name })
+    }
+    catch {
+        $exported = @()
+    }
+    $missing = @($expectedFunctions | Where-Object { $exported -notcontains $_ })
+    if ($missing.Count -eq 0) {
+        $exportDetail = ('{0} ExcelCom functions exported' -f $exported.Count)
+        $exportOk = $true
+    }
+    else {
+        $exportDetail = ('Missing: {0}' -f ($missing -join ', '))
+        $exportOk = $false
+    }
+    $checks.Add((New-ExcelToolkitDiagnosticsCheck -Name 'ModuleExports' -Passed $exportOk -Detail $exportDetail -Severity 'critical'))
+
+    # Diagnostics directory writable
+    $diagDir = Get-ExcelToolkitDiagnosticsDir
+    $diagWriteOk = $false
+    $diagDetail = $diagDir
+    try {
+        if (-not (Test-Path -LiteralPath $diagDir)) {
+            New-Item -ItemType Directory -Path $diagDir -Force | Out-Null
+        }
+        $probe = Join-Path $diagDir ('.write_probe_{0}.tmp' -f [guid]::NewGuid().ToString('N'))
+        'ok' | Set-Content -LiteralPath $probe -Encoding ASCII
+        $diagWriteOk = Test-Path -LiteralPath $probe
+        Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue
+        if ($diagWriteOk) {
+            $diagDetail = ('{0} (writable)' -f $diagDir)
+        }
+    }
+    catch {
+        $diagWriteOk = $false
+        $diagDetail = $_.Exception.Message
+    }
+    $checks.Add((New-ExcelToolkitDiagnosticsCheck -Name 'DiagnosticsDirWritable' -Passed $diagWriteOk -Detail $diagDetail -Severity 'critical'))
+
+    # Toolkit module identity
+    $checks.Add((New-ExcelToolkitDiagnosticsCheck -Name 'ToolkitVersion' -Passed $true -Detail (Get-ExcelToolkitVersion) -Severity 'advisory'))
+    $checks.Add((New-ExcelToolkitDiagnosticsCheck -Name 'ToolkitRoot' -Passed $true -Detail $PSScriptRoot -Severity 'advisory'))
+
+    return $checks.ToArray()
+}
+
+function Format-ExcelToolkitDiagnosticsTextReport {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Result
+    )
+
+    $overall = if ($Result.OverallPass) { 'PASS' } else { 'FAIL' }
+    $lines = New-Object System.Collections.Generic.List[string]
+    [void]$lines.Add('Excel Toolkit — Enterprise Diagnostics')
+    [void]$lines.Add(('ToolkitVersion: {0}' -f $Result.ToolkitVersion))
+    [void]$lines.Add(('PowerShellVersion: {0}' -f $Result.PowerShellVersion))
+    [void]$lines.Add(('Platform: {0}' -f $Result.Platform))
+    [void]$lines.Add(('OverallPass: {0}' -f $overall))
+    [void]$lines.Add(('StartedAt: {0}' -f $Result.StartedAt))
+    [void]$lines.Add(('FinishedAt: {0}' -f $Result.FinishedAt))
+    [void]$lines.Add(('ToolkitRoot: {0}' -f $Result.ToolkitRoot))
+    [void]$lines.Add('')
+    [void]$lines.Add('Checks:')
+    foreach ($c in @($Result.Checks)) {
+        $flag = if ($c.Passed) { 'PASS' } else { 'FAIL' }
+        $sev = $c.Severity
+        if ([string]::IsNullOrWhiteSpace($sev)) { $sev = 'critical' }
+        [void]$lines.Add(('  [{0}] ({1}) {2}: {3}' -f $flag, $sev, $c.Name, $c.Detail))
+    }
+    $failed = @($Result.CriticalFailed)
+    if ($failed.Count -gt 0) {
+        [void]$lines.Add('')
+        [void]$lines.Add(('Critical failures: {0}' -f ($failed -join ', ')))
+    }
+    [void]$lines.Add('')
+    [void]$lines.Add([string]$Result.Message)
+    [void]$lines.Add('')
+    [void]$lines.Add('Privacy: this report records environment and module/COM readiness only; it does not include claim rows or PHI.')
+    [void]$lines.Add('')
+    return ($lines -join "`r`n")
+}
+
+function Write-ExcelToolkitDiagnosticsReports {
+    <#
+    .SYNOPSIS
+        Write last_diagnostics.json and last_diagnostics.txt under diagnostics\.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $Result
+    )
+
+    $paths = Get-ExcelToolkitDiagnosticsReportPaths
+    if (-not (Test-Path -LiteralPath $paths.Directory)) {
+        New-Item -ItemType Directory -Path $paths.Directory -Force | Out-Null
+    }
+
+    # ConvertTo-Json for gate readers (Depth covers Checks array)
+    $json = $Result | ConvertTo-Json -Depth 8
+    $utf8 = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($paths.JsonPath, $json + "`r`n", $utf8)
+
+    $text = Format-ExcelToolkitDiagnosticsTextReport -Result $Result
+    [System.IO.File]::WriteAllText($paths.TextPath, $text, $utf8)
+
+    return [pscustomobject]@{
+        JsonPath = $paths.JsonPath
+        TextPath = $paths.TextPath
+    }
+}
+
+function Invoke-ExcelToolkitDiagnostics {
+    <#
+    .SYNOPSIS
+        Run readiness diagnostics and optionally write the pass/fail certificate.
+
+    .PARAMETER Write
+        When $true (default), refresh last_diagnostics.json/.txt.
+
+    .PARAMETER CsvPath / SchemaPath
+        Optional path checks (same as probe).
+    #>
+    [CmdletBinding()]
+    param(
+        [bool]$Write = $true,
+
+        [string]$CsvPath,
+
+        [string]$SchemaPath,
+
+        [switch]$SkipExcelProbe
+    )
+
+    $started = Get-ExcelToolkitUtcNowIso
+    $checks = @(Invoke-ExcelToolkitReadinessChecks -CsvPath $CsvPath -SchemaPath $SchemaPath -SkipExcelProbe:$SkipExcelProbe)
+
+    $criticalFailed = @(
+        $checks |
+            Where-Object { $_.Severity -eq 'critical' -and -not $_.Passed } |
+            ForEach-Object { [string]$_.Name }
+    )
+    $overall = ($criticalFailed.Count -eq 0)
+    $finished = Get-ExcelToolkitUtcNowIso
+
+    $result = [pscustomobject]@{
+        ReportVersion     = [int]$script:ExcelToolkitDiagnosticsReportVersion
+        Success           = [bool]$overall
+        OverallPass       = [bool]$overall
+        Command           = 'diagnostics'
+        Version           = (Get-ExcelToolkitVersion)
+        ToolkitVersion    = (Get-ExcelToolkitVersion)
+        PowerShellVersion = [string]$PSVersionTable.PSVersion
+        Platform          = [string][System.Environment]::OSVersion.Platform
+        StartedAt         = $started
+        FinishedAt        = $finished
+        ToolkitRoot       = $PSScriptRoot
+        CriticalFailed    = $criticalFailed
+        Checks            = $checks
+        Message           = $(
+            if ($overall) {
+                'Diagnostics passed. Operational commands may proceed.'
+            }
+            else {
+                'Diagnostics failed. Fix critical failures before export-csv/import-excel.'
+            }
+        )
+        ReportJsonPath    = $null
+        ReportTextPath    = $null
+    }
+
+    if ($Write) {
+        try {
+            $written = Write-ExcelToolkitDiagnosticsReports -Result $result
+            $result.ReportJsonPath = $written.JsonPath
+            $result.ReportTextPath = $written.TextPath
+        }
+        catch {
+            $result.Success = $false
+            $result.OverallPass = $false
+            $result.Message = ('Diagnostics checks finished but report write failed: {0}' -f $_.Exception.Message)
+            $cf = New-Object System.Collections.Generic.List[string]
+            foreach ($n in @($result.CriticalFailed)) { [void]$cf.Add([string]$n) }
+            if ($cf -notcontains 'ReportWrite') { [void]$cf.Add('ReportWrite') }
+            $result.CriticalFailed = $cf.ToArray()
+            $checkList = New-Object System.Collections.Generic.List[object]
+            foreach ($c in @($result.Checks)) { [void]$checkList.Add($c) }
+            [void]$checkList.Add((New-ExcelToolkitDiagnosticsCheck -Name 'ReportWrite' -Passed $false -Detail $_.Exception.Message -Severity 'critical'))
+            $result.Checks = $checkList.ToArray()
+        }
+    }
+
+    return $result
+}
+
+function Test-ExcelToolkitPassCertificate {
+    <#
+    .SYNOPSIS
+        Return the stored diagnostics report if it is a valid pass certificate; else $null.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $paths = Get-ExcelToolkitDiagnosticsReportPaths
+    if (-not (Test-Path -LiteralPath $paths.JsonPath)) {
+        return $null
+    }
+
+    try {
+        $raw = Get-Content -LiteralPath $paths.JsonPath -Raw -ErrorAction Stop
+        if ([string]::IsNullOrWhiteSpace($raw)) {
+            return $null
+        }
+        $data = $raw | ConvertFrom-Json -ErrorAction Stop
+    }
+    catch {
+        return $null
+    }
+
+    if ($null -eq $data) {
+        return $null
+    }
+
+    $reportVer = 0
+    try { $reportVer = [int]$data.ReportVersion } catch { $reportVer = 0 }
+    if ($reportVer -ne [int]$script:ExcelToolkitDiagnosticsReportVersion) {
+        return $null
+    }
+
+    $pass = $false
+    try { $pass = [bool]$data.OverallPass } catch { $pass = $false }
+    if (-not $pass) {
+        return $null
+    }
+
+    $certToolkit = [string]$data.ToolkitVersion
+    if ($certToolkit -ne (Get-ExcelToolkitVersion)) {
+        return $null
+    }
+
+    return $data
+}
+
+function Assert-ExcelToolkitDiagnosticsPass {
+    <#
+    .SYNOPSIS
+        Ensure a valid diagnostics pass certificate exists (auto-run if missing).
+
+    .DESCRIPTION
+        Gate decision object:
+          GateOk, GateMode (cached|ran|skipped|blocked), Diagnostics, Message, report paths.
+
+    .PARAMETER Force
+        Re-run diagnostics even if a valid certificate exists.
+
+    .PARAMETER Skip
+        Emergency bypass (does not write a pass certificate).
+    #>
+    [CmdletBinding()]
+    param(
+        [switch]$Force,
+
+        [switch]$Skip,
+
+        [string]$CsvPath,
+
+        [string]$SchemaPath
+    )
+
+    if ($Skip) {
+        return [pscustomobject]@{
+            GateOk                  = $true
+            GateMode                = 'skipped'
+            DiagnosticsGateSkipped  = $true
+            Diagnostics             = $null
+            ReportJsonPath          = $null
+            ReportTextPath          = $null
+            Message                 = 'Diagnostics gate skipped (-SkipDiagnosticsGate). Emergency/support use only.'
+        }
+    }
+
+    if (-not $Force) {
+        $cached = Test-ExcelToolkitPassCertificate
+        if ($null -ne $cached) {
+            $paths = Get-ExcelToolkitDiagnosticsReportPaths
+            $textPath = $null
+            if (Test-Path -LiteralPath $paths.TextPath) {
+                $textPath = $paths.TextPath
+            }
+            return [pscustomobject]@{
+                GateOk                  = $true
+                GateMode                = 'cached'
+                DiagnosticsGateSkipped  = $false
+                Diagnostics             = $cached
+                ReportJsonPath          = $paths.JsonPath
+                ReportTextPath          = $textPath
+                Message                 = 'Diagnostics certificate valid (cached pass).'
+            }
+        }
+    }
+
+    $result = Invoke-ExcelToolkitDiagnostics -Write $true -CsvPath $CsvPath -SchemaPath $SchemaPath
+    if ($result.OverallPass) {
+        return [pscustomobject]@{
+            GateOk                  = $true
+            GateMode                = 'ran'
+            DiagnosticsGateSkipped  = $false
+            Diagnostics             = $result
+            ReportJsonPath          = $result.ReportJsonPath
+            ReportTextPath          = $result.ReportTextPath
+            Message                 = 'Diagnostics auto-ran and passed.'
+        }
+    }
+
+    $textPath = $result.ReportTextPath
+    if ([string]::IsNullOrWhiteSpace($textPath)) {
+        $textPath = (Get-ExcelToolkitDiagnosticsReportPaths).TextPath
+    }
+    return [pscustomobject]@{
+        GateOk                  = $false
+        GateMode                = 'blocked'
+        DiagnosticsGateSkipped  = $false
+        Diagnostics             = $result
+        ReportJsonPath          = $result.ReportJsonPath
+        ReportTextPath          = $textPath
+        Message                 = (
+            'Diagnostics gate blocked this command. See: {0}. Re-run: excel-toolkit.cmd diagnostics -Force' -f $textPath
+        )
+    }
+}
+
+function Add-ExcelToolkitGateFields {
+    <#
+    .SYNOPSIS
+        Attach diagnostics gate metadata onto a CLI/result hashtable or PSCustomObject fields.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Target,
+
+        [Parameter(Mandatory = $true)]
+        $Gate
+    )
+
+    $Target['DiagnosticsGate'] = [string]$Gate.GateMode
+    $Target['DiagnosticsGateSkipped'] = [bool]$Gate.DiagnosticsGateSkipped
+    if (-not [string]::IsNullOrWhiteSpace([string]$Gate.ReportJsonPath)) {
+        $Target['DiagnosticsReportJsonPath'] = [string]$Gate.ReportJsonPath
+    }
+    if (-not [string]::IsNullOrWhiteSpace([string]$Gate.ReportTextPath)) {
+        $Target['DiagnosticsReportTextPath'] = [string]$Gate.ReportTextPath
+    }
+    return $Target
+}
+
+#endregion Enterprise diagnostics gate
+
 Export-ModuleMember -Function @(
     'Get-ExcelToolkitVersion',
     'Resolve-ExcelToolkitUniquePath',
     'Export-ExcelFromCsv',
-    'Import-CsvFromExcel'
+    'Import-CsvFromExcel',
+    'Get-ExcelToolkitDiagnosticsDir',
+    'Get-ExcelToolkitDiagnosticsReportPaths',
+    'Invoke-ExcelToolkitReadinessChecks',
+    'Invoke-ExcelToolkitDiagnostics',
+    'Write-ExcelToolkitDiagnosticsReports',
+    'Test-ExcelToolkitPassCertificate',
+    'Assert-ExcelToolkitDiagnosticsPass',
+    'Add-ExcelToolkitGateFields'
 )

@@ -15,13 +15,16 @@
         2  runtime failure
 
 .PARAMETER Command
-    Verb: version | probe | export-csv | import-excel | help
+    Verb: version | probe | diagnostics | export-csv | import-excel | help
 
 .EXAMPLE
     .\ExcelToolkit.ps1 version
 
 .EXAMPLE
     .\ExcelToolkit.ps1 probe -CsvPath ..\wq_data.csv -Json
+
+.EXAMPLE
+    .\ExcelToolkit.ps1 diagnostics -Json
 
 .EXAMPLE
     .\ExcelToolkit.ps1 export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx -Json
@@ -32,12 +35,13 @@
 .NOTES
     See CLI-GUIDE.md for full syntax and examples.
     -Password is never written to JSON, host success lines, or logs.
+    export-csv / import-excel auto-run diagnostics once until a pass certificate exists.
 #>
 
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('version', 'probe', 'export-csv', 'import-excel', 'help', '')]
+    [ValidateSet('version', 'probe', 'diagnostics', 'export-csv', 'import-excel', 'help', '')]
     [string]$Command = 'help',
 
     [string]$CsvPath,
@@ -53,6 +57,8 @@ param(
     [switch]$Visible,
     [switch]$DryRun,
     [switch]$Force,
+    [switch]$ForceDiagnostics,
+    [switch]$SkipDiagnosticsGate,
     [switch]$Json,
     [switch]$Quiet
 )
@@ -91,6 +97,7 @@ Excel Toolkit CLI
 Commands:
   version                 Print toolkit version
   probe                   Run environment preflight (Excel COM, paths)
+  diagnostics             Enterprise readiness suite; write diagnostics\last_diagnostics.*
   export-csv              Export a data CSV to .xlsx
   import-excel            Import an Excel workbook to .csv
   help                    Show this help
@@ -102,6 +109,16 @@ Common options:
 probe options:
   -CsvPath <path>         Optional CSV to validate
   -SchemaPath <path>      Optional schema to validate
+
+diagnostics options:
+  -Force                  Re-run and overwrite certificate even if a valid pass exists
+  -CsvPath / -SchemaPath  Optional path checks (same as probe)
+  -Json / -Quiet
+
+export-csv / import-excel gate:
+  First run auto-executes diagnostics when no valid pass certificate exists.
+  -ForceDiagnostics       Re-run diagnostics before this command
+  -SkipDiagnosticsGate    Emergency/support only (skip pass requirement)
 
 export-csv options:
   -CsvPath <path>         Input data CSV (required)
@@ -139,6 +156,65 @@ Exit codes:  0 success | 1 validation | 2 runtime
 
 Docs:  CLI-GUIDE.md
 '@ | Write-Host
+}
+
+function Invoke-CliDiagnosticsGate {
+    <#
+    .SYNOPSIS
+        Run Assert-ExcelToolkitDiagnosticsPass for gated CLI commands.
+        Returns $true if the command may proceed; sets $script:exitCode on block.
+    #>
+    param(
+        [string]$OptionalCsvPath,
+        [string]$OptionalSchemaPath
+    )
+
+    $gateParams = @{
+        Force = $ForceDiagnostics
+        Skip  = $SkipDiagnosticsGate
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OptionalCsvPath)) {
+        $gateParams['CsvPath'] = $OptionalCsvPath
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OptionalSchemaPath)) {
+        $gateParams['SchemaPath'] = $OptionalSchemaPath
+    }
+
+    $gate = Assert-ExcelToolkitDiagnosticsPass @gateParams
+
+    if ($SkipDiagnosticsGate -and -not $Quiet -and -not $Json) {
+        Write-Host 'WARNING: Diagnostics gate skipped (-SkipDiagnosticsGate). Emergency/support use only.' -ForegroundColor Yellow
+    }
+
+    if ($gate.GateOk) {
+        if ($gate.GateMode -eq 'ran' -and -not $Quiet -and -not $Json) {
+            Write-Host ("Diagnostics auto-ran and passed. Report: {0}" -f $gate.ReportTextPath) -ForegroundColor DarkGray
+        }
+        return $gate
+    }
+
+    # Blocked
+    $blocked = [ordered]@{
+        Success                     = $false
+        Command                     = $Command
+        Version                     = (Get-ExcelToolkitVersion)
+        Message                     = [string]$gate.Message
+        DiagnosticsGate             = [string]$gate.GateMode
+        DiagnosticsGateSkipped      = [bool]$gate.DiagnosticsGateSkipped
+        DiagnosticsReportJsonPath   = $gate.ReportJsonPath
+        DiagnosticsReportTextPath   = $gate.ReportTextPath
+    }
+    if ($Json) {
+        [pscustomobject]$blocked | ConvertTo-Json -Compress -Depth 6
+    }
+    else {
+        Write-Host ("FAIL: {0}" -f $gate.Message) -ForegroundColor Red
+        if (-not [string]::IsNullOrWhiteSpace([string]$gate.ReportTextPath)) {
+            Write-Host ("  See: {0}" -f $gate.ReportTextPath) -ForegroundColor Yellow
+        }
+    }
+    $script:exitCode = 1
+    return $null
 }
 
 try {
@@ -205,12 +281,58 @@ try {
             }
             $exitCode = $(if ($probe.Passed) { 0 } else { 1 })
         }
+        'diagnostics' {
+            Write-CliHost 'Excel Toolkit diagnostics...' Cyan
+            # Always re-run and write reports (certificate refresh). -Force is accepted for symmetry with KPI.
+            $diag = Invoke-ExcelToolkitDiagnostics -Write $true -CsvPath $CsvPath -SchemaPath $SchemaPath
+            $obj = [pscustomobject]@{
+                Success                   = [bool]$diag.Success
+                OverallPass               = [bool]$diag.OverallPass
+                Command                   = 'diagnostics'
+                Version                   = (Get-ExcelToolkitVersion)
+                ToolkitVersion            = [string]$diag.ToolkitVersion
+                PowerShellVersion         = [string]$diag.PowerShellVersion
+                ReportVersion             = [int]$diag.ReportVersion
+                CriticalFailed            = @($diag.CriticalFailed)
+                Checks                    = @($diag.Checks)
+                Message                   = [string]$diag.Message
+                DiagnosticsReportJsonPath = $diag.ReportJsonPath
+                DiagnosticsReportTextPath = $diag.ReportTextPath
+            }
+            if ($Json) {
+                $obj | ConvertTo-Json -Compress -Depth 8
+            }
+            else {
+                foreach ($c in @($diag.Checks)) {
+                    $tag = if ($c.Passed) { 'PASS' } else { 'FAIL' }
+                    Write-Host ("  [{0}] {1}: {2}" -f $tag, $c.Name, $c.Detail)
+                }
+                if ($diag.OverallPass) {
+                    Write-Host 'OK' -ForegroundColor Green
+                    if ($diag.ReportTextPath) {
+                        Write-Host ("  Report: {0}" -f $diag.ReportTextPath) -ForegroundColor DarkGray
+                    }
+                }
+                else {
+                    Write-Host 'FAIL' -ForegroundColor Red
+                    if ($diag.ReportTextPath) {
+                        Write-Host ("  Report: {0}" -f $diag.ReportTextPath) -ForegroundColor Yellow
+                    }
+                }
+            }
+            $exitCode = $(if ($diag.OverallPass) { 0 } else { 1 })
+        }
         'export-csv' {
             if ([string]::IsNullOrWhiteSpace($CsvPath)) {
                 throw 'export-csv requires -CsvPath'
             }
             if ([string]::IsNullOrWhiteSpace($OutputPath)) {
                 $OutputPath = Join-Path $repoRoot 'output\export.xlsx'
+            }
+
+            $gate = Invoke-CliDiagnosticsGate -OptionalCsvPath $CsvPath -OptionalSchemaPath $SchemaPath
+            if ($null -eq $gate) {
+                break
             }
 
             Write-CliHost ("export-csv: {0} -> {1}" -f $CsvPath, $OutputPath) Cyan
@@ -238,7 +360,7 @@ try {
             }
 
             $r = Export-ExcelFromCsv @exportParams
-            $payload = [pscustomobject]@{
+            $payloadHt = @{
                 Success             = [bool]$r.Success
                 Command             = 'export-csv'
                 Version             = (Get-ExcelToolkitVersion)
@@ -252,6 +374,8 @@ try {
                 HeadersSample       = @($r.HeadersSample)
                 SheetName           = $r.SheetName
             }
+            $null = Add-ExcelToolkitGateFields -Target $payloadHt -Gate $gate
+            $payload = [pscustomobject]$payloadHt
 
             if ($Json) {
                 $payload | ConvertTo-Json -Compress -Depth 6
@@ -302,6 +426,11 @@ try {
                 $OutputPath = Join-Path $importDir ("{0}.csv" -f $baseName)
             }
 
+            $gate = Invoke-CliDiagnosticsGate -OptionalSchemaPath $SchemaPath
+            if ($null -eq $gate) {
+                break
+            }
+
             Write-CliHost ("import-excel: {0} -> {1}" -f $ExcelPath, $OutputPath) Cyan
 
             # Default SheetName for export is 'Data'; for import empty means first sheet
@@ -326,7 +455,7 @@ try {
             }
 
             $r = Import-CsvFromExcel @importParams
-            $payload = [pscustomobject]@{
+            $payloadHt = @{
                 Success             = [bool]$r.Success
                 Command             = 'import-excel'
                 Version             = (Get-ExcelToolkitVersion)
@@ -342,6 +471,8 @@ try {
                 SheetName           = $r.SheetName
                 PasswordUsed        = [bool]$r.PasswordUsed
             }
+            $null = Add-ExcelToolkitGateFields -Target $payloadHt -Gate $gate
+            $payload = [pscustomobject]$payloadHt
 
             if ($Json) {
                 $payload | ConvertTo-Json -Compress -Depth 6

@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.3.0"
+version: "1.4.0"
 status: current
 audience:
   - users
@@ -17,7 +17,7 @@ last_updated: "2026-07-22"
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), one-menu **KPI score → Excel** pipeline (via sibling `kpi-analytics`), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.3.0  
+**Toolkit version:** 1.4.0  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
@@ -141,8 +141,9 @@ Extra data-CSV columns not listed in the schema are still exported. Schema-only 
 | `Start-ExcelMenu.cmd` | Double-click menu launcher |
 | `Start-ExcelMenu.ps1` | Interactive menu (incl. KPI score → Excel pipeline) |
 | `excel-toolkit.cmd` | CLI shim for automation |
-| `ExcelToolkit.ps1` | CLI (`version`, `probe`, `export-csv`, `import-excel`) |
-| `ExcelToolkit.psm1` | High-level module (`Export-ExcelFromCsv`, `Import-CsvFromExcel`, `Resolve-ExcelToolkitUniquePath`, version) |
+| `ExcelToolkit.ps1` | CLI (`version`, `probe`, `diagnostics`, `export-csv`, `import-excel`) |
+| `ExcelToolkit.psm1` | High-level module (export/import, unique paths, diagnostics gate helpers, version) |
+| `diagnostics\` | Enterprise pass certificate (`last_diagnostics.json` / `.txt`, gitignored) + README |
 | `ExcelCom.psm1` | Low-level Excel COM primitives (including optional workbook passwords) |
 | `Export-CsvToExcel.ps1` | Thin export wrapper (menu / legacy) |
 | `Export-WqDataToExcel.ps1` | Compatibility forwarder |
@@ -243,6 +244,7 @@ Quick start:
 ```bat
 cd excel-toolkit
 excel-toolkit.cmd version
+excel-toolkit.cmd diagnostics
 excel-toolkit.cmd probe -CsvPath ..\wq_data.csv -Json
 excel-toolkit.cmd export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx -Json
 excel-toolkit.cmd import-excel -ExcelPath ..\import\wq_synthetic_data.xlsx -OutputPath ..\import\from_xlsx_smoke.csv -Json
