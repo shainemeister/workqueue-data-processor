@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.2.1"
+version: "1.2.2"
 status: current
 audience:
   - developers
@@ -20,9 +20,11 @@ last_updated: "2026-07-22"
 
 # Repository Maintenance Rules
 
-Fundamental rules for maintaining **workqueue-data-processor** as a professional, auditable dual-toolkit repository. These rules govern documentation, code boundaries, data contracts, git hygiene, and verification—not product tutorials.
+Policy for keeping **workqueue-data-processor** professional, auditable, and safe to change. This file is for **contributors and reviewers**—not a product tutorial.
 
-**Document version:** 1.2.1  
+**If you only need to score work or export Excel:** start with the root [README.md](./README.md) and the toolkit guides. Come back here when you edit code, docs, schema, or release behavior.
+
+**Document version:** 1.2.2  
 
 **Related:** [README.md](./README.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc)
 
@@ -30,21 +32,21 @@ Fundamental rules for maintaining **workqueue-data-processor** as a professional
 
 ## Summary
 
-This repository is a **Work Queue data contract** plus two independent toolkits:
+The product is a **Work Queue data contract** plus two **independent** toolkits:
 
 | Toolkit | Runtime | Role |
 |---------|---------|------|
-| `excel-toolkit\` | Windows PowerShell 5.1 + Excel COM | CSV → formatted workbook |
-| `kpi-analytics\` | Python **3.13** stdlib only | CSV → priority scores + RCM KPI Q columns |
+| `excel-toolkit\` | Windows PowerShell 5.1 + Excel COM | CSV ↔ formatted workbook; first-run diagnostics gate |
+| `kpi-analytics\` | Python **3.13** stdlib only | CSV → priority scores + RCM KPI Q columns; first-run diagnostics gate |
 
-**RULES.md** is the maintenance policy. Detailed contracts live elsewhere (CLI guides, methodology, security notes). When those contracts change, update the **canonical** file in the same change set—do not leave docs, fixtures, or versions stale.
+**RULES.md** is the **maintenance policy**. Day-to-day product contracts live in CLI guides, methodology, and security notes. When those contracts change, update the **canonical** file in the **same change set**—do not leave docs, fixtures, or versions stale.
 
 | Must | Must not |
 |------|----------|
-| Update canonical docs with behavior changes | Commit `output\`, caches, secrets, or real PHI |
+| Update the **canonical** doc with behavior changes | Commit `output\`, caches, secrets, real PHI, or diagnostics certificates |
 | Use conventional commit messages that match staged files | Mix unrelated toolkits or leave CLI/security docs stale |
 | Keep toolkits independent at the runtime layer | Add pip packages or network clients to **product** code |
-| Run **pylint** on `kpi_modules` after Python product changes | Treat pylint as a runtime install requirement for end users |
+| Run **pylint** on `kpi_modules` after Python product changes | Treat pylint as a runtime install for end users |
 | Preserve explainable score / dual KPI attribution | Force-kill Excel or permanently alter ExecutionPolicy |
 | Verify before sharing scoring or COM changes | Silently rename schema fields or scored columns |
 
@@ -71,21 +73,23 @@ This repository is a **Work Queue data contract** plus two independent toolkits:
 
 ## Authority map
 
-Update the **owner** document for a change. Cross-link; do not duplicate full contracts.
+Update the **owner** document for a change. Cross-link; do not paste full contracts into multiple places.
 
 | Concern | Canonical source |
 |---------|------------------|
-| Repo purpose and quick start | [README.md](./README.md) |
+| End-user purpose and quick start | [README.md](./README.md) |
 | Path-level file inventory | [FILE-CATALOG.md](./FILE-CATALOG.md) |
 | Markdown structure, frontmatter, author checklist | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [templates/](./templates/) |
 | Maintenance policy (this file) | [RULES.md](./RULES.md) |
-| Excel CLI (verbs, exit codes, JSON) | [excel-toolkit/CLI-GUIDE.md](./excel-toolkit/CLI-GUIDE.md) |
-| KPI CLI (verbs, exit codes, JSON) | [kpi-analytics/CLI-GUIDE.md](./kpi-analytics/CLI-GUIDE.md) |
+| Excel CLI (verbs, exit codes, JSON, diagnostics gate) | [excel-toolkit/CLI-GUIDE.md](./excel-toolkit/CLI-GUIDE.md) |
+| KPI CLI (verbs, exit codes, JSON, diagnostics gate) | [kpi-analytics/CLI-GUIDE.md](./kpi-analytics/CLI-GUIDE.md) |
 | Priority V1 + `kpi_q_*` implementation | [kpi-analytics/SCORE-METHODOLOGY.md](./kpi-analytics/SCORE-METHODOLOGY.md) |
 | RCM dual-attribution theory | [kpi-analytics/RCM_KPI_Claim_Impact_Methodology.md](./kpi-analytics/RCM_KPI_Claim_Impact_Methodology.md) |
 | Priority design roadmap (V1–V3) | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) |
 | Excel enterprise / COM posture | [excel-toolkit/ENTERPRISE-SECURITY.md](./excel-toolkit/ENTERPRISE-SECURITY.md) |
 | KPI enterprise / offline posture | [kpi-analytics/ENTERPRISE-SECURITY.md](./kpi-analytics/ENTERPRISE-SECURITY.md) |
+| Excel diagnostics certificate folder | [excel-toolkit/diagnostics/README.md](./excel-toolkit/diagnostics/README.md) |
+| KPI diagnostics certificate folder | [kpi-analytics/diagnostics/README.md](./kpi-analytics/diagnostics/README.md) |
 | Field definitions | [wq_schema.json](./wq_schema.json) (CSV twin: [wq_schema.csv](./wq_schema.csv)) |
 | Sample fact rows | [wq_data.csv](./wq_data.csv) |
 | Default score config | [kpi-analytics/kpi_modules/config_default.json](./kpi-analytics/kpi_modules/config_default.json) |
@@ -105,7 +109,7 @@ Update the **owner** document for a change. Cross-link; do not duplicate full co
    - Scoring formulas, output columns, validation → `SCORE-METHODOLOGY.md` (+ fixtures if contract shifts)  
    - Trust boundary or execution model → matching `ENTERPRISE-SECURITY.md`  
 4. **Prefer link + short summary** over pasting another document in full.  
-5. **README** stays an overview; deep contracts stay in toolkit docs.  
+5. **Root [README.md](./README.md)** stays an **end-user landing page** (summary, use cases, one quick start). Deep contracts stay in toolkit docs.  
 6. **Status honesty:** set frontmatter `status` to `draft` / `current` / `deprecated` accurately.
 
 ---
@@ -223,8 +227,9 @@ Additional rules:
 | Schema, sample data, fixtures | `__pycache__\`, `*.pyc` |
 | `import\` synthetic / non-PHI inputs | Real PHI/PII extracts under `import\` (or anywhere) |
 | Docs, templates, `.gitignore` | `.venv\`, `venv\`, `.env` |
-| | Secrets, IDE-only folders already ignored |
+| Diagnostics folder **README** files | Secrets, IDE-only folders already ignored |
 | | `kpi-analytics\diagnostics\last_diagnostics.*` (regenerable certificates) |
+| | `excel-toolkit\diagnostics\last_diagnostics.*` (regenerable certificates) |
 
 Respect [.gitignore](./.gitignore). Do not force-add ignored generated artifacts “for convenience.”
 
@@ -356,6 +361,7 @@ Do not claim a scoring or export change is complete if the relevant probe/valida
 | Skipping pylint after Python edits | Run `py -3.13 -m pylint kpi_modules` from `kpi-analytics\` |
 | Force-killing Excel to “clean up” | Quit → wait → one retry → warn user |
 | Committing `output\wq_scored*.csv` or `.xlsx` | Document regenerate commands in README / catalog |
+| Committing `last_diagnostics.json` / `.txt` | Leave regenerable; only track diagnostics `README.md` |
 | Silent field or `v1_*` / `kpi_q_*` rename | Coordinated contract bump + fixtures + docs |
 | Long docs without Summary | MARKDOWN-STANDARD order |
 | Duplicating security matrices into README | Link to ENTERPRISE-SECURITY |
@@ -372,7 +378,7 @@ Do not claim a scoring or export change is complete if the relevant probe/valida
 
 Before you commit or share a change:
 
-- [ ] Behavior matches the **canonical** doc for that surface (CLI / methodology / security / README)  
+- [ ] Behavior matches the **canonical** doc for that surface (CLI / methodology / security / root README when the landing workflow changed)  
 - [ ] [FILE-CATALOG.md](./FILE-CATALOG.md) updated if paths changed  
 - [ ] Versions and `last_updated` bumped where contracts changed  
 - [ ] Required **verification** from the table above has been run  
@@ -392,3 +398,4 @@ Before you commit or share a change:
 | 1.1.0 | Git commit message format, documentation-consistency rules, and commit workflow |
 | 1.2.0 | Python PEP-8 style gate via pylint (`.pylintrc`); verification and checklist requirements |
 | 1.2.1 | Output collision rule (unique suffix by default); workflow composition via Excel menu → kpi-analytics |
+| 1.2.2 | End-user pointer in lead; dual diagnostics certificates (KPI + Excel) in authority map / git rules; clearer README role |
