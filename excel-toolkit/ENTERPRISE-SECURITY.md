@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.4.0"
+version: "1.5.0"
 status: current
 audience:
   - security
@@ -18,7 +18,7 @@ last_updated: "2026-07-25"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.4.0  
+**Toolkit version:** 1.5.0  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
@@ -246,3 +246,4 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.2.1 | Refuse overwrite of existing output files unless `-Force` (or interactive menu confirm) |
 | 1.3.0 | Default collision policy: unique numerical suffix (`name_N.ext`) instead of refuse; menu Score→Excel may subprocess local `kpi-analytics.cmd`; `-Force` still exact-path replace only |
 | 1.3.0a | Product scripts saved UTF-8 **with BOM** / ASCII-safe punctuation so Windows PowerShell 5.1 `-File` parses reliably (BOM-less UTF-8 + Unicode arrows/dashes caused menu parse failures) |
+| 1.5.0 | Interactive menu simplified (pipeline / score only / export / Advanced); no trust-boundary change |

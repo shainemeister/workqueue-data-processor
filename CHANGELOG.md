@@ -13,6 +13,19 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.3.0] - 2026-07-25
+
+#### Changed
+
+- **excel-toolkit 1.5.0:** simplify interactive `Start-ExcelMenu.ps1` main menu
+  - **1** Run full pipeline (Score CSV → Excel)
+  - **2** Score only (scored + summary CSV; no Excel COM)
+  - **3** Export CSV to Excel
+  - **4** Advanced tools… (schema-header export, import, folders, env, schema, diagnostics)
+  - **0** Exit
+- Root README and excel-toolkit README / FILE-CATALOG / PLAN updated for the new menu shape
+- Automation CLIs (`excel-toolkit.cmd`, `kpi-analytics.cmd`) unchanged
+
 ### [1.2.0] - 2026-07-25
 
 #### Added

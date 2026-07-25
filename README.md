@@ -22,7 +22,7 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 
 | You want to… | Start here |
 |--------------|------------|
-| Score and open Excel in one step | Double-click `Start-ExcelMenu.cmd` → option **1** |
+| Score and open Excel in one step | Double-click `Start-ExcelMenu.cmd` → option **1** (full pipeline) |
 | Rank WQ work by priority only | [kpi-analytics](./kpi-analytics/README.md) · `score` |
 | Put an existing CSV into Excel | [excel-toolkit](./excel-toolkit/README.md) |
 | See what a claim row looks like | [wq_data.csv](./wq_data.csv) · [wq_schema.json](./wq_schema.json) |
@@ -40,6 +40,7 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | **Demo or test without real PHI** | Synthetic professional-billing WQ CSV (de-identified names) | `generate` · [KPI CLI guide](./kpi-analytics/CLI-GUIDE.md) |
 | **Share results with leadership** | Formatted `.xlsx` from a scored or summary CSV | [excel-toolkit](./excel-toolkit/README.md) |
 | **Score and Excel in one menu step** | Scored + summary workbooks under `output\` | `Start-ExcelMenu.cmd` → option **1** |
+| **Score only (no Excel)** | Scored + summary CSV under `output\` | `Start-ExcelMenu.cmd` → option **2** |
 | **First run on a locked-down PC** | Pass/fail environment certificates for IT | KPI or Excel `diagnostics` · [KPI security](./kpi-analytics/ENTERPRISE-SECURITY.md) · [Excel security](./excel-toolkit/ENTERPRISE-SECURITY.md) |
 | **Understand the data layout** | Field definitions and sample fact rows | [wq_schema.json](./wq_schema.json) · [wq_data.csv](./wq_data.csv) |
 
@@ -77,7 +78,7 @@ IT / controlled-PC notes: [kpi-analytics security](./kpi-analytics/ENTERPRISE-SE
 
 1. Put a WQ CSV under `import\` (or use the included synthetic file).  
 2. Double-click **`Start-ExcelMenu.cmd`**.  
-3. Choose **1) Score CSV → Excel (KPI pipeline)** and pick the file.
+3. Choose **1) Run full pipeline (Score CSV → Excel)** and pick the file.
 
 You get scored and summary CSVs plus both workbooks under `output\`. If a file name already exists, a free `name_N` suffix is used. Needs **Python 3.13** and **Excel**. On first use, each toolkit may run a one-time **diagnostics** check and write a local pass report for IT.
 

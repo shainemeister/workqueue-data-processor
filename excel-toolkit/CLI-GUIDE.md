@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.4.0"
+version: "1.5.0"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-07-25"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.4.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.5.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -177,10 +177,10 @@ excel-toolkit.cmd version -Json
 **JSON shape (illustrative)**
 
 ```json
-{"Success":true,"Version":"1.4.0","Command":"version"}
+{"Success":true,"Version":"1.5.0","Command":"version"}
 ```
 
-Without `-Json`, stdout is the bare version string (for example `1.4.0`).
+Without `-Json`, stdout is the bare version string (for example `1.5.0`).
 
 ---
 
@@ -226,7 +226,7 @@ OK
 {
   "Success": true,
   "Command": "probe",
-  "Version": "1.4.0",
+  "Version": "1.5.0",
   "Message": "Preflight passed.",
   "Checks": [
     { "Name": "ExcelCom", "Passed": true, "Detail": "Excel version 16.0" }
@@ -360,7 +360,7 @@ excel-toolkit.cmd export-csv ^
 {
   "Success": true,
   "Command": "export-csv",
-  "Version": "1.4.0",
+  "Version": "1.5.0",
   "OutputPath": "C:\\...\\output\\export.xlsx",
   "RequestedOutputPath": "C:\\...\\output\\export.xlsx",
   "PathAdjusted": false,
@@ -449,7 +449,7 @@ excel-toolkit.cmd import-excel -ExcelPath ..\import\wq_synthetic_data_protected.
 {
   "Success": true,
   "Command": "import-excel",
-  "Version": "1.4.0",
+  "Version": "1.5.0",
   "ExcelPath": "C:\\...\\import\\wq_synthetic_data.xlsx",
   "OutputPath": "C:\\...\\import\\wq_synthetic_data_1.csv",
   "RequestedOutputPath": "C:\\...\\import\\wq_synthetic_data.csv",
@@ -621,8 +621,10 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.4.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.5.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.5.0 notes:** interactive `Start-ExcelMenu` simplified — main options: full pipeline, score only, export CSV→Excel, Advanced tools (schema export, import, schema, diagnostics). CLI verbs unchanged. See [README.md](./README.md).
 
 **1.4.0 notes:** `diagnostics` command and first-run **diagnostics gate** for `export-csv` / `import-excel` (pass certificate under `diagnostics\last_diagnostics.*`; delete cert to force re-run). JSON on gated commands includes `DiagnosticsGate` and report paths.
 
-**1.3.0 notes:** default collision policy is unique numerical suffix (not refuse). JSON adds `RequestedOutputPath` and `PathAdjusted`. Interactive menu option **Score CSV → Excel** is documented in [README.md](./README.md) (workflow composition with `kpi-analytics`; not a CLI verb).
+**1.3.0 notes:** default collision policy is unique numerical suffix (not refuse). JSON adds `RequestedOutputPath` and `PathAdjusted`. Interactive pipeline composition with `kpi-analytics` is documented in [README.md](./README.md) (not a CLI verb).

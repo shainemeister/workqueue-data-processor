@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Diagnostics Folder
 description: Purpose of the enterprise diagnostics report directory for first-run and gated execution.
-version: "1.4.0"
+version: "1.5.0"
 status: current
 audience:
   - users

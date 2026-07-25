@@ -1,15 +1,16 @@
 ﻿#requires -Version 5.1
 <#
 .SYNOPSIS
-    Interactive menu for Excel CSV export, Excel->CSV import, schema, and diagnostics.
+    Interactive menu for KPI score-to-Excel pipeline, export, and advanced tools.
 
 .DESCRIPTION
     Double-click Start-ExcelMenu.cmd (recommended) or run this script under
     Windows PowerShell 5.1. No PowerShell syntax knowledge is required for
     common tasks.
 
-    Main menu: Score CSV to Excel (KPI pipeline), export, import (CSV defaults
-    under import\), folders, schema, and Diagnostics (readiness + full self-test).
+    Main menu (happy path first): full Score CSV -> Excel pipeline, score only,
+    export CSV to Excel, and Advanced tools (schema headers export, import,
+    folders, schema, diagnostics, environment).
 
     Column layout always comes from your data CSV. An optional schema (JSON or
     CSV) supplies display labels only. Nothing domain-specific is hard-coded.
@@ -43,7 +44,7 @@ $testScript   = Join-Path $scriptDir 'Test-ExcelCom.ps1'
 $toolkitModulePath = Join-Path $scriptDir 'ExcelToolkit.psm1'
 $modulePath   = Join-Path $scriptDir 'ExcelCom.psm1'
 
-# --- Session schema settings (option 7; used by export options 3/4) ---
+# --- Session schema settings (Advanced -> Schema; used by schema-header export) ---
 $sessionSchemaFormat = 'Auto'   # Auto | Json | Csv
 $sessionSchemaPath   = $null    # full path; null = auto-resolve from format
 
@@ -595,10 +596,28 @@ function Select-CsvInputsForPipeline {
 }
 
 function Invoke-KpiScoreExportMenu {
+    <#
+    .SYNOPSIS
+        Score selected CSVs via kpi-analytics; optionally export scored + summary to Excel.
+    .PARAMETER ScoreOnly
+        When set, write scored and summary CSVs only (no Excel COM export).
+    #>
+    [CmdletBinding()]
+    param(
+        [switch]$ScoreOnly
+    )
+
     Write-Host ''
-    Write-Host 'Score CSV -> Excel (KPI pipeline)' -ForegroundColor Cyan
-    Write-Host 'Runs kpi-analytics score, then exports scored + summary CSVs to Excel.' -ForegroundColor DarkGray
-    Write-Host 'Engines stay separate: Python scores; Excel COM formats workbooks.' -ForegroundColor DarkGray
+    if ($ScoreOnly) {
+        Write-Host 'Score only (KPI CSV)' -ForegroundColor Cyan
+        Write-Host 'Runs kpi-analytics score; writes scored + summary CSVs under output\.' -ForegroundColor DarkGray
+        Write-Host 'No Excel export on this path (use menu option 1 or 3 for workbooks).' -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host 'Run full pipeline (Score CSV -> Excel)' -ForegroundColor Cyan
+        Write-Host 'Runs kpi-analytics score, then exports scored + summary CSVs to Excel.' -ForegroundColor DarkGray
+        Write-Host 'Engines stay separate: Python scores; Excel COM formats workbooks.' -ForegroundColor DarkGray
+    }
     Write-Host 'Existing outputs are kept; new files use a free numerical suffix when needed.' -ForegroundColor DarkGray
     Write-Host ''
 
@@ -622,12 +641,19 @@ function Invoke-KpiScoreExportMenu {
     }
 
     Write-Host ''
-    Write-Host ("Selected {0} file(s). First KPI score may run Python diagnostics; first Excel export may run Excel diagnostics (one-time gates)." -f $inputs.Count) -ForegroundColor DarkGray
+    if ($ScoreOnly) {
+        Write-Host ("Selected {0} file(s). First score may run Python diagnostics (one-time gate)." -f $inputs.Count) -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host ("Selected {0} file(s). First KPI score may run Python diagnostics; first Excel export may run Excel diagnostics (one-time gates)." -f $inputs.Count) -ForegroundColor DarkGray
+    }
     Write-Host ''
 
-    # Excel COM gate once per menu action (before any export)
-    if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
-        return
+    # Excel COM gate only when this action will export workbooks
+    if (-not $ScoreOnly) {
+        if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
+            return
+        }
     }
 
     $okCount = 0
@@ -702,6 +728,14 @@ function Invoke-KpiScoreExportMenu {
             }
             Write-Host ("  Score OK.{0}" -f $rowNote) -ForegroundColor Green
 
+            if ($ScoreOnly) {
+                Write-Host ("  Scored CSV  : {0}" -f $actualScoredCsv) -ForegroundColor Green
+                Write-Host ("  Summary CSV : {0}" -f $actualSummaryCsv) -ForegroundColor Green
+                Write-Host '  Score-only complete for this file.' -ForegroundColor Green
+                $okCount++
+                continue
+            }
+
             $plannedScoredXlsx  = [System.IO.Path]::ChangeExtension($actualScoredCsv, '.xlsx')
             $plannedSummaryXlsx = [System.IO.Path]::ChangeExtension($actualSummaryCsv, '.xlsx')
 
@@ -759,7 +793,7 @@ function Invoke-DiagnosticsMenu {
         Write-Host '================================================' -ForegroundColor Cyan
         Write-Host '  1) Check readiness (dry-run + pass certificate)'
         Write-Host '  2) Run full self-test'
-        Write-Host '  0) Back to main menu'
+        Write-Host '  0) Back'
         Write-Host '================================================' -ForegroundColor Cyan
         Write-Host ''
         $sub = Read-Host 'Select a diagnostics option'
@@ -1089,7 +1123,7 @@ function Invoke-SchemaMenu {
         Write-Host '  A) Auto-detect format from file extension'
         Write-Host '  P) Set schema file path manually'
         Write-Host '  R) Refresh preview'
-        Write-Host '  B) Back to main menu'
+        Write-Host '  B) Back'
         Write-Host '------------------------------------------------' -ForegroundColor DarkGray
         Write-Host ''
         Write-Host 'CSV schema columns: field_name, display_name (or wq_field_name), optional data_type' -ForegroundColor DarkGray
@@ -1140,23 +1174,109 @@ function Show-Menu {
     $schemaNote = '{0} | {1}' -f $schemaFmt, (Split-Path -Leaf $schemaPath)
 
     Write-Host '================================================' -ForegroundColor Cyan
-    Write-Host '  Excel Data Tools' -ForegroundColor Cyan
+    Write-Host '  Work Queue Data Tools' -ForegroundColor Cyan
     Write-Host '================================================' -ForegroundColor Cyan
-    Write-Host '  1) Score CSV -> Excel (KPI pipeline)'
-    Write-Host '  2) Export CSV to Excel'
-    Write-Host '  3) Export CSV to Excel (schema display headers)'
-    Write-Host '  4) Import Excel to CSV (password prompt if needed)'
-    Write-Host '  5) Open output folder'
-    Write-Host '  6) Show environment / policy info'
-    Write-Host '  7) Schema: show source, preview, change JSON/CSV'
-    Write-Host '  8) Diagnostics (readiness / self-test)'
+    Write-Host '  1) Run full pipeline (Score CSV -> Excel)'
+    Write-Host '  2) Score only (CSV -> scored + summary CSV)'
+    Write-Host '  3) Export CSV to Excel'
+    Write-Host '  4) Advanced tools...'
     Write-Host '  0) Exit'
     Write-Host '================================================' -ForegroundColor Cyan
     Write-Host ''
-    Write-Host ("Current schema: {0}" -f $schemaNote) -ForegroundColor DarkGray
-    Write-Host 'Headers/columns come from your data CSV; schema is for display labels only.' -ForegroundColor DarkGray
+    Write-Host 'Happy path: place data under import\, choose 1, pick the file.' -ForegroundColor DarkGray
+    Write-Host ("Schema (Advanced): {0}" -f $schemaNote) -ForegroundColor DarkGray
     Write-Host 'Existing outputs are not overwritten (unique name_N.ext when needed).' -ForegroundColor DarkGray
-    Write-Host 'Import CSV defaults to the import\ folder. Pipeline uses kpi-analytics + Excel.' -ForegroundColor DarkGray
+}
+
+function Invoke-AdvancedMenu {
+    <#
+    .SYNOPSIS
+        Secondary tools: schema-header export, import, folders, schema, diagnostics, env.
+    #>
+    $inAdvanced = $true
+    while ($inAdvanced) {
+        Clear-Host
+        $schemaPath = Get-EffectiveSchemaPath
+        $schemaFmt  = Get-EffectiveSchemaFormat -Path $schemaPath
+        $schemaNote = '{0} | {1}' -f $schemaFmt, (Split-Path -Leaf $schemaPath)
+
+        Write-Host '================================================' -ForegroundColor Cyan
+        Write-Host '  Advanced tools' -ForegroundColor Cyan
+        Write-Host '================================================' -ForegroundColor Cyan
+        Write-Host '  1) Export CSV to Excel (schema display headers)'
+        Write-Host '  2) Import Excel to CSV (password prompt if needed)'
+        Write-Host '  3) Open output folder'
+        Write-Host '  4) Show environment / policy info'
+        Write-Host '  5) Schema: show source, preview, change JSON/CSV'
+        Write-Host '  6) Diagnostics (readiness / self-test)'
+        Write-Host '  0) Back to main menu'
+        Write-Host '================================================' -ForegroundColor Cyan
+        Write-Host ''
+        Write-Host ("Current schema: {0}" -f $schemaNote) -ForegroundColor DarkGray
+        Write-Host 'Headers come from your data CSV; schema is for display labels only.' -ForegroundColor DarkGray
+        Write-Host 'Import CSV defaults to the import\ folder.' -ForegroundColor DarkGray
+        Write-Host ''
+
+        $sub = Read-Host 'Select an advanced option'
+        switch ($sub) {
+            '1' {
+                $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments -UseDisplayNames)
+                Wait-ForEnter
+            }
+            '2' {
+                try {
+                    Invoke-ImportExcelMenu
+                }
+                catch {
+                    Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                }
+                Wait-ForEnter
+            }
+            '3' {
+                try {
+                    Open-OutputFolder
+                }
+                catch {
+                    Write-Host ("Could not open folder: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                }
+                Wait-ForEnter
+            }
+            '4' {
+                try {
+                    Show-EnvironmentInfo
+                }
+                catch {
+                    Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                }
+                Wait-ForEnter
+            }
+            '5' {
+                try {
+                    Invoke-SchemaMenu
+                }
+                catch {
+                    Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                    Wait-ForEnter
+                }
+            }
+            '6' {
+                try {
+                    Invoke-DiagnosticsMenu
+                }
+                catch {
+                    Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                    Wait-ForEnter
+                }
+            }
+            '0' {
+                $inAdvanced = $false
+            }
+            default {
+                Write-Host 'Please enter a number from the advanced menu.' -ForegroundColor Yellow
+                Start-Sleep -Seconds 1
+            }
+        }
+    }
 }
 
 #endregion Paths and helpers
@@ -1182,52 +1302,21 @@ while ($running) {
             Wait-ForEnter
         }
         '2' {
-            $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments)
+            try {
+                Invoke-KpiScoreExportMenu -ScoreOnly
+            }
+            catch {
+                Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+            }
             Wait-ForEnter
         }
         '3' {
-            $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments -UseDisplayNames)
+            $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments)
             Wait-ForEnter
         }
         '4' {
             try {
-                Invoke-ImportExcelMenu
-            }
-            catch {
-                Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
-            }
-            Wait-ForEnter
-        }
-        '5' {
-            try {
-                Open-OutputFolder
-            }
-            catch {
-                Write-Host ("Could not open folder: {0}" -f $_.Exception.Message) -ForegroundColor Red
-            }
-            Wait-ForEnter
-        }
-        '6' {
-            try {
-                Show-EnvironmentInfo
-            }
-            catch {
-                Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
-            }
-            Wait-ForEnter
-        }
-        '7' {
-            try {
-                Invoke-SchemaMenu
-            }
-            catch {
-                Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
-                Wait-ForEnter
-            }
-        }
-        '8' {
-            try {
-                Invoke-DiagnosticsMenu
+                Invoke-AdvancedMenu
             }
             catch {
                 Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red

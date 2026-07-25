@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.4.0"
+version: "1.5.0"
 status: current
 audience:
   - users
@@ -18,7 +18,7 @@ last_updated: "2026-07-25"
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), one-menu **KPI score → Excel** pipeline (via sibling `kpi-analytics`), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.4.0  
+**Toolkit version:** 1.5.0  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
@@ -36,7 +36,9 @@ Excel Toolkit is a **local Windows** PowerShell **5.1** package for controlled d
 | You want… | Start here |
 |-----------|------------|
 | Score then open Excel in one step | [For most users](#for-most-users-recommended) · menu option **1** |
-| Export / import only | Menu options **2–4** or [CLI-GUIDE.md](./CLI-GUIDE.md) |
+| Score only (CSV, no Excel) | Menu option **2** |
+| Export CSV to Excel | Menu option **3** or [CLI-GUIDE.md](./CLI-GUIDE.md) |
+| Import / schema / diagnostics | Menu option **4** Advanced… |
 | CLI automation | [CLI-GUIDE.md](./CLI-GUIDE.md) |
 | Module API from PowerShell | [Using the toolkit from other PowerShell scripts](#using-the-toolkit-from-other-powershell-scripts) |
 | First-run / locked-down PC | `excel-toolkit.cmd diagnostics` · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md) |
@@ -66,7 +68,7 @@ Excel Toolkit is a **local Windows** PowerShell **5.1** package for controlled d
 | Interactive users | `Start-ExcelMenu.cmd` (or root `Start-ExcelMenu.cmd`) |
 | Other PowerShell scripts | `Import-Module .\ExcelToolkit.psm1` → `Export-ExcelFromCsv` / `Import-CsvFromExcel` |
 | Python / Task Scheduler / cmd | CLI: `excel-toolkit.cmd` / `ExcelToolkit.ps1` — see [CLI-GUIDE.md](./CLI-GUIDE.md) |
-| Smoke / self-test | `Test-ExcelCom.ps1` (menu option 2, or run directly) |
+| Smoke / self-test | `Test-ExcelCom.ps1` (Advanced → Diagnostics, or run directly) |
 
 ---
 
@@ -78,19 +80,27 @@ Excel Toolkit is a **local Windows** PowerShell **5.1** package for controlled d
 
 | Option | What it does |
 |--------|----------------|
-| **1** | **Score CSV -> Excel (KPI pipeline)** - select one or more CSVs under `import\`, run sibling `kpi-analytics` score, export scored + summary workbooks under `output\` |
-| **2** | Export CSV → Excel (data CSV headers) |
-| **3** | Export CSV → Excel (schema display headers) |
-| **4** | Import Excel → CSV (password prompt if needed; default CSV under `import\`) |
-| **5** | Open the `output` folder |
-| **6** | Show environment / policy info |
-| **7** | Schema: show source, preview fields, switch JSON/CSV |
-| **8** | Diagnostics… (readiness dry-run / full self-test) |
+| **1** | **Run full pipeline** — select CSV(s) under `import\`, score with `kpi-analytics`, export scored + summary workbooks under `output\` |
+| **2** | **Score only** — same scoring path; writes scored + summary **CSV** only (no Excel) |
+| **3** | **Export CSV to Excel** (data CSV headers) |
+| **4** | **Advanced tools…** — schema-header export, import Excel→CSV, folders, env, schema, diagnostics |
 | **0** | Exit |
+
+**Advanced (option 4)**
+
+| Sub-option | What it does |
+|------------|----------------|
+| **1** | Export CSV → Excel with schema display headers |
+| **2** | Import Excel → CSV (password prompt if needed; default under `import\`) |
+| **3** | Open the `output` folder |
+| **4** | Show environment / policy info |
+| **5** | Schema: show source, preview fields, switch JSON/CSV |
+| **6** | Diagnostics (readiness dry-run / full self-test) |
+| **0** | Back to main menu |
 
 3. Open export / scored workbooks under **`output\`**; imported CSVs default under **`import\`**.
 
-### Score → Excel (option 1)
+### Full pipeline (option 1)
 
 Composes the two toolkits at the **workflow** layer only (no shared process, no scoring math in PowerShell, no Excel COM from Python):
 
@@ -99,7 +109,9 @@ Composes the two toolkits at the **workflow** layer only (no shared process, no 
 3. Call `kpi-analytics\kpi-analytics.cmd score … --json`.  
 4. Export both CSVs to `.xlsx` (again using unique paths if those workbooks already exist).
 
-**Needs:** Python **3.13** (for `kpi-analytics`) **and** desktop Excel (for COM). First score may run KPI diagnostics once (gate).
+**Option 2** stops after step 3 (CSV only; no Excel diagnostics gate).
+
+**Needs:** Python **3.13** (for `kpi-analytics`) **and** desktop Excel (for COM on options 1 and 3). First score may run KPI diagnostics once (gate).
 
 The `.cmd` launcher starts PowerShell with a **process-only** execution policy setting for that window. It does **not** permanently change organization policy.
 
@@ -147,7 +159,7 @@ If Excel stays open after a run, close it yourself (or via Task Manager), then r
 | **Data CSV** | Source of truth for column **order** and technical header names |
 | **Schema** (optional JSON **or** CSV) | Maps `field_name` → display label only; does not add/remove columns |
 
-Use **menu option 6** to preview the schema, see the file path, and switch between **JSON** and **CSV** schema formats for the session (options 1/2 honor that choice).
+Use **Advanced → Schema** to preview the schema, see the file path, and switch between **JSON** and **CSV** schema formats for the session (export options honor that choice).
 
 **JSON schema** — `fields` array with `field_name` plus a label property.
 

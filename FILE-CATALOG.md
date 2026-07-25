@@ -130,7 +130,7 @@ Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-
 | [diagnostics/README.md](./excel-toolkit/diagnostics/README.md) | doc | Explains pass certificate files and first-run gate (json/txt are gitignored). |
 | [excel-toolkit.cmd](./excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](./excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
-| [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: **Score CSV → Excel** (option 1; multi-select CSV, subprocess `kpi-analytics` score, dual XLSX export), export, import (CSV defaults under `import\`), schema, Diagnostics; unique output paths (`name_N.ext`) by default. |
+| [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: full pipeline (1), score only (2), export CSV→Excel (3), Advanced (schema export, import, folders, schema, diagnostics); unique output paths (`name_N.ext`) by default. |
 | [Export-CsvToExcel.ps1](./excel-toolkit/Export-CsvToExcel.ps1) | script | Thin menu/legacy wrapper around `Export-ExcelFromCsv` in the high-level module. |
 | [Export-WqDataToExcel.ps1](./excel-toolkit/Export-WqDataToExcel.ps1) | script | Compatibility forwarder to `Export-CsvToExcel.ps1` (legacy entry name). |
 | [Test-ExcelCom.ps1](./excel-toolkit/Test-ExcelCom.ps1) | script | Dry-run and full smoke tests for COM readiness and workbook operations. |
