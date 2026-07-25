@@ -217,6 +217,15 @@ def build_parser() -> argparse.ArgumentParser:
         const=False,
         help="Disable PHI field masking on scored output (overrides config)",
     )
+    p_score.add_argument(
+        "--mapping",
+        dest="mapping_path",
+        default=None,
+        help=(
+            "Optional JSON mapping profile: semantic roles to CSV column names "
+            "(see CLI-GUIDE). Auto-detect still runs for unlisted roles."
+        ),
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -472,15 +481,31 @@ def main(argv: list[str] | None = None) -> int:
                     return EXIT_VALIDATION
 
             output_path = args.output_path or str(_default_score_output())
-            result = score_csv(
-                csv_path,
-                output_path,
-                config_path=getattr(args, "config_path", None),
-                dry_run=bool(getattr(args, "dry_run", False)),
-                summary_path=getattr(args, "summary_path", None),
-                write_summary=not bool(getattr(args, "no_summary", False)),
-                privacy_enabled=getattr(args, "privacy_override", None),
-            )
+            try:
+                result = score_csv(
+                    csv_path,
+                    output_path,
+                    config_path=getattr(args, "config_path", None),
+                    dry_run=bool(getattr(args, "dry_run", False)),
+                    summary_path=getattr(args, "summary_path", None),
+                    write_summary=not bool(
+                        getattr(args, "no_summary", False)
+                    ),
+                    privacy_enabled=getattr(args, "privacy_override", None),
+                    mapping_path=getattr(args, "mapping_path", None),
+                )
+            except (FileNotFoundError, ValueError, OSError) as exc:
+                _emit(
+                    {
+                        "Success": False,
+                        "Command": "score",
+                        "Version": __version__,
+                        "Message": str(exc),
+                    },
+                    as_json=as_json,
+                    quiet=quiet,
+                )
+                return EXIT_VALIDATION
             result["Version"] = __version__
             if gate:
                 attach_gate_fields(result, gate)

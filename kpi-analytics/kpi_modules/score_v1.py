@@ -6,6 +6,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from .column_map import apply_mapping_to_config, load_mapping_profile
 from .config import METRIC_KEYS, effective_weights, load_config
 from .io_csv import read_csv_rows, write_csv_rows
 from .kpi_quantifiers import apply_quantifiers_to_rows
@@ -30,6 +31,7 @@ def score_rows(
     cfg: dict[str, Any],
     *,
     as_of: date | None = None,
+    mapping_report: dict[str, Any] | None = None,
 ) -> tuple[list[str], list[dict[str, Any]], dict[str, Any]]:
     """
     Score in-memory rows and attach portfolio KPI quantifiers.
@@ -39,13 +41,23 @@ def score_rows(
     Priority score (v1_*) and portfolio KPIs (kpi_q_*) are independent:
     - v1_* ranks work (0-1)
     - kpi_q_* sum across rows to dataset-level KPIs
+
+    mapping_report: optional result from apply_mapping_to_config (active/skipped
+    metrics and resolved roles). When omitted, all METRIC_KEYS stay active.
     """
     if as_of is None:
         as_of = resolve_as_of(cfg)
 
+    if mapping_report is not None:
+        active = list(mapping_report.get("active_metrics") or [])
+        skipped = dict(mapping_report.get("skipped_metrics") or {})
+    else:
+        active = list(METRIC_KEYS)
+        skipped = {}
+
     raw_list = [compute_raw_metrics(row, cfg, as_of) for row in rows]
     chaos_mode, chaos_stats = detect_chaos_mode(raw_list, cfg)
-    weights = effective_weights(cfg, chaos_mode)
+    weights = effective_weights(cfg, chaos_mode, active_metrics=active)
     ratios = normalize_all(raw_list, cfg)
 
     prefix = str(cfg["output"].get("prefix", "v1_"))
@@ -130,6 +142,18 @@ def score_rows(
         "kpi_totals": kpi_totals,
         "kpi_columns": kpi_cols,
         "privacy": privacy_stats,
+        "active_metrics": list(active),
+        "skipped_metrics": skipped,
+        "field_roles": (
+            dict(mapping_report.get("resolved") or {})
+            if mapping_report is not None
+            else {}
+        ),
+        "missing_roles": (
+            list(mapping_report.get("missing_roles") or [])
+            if mapping_report is not None
+            else []
+        ),
     }
     return out_fields, out_rows, summary
 
@@ -143,6 +167,7 @@ def score_csv(
     summary_path: str | Path | None = None,
     write_summary: bool = True,
     privacy_enabled: bool | None = None,
+    mapping_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """
     Score a data CSV and write an enriched CSV.
@@ -151,6 +176,10 @@ def score_csv(
 
     privacy_enabled: if not None, overrides config privacy.enabled (CLI --privacy /
     --no-privacy). None keeps the JSON config value.
+
+    mapping_path: optional JSON profile mapping semantic roles to CSV headers.
+    Headers are always inspected (case/space tolerant + aliases); the profile
+    overrides auto-detect for listed roles.
 
     Returns a result dict suitable for CLI JSON output.
     """
@@ -161,8 +190,26 @@ def score_csv(
             privacy = {}
             cfg["privacy"] = privacy
         privacy["enabled"] = bool(privacy_enabled)
+
     fieldnames, rows = read_csv_rows(csv_path)
-    out_fields, out_rows, summary = score_rows(fieldnames, rows, cfg)
+
+    profile_roles = None
+    if mapping_path is not None:
+        profile_roles = load_mapping_profile(mapping_path)
+
+    cfg, mapping_report = apply_mapping_to_config(
+        cfg,
+        fieldnames,
+        profile_roles=profile_roles,
+        require_active_metric=True,
+    )
+
+    out_fields, out_rows, summary = score_rows(
+        fieldnames,
+        rows,
+        cfg,
+        mapping_report=mapping_report,
+    )
 
     out_resolved = Path(output_path).resolve()
     sum_path = (
@@ -192,6 +239,13 @@ def score_csv(
         "Chaos": summary["chaos"],
         "KpiTotals": summary.get("kpi_totals") or {},
         "KpiColumns": summary.get("kpi_columns") or [],
+        "ActiveMetrics": summary.get("active_metrics") or [],
+        "SkippedMetrics": summary.get("skipped_metrics") or {},
+        "FieldRoles": summary.get("field_roles") or {},
+        "MissingRoles": summary.get("missing_roles") or [],
+        "MappingPath": (
+            str(Path(mapping_path).resolve()) if mapping_path else None
+        ),
         "PrivacyEnabled": bool((summary.get("privacy") or {}).get("enabled")),
         "PrivacyPatientMode": (summary.get("privacy") or {}).get(
             "patient_mode"
@@ -205,7 +259,9 @@ def score_csv(
             if privacy_enabled is None
             else bool(privacy_enabled)
         ),
-        "Message": "Dry-run only; no file written." if dry_run else "Score complete.",
+        "Message": (
+            "Dry-run only; no file written." if dry_run else "Score complete."
+        ),
     }
 
     if not dry_run:

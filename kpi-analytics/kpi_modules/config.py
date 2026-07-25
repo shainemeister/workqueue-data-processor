@@ -215,14 +215,33 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def effective_weights(cfg: dict[str, Any], chaos_mode: bool) -> dict[str, float]:
-    """Base weights × POI multipliers × (optional) chaos multipliers, then renorm."""
+def effective_weights(
+    cfg: dict[str, Any],
+    chaos_mode: bool,
+    active_metrics: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, float]:
+    """
+    Base weights × POI multipliers × (optional) chaos multipliers, then renorm.
+
+    When *active_metrics* is provided, inactive metrics receive weight 0 and the
+    remaining weights are re-normalized to sum to 1.0. If no active metric has
+    positive weight, raises ValueError.
+    """
+    if active_metrics is None:
+        keys: tuple[str, ...] = METRIC_KEYS
+    else:
+        keys = tuple(active_metrics)
+
+    active_set = set(keys)
     base = {k: float(cfg["weights"][k]) for k in METRIC_KEYS}
     poi_m = cfg["point_of_interest"]["multipliers"]
     chaos_m = cfg["chaos"]["multipliers"]
 
     raw: dict[str, float] = {}
     for k in METRIC_KEYS:
+        if k not in active_set:
+            raw[k] = 0.0
+            continue
         w = base[k] * float(poi_m.get(k, 1.0))
         if chaos_mode and cfg["chaos"].get("enabled", True):
             w *= float(chaos_m.get(k, 1.0))
@@ -230,6 +249,15 @@ def effective_weights(cfg: dict[str, Any], chaos_mode: bool) -> dict[str, float]
 
     total = sum(raw.values())
     if total <= 0:
+        if active_metrics is not None and not active_set:
+            raise ValueError(
+                "No active priority metrics; cannot compute weights"
+            )
+        if active_metrics is not None:
+            raise ValueError(
+                "Active priority metrics have zero total weight after "
+                "multipliers; check config weights"
+            )
         n = len(METRIC_KEYS)
         return {k: 1.0 / n for k in METRIC_KEYS}
     return {k: raw[k] / total for k in METRIC_KEYS}

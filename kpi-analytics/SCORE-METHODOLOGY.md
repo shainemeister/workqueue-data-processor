@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "1.8.1"
+version: "1.9.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 1.8.1  
+**Toolkit version:** 1.9.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -88,8 +88,12 @@ RCM `kpi_q_*` columns are **independent** of priority ranking.
 ```text
 Data CSV
     │
+    ├─► [Column roles] (score path)
+    │       auto-detect / optional mapping profile → config fields
+    │       active metrics (roles present) vs skipped (missing roles)
+    │
     ├─► [Priority V1]
-    │       raw metrics → chaos mode → weights → normalize → contrib → v1_priority_score
+    │       raw metrics → chaos mode → weights (active only) → normalize → contrib → v1_priority_score
     │
     ├─► [RCM KPI Q]
     │       T, N_T, ADC → static share/contrib → exact Δ (Days in AR; aging pp)
@@ -100,7 +104,7 @@ Data CSV
     └─► [Outputs]
             detail CSV (source fields with optional PHI mask + v1_* + kpi_q_*)
             summary CSV (vertical: section, metric, value, formula, explanation)
-            CLI JSON (KpiTotals, Privacy*, scores, paths)
+            CLI JSON (KpiTotals, ActiveMetrics, SkippedMetrics, Privacy*, scores, paths)
 ```
 
 ```bat
@@ -127,6 +131,28 @@ Computed in `metrics.py` using config `fields`.
 **Defaults:** `ar_day_target = 45`. `as_of_date` is today unless set (fixtures use `2026-07-22`).
 
 Missing parseable values → normalization uses `missing_norm_value` (default **0.0**).
+
+### Column role resolution (1.9.0+)
+
+On each `score` run, CSV headers are bound to config **roles** (`fields` keys) via:
+
+1. Optional mapping profile (`--mapping`)  
+2. Config field names present in the header row  
+3. Case/space-tolerant aliases (e.g. display-style “Service Date”)
+
+| Metric key | Required role(s) |
+|------------|------------------|
+| `ar_days`, `ar_disparity` | `service_date` |
+| `out_ins_amt` | `out_ins_amt` |
+| `billed_amount` | `billed_amount` |
+| `appeal_urgency` | `days_until_appeal_deadline` |
+| `wq_age` | `days_on_wq_tab` |
+
+If a required role is **unresolved**, that metric is **skipped** for the run (weight **0**). Remaining metrics keep chaos × POI multipliers, then weights are **re-normalized to sum to 1.0**. If no metrics remain, scoring fails with a clear error.
+
+Skipped vs active metrics appear in the vertical summary and in CLI JSON (`ActiveMetrics`, `SkippedMetrics`, `FieldRoles`, `MissingRoles`).
+
+This is independent of cell-level missing values inside a present column (those still use `missing_norm_value`).
 
 ---
 
@@ -461,3 +487,4 @@ Checks include:
 | 1.7.0 | Score-output PHI masking (`privacy`); patient prefix+token; DOB omit; `--privacy` / `--no-privacy` CLI |
 | 1.8.0 | Default score/generate paths use tracked `import\wq_synthetic_data.csv` (no formula change) |
 | 1.8.1 | Default chaos retune: `mean_ar_days_factor` **1.0** (threshold = `ar_day_target`); chaos multipliers boost `ar_days` ×1.2 and `out_ins_amt` ×1.5 (with existing disparity/appeal boosts) |
+| 1.9.0 | Column role resolution + optional mapping profile; availability-aware priority weights (skip metrics with missing roles, renorm); summary/CLI report active and skipped metrics (no change to default formulas when all roles present) |

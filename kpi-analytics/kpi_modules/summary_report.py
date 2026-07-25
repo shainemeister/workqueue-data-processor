@@ -463,16 +463,64 @@ def build_summary_rows(
             explanation="Average work-queue priority score across all claims in this batch.",
         )
     )
+    active_metrics = summary.get("active_metrics") or []
+    skipped_metrics = summary.get("skipped_metrics") or {}
+    if active_metrics or skipped_metrics:
+        rows.append(
+            _row(
+                "Priority batch",
+                "active_metrics",
+                ", ".join(str(m) for m in active_metrics),
+                explanation=(
+                    "Priority metrics included this run after column role "
+                    "resolution. Weights are re-normalized over this set only."
+                ),
+            )
+        )
+        if skipped_metrics:
+            skip_text = " | ".join(
+                f"{k}: {v}" for k, v in sorted(skipped_metrics.items())
+            )
+            rows.append(
+                _row(
+                    "Priority batch",
+                    "skipped_metrics",
+                    skip_text,
+                    explanation=(
+                        "Priority metrics disabled because required CSV columns "
+                        "(roles) were missing. Their weight is redistributed to "
+                        "active metrics."
+                    ),
+                )
+            )
+        missing_roles = summary.get("missing_roles") or []
+        if missing_roles:
+            rows.append(
+                _row(
+                    "Priority batch",
+                    "missing_roles",
+                    ", ".join(str(r) for r in missing_roles),
+                    explanation=(
+                        "Semantic field roles not found in the input headers "
+                        "after auto-detect and optional mapping profile."
+                    ),
+                )
+            )
+
     for mk, wv in weights.items():
         rows.append(
             _row(
                 "Priority weights",
                 f"weight_{mk}",
                 wv,
-                formula="Base weight x focus x chaos factors, then scaled so all weights sum to 1",
+                formula=(
+                    "Base weight x focus x chaos factors, then scaled so "
+                    "active weights sum to 1 (inactive metrics = 0)"
+                ),
                 explanation=(
-                    f"Share of the priority score driven by the '{mk}' metric for this batch. "
-                    "All priority weights together equal 1.0."
+                    f"Share of the priority score driven by the '{mk}' metric "
+                    "for this batch. Active priority weights together equal 1.0; "
+                    "skipped metrics show 0."
                 ),
             )
         )

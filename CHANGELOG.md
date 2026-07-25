@@ -13,6 +13,23 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.1.0] - 2026-07-25
+
+#### Added
+
+- **kpi-analytics 1.9.0:** dynamic column role mapping for `score`
+  - New `kpi_modules.column_map`: role catalog, header aliases (case/space tolerant), mapping profile JSON load/save
+  - CLI `score --mapping PATH` to bind semantic roles to extract column names
+  - Auto-detect when headers match schema-style names or common synonyms without a profile
+  - Availability-aware priority: metrics whose required roles are missing are skipped; weights re-normalized over active metrics
+  - Score summary CSV and CLI JSON report `ActiveMetrics`, `SkippedMetrics`, `FieldRoles`, `MissingRoles`
+- Living development plan updates in `PLAN.md` (v0.2.0): efficiency releases R1–R3; locked `claim_age_days` and Balance-Weighted Days Outstanding for R2
+
+#### Changed
+
+- Score path always resolves field roles before raw metrics (config `fields` rewritten to actual headers for the run)
+- FILE-CATALOG inventory for `column_map.py` and toolkit version **1.9.0**
+
 ### [1.0.2] - 2026-07-25
 
 #### Changed

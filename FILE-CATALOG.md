@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.2.1"
+version: "1.3.0"
 status: current
 audience:
   - developers
@@ -21,7 +21,7 @@ last_updated: "2026-07-25"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.2.1  
+**Document version:** 1.3.0  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md) · [PLAN.md](./PLAN.md)
@@ -179,11 +179,12 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 1.8.1). |
+| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 1.9.0). |
 | [__main__.py](./kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score`, `generate`, `validate-score`; diagnostics gate. |
+| [column_map.py](./kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, mapping profile JSON, availability-aware metric set. |
 | [diagnostics.py](./kpi-analytics/kpi_modules/diagnostics.py) | module | Enterprise runtime/import dry-run, durable pass/fail report, operational gate helpers. |
-| [config.py](./kpi-analytics/kpi_modules/config.py) | module | Loads and validates JSON config; resolves healthy vs chaos weight sets. |
+| [config.py](./kpi-analytics/kpi_modules/config.py) | module | Loads and validates JSON config; resolves healthy vs chaos weight sets (optional active-metric renorm). |
 | [config_default.json](./kpi-analytics/kpi_modules/config_default.json) | config | Default field maps, weights, thresholds, and KPI quantifier settings. |
 | [io_csv.py](./kpi-analytics/kpi_modules/io_csv.py) | module | Stdlib CSV read/write helpers shared by score and generate paths. |
 | [metrics.py](./kpi-analytics/kpi_modules/metrics.py) | module | Raw Priority Matrix V1 metrics (AR days, disparity, balances, appeal urgency, WQ age). |
@@ -277,6 +278,7 @@ rem Existing destinations require -Force to overwrite
 | 1.1.1 | `privacy.py` score-output PHI masking; toolkit version 1.7.0 |
 | 1.1.2 | `import\` tracked inputs; default score/generate paths; toolkit 1.8.0 |
 | 1.1.3 | Synthetic import `.xlsx` fixtures; excel-toolkit 1.2.0 `import-excel` |
+| 1.3.0 | `column_map.py` role mapping; kpi-analytics 1.9.0; PLAN.md living plan already cataloged |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |

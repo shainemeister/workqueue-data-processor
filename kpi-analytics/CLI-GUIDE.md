@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "1.8.1"
+version: "1.9.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-25"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 1.8.1 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 1.9.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -156,10 +156,10 @@ Prefer **`--json`** stdout for machine-readable details.
 python -m kpi_modules version [--json]
 ```
 
-Without `--json`, prints the bare version string (e.g. `1.8.1`).
+Without `--json`, prints the bare version string (e.g. `1.9.0`).
 
 ```json
-{"Success":true,"Version":"1.8.1","Command":"version"}
+{"Success":true,"Version":"1.9.0","Command":"version"}
 ```
 ---
 
@@ -209,8 +209,8 @@ Exit **0** if `OverallPass`; **1** if any critical check fails.
   "Success": true,
   "OverallPass": true,
   "Command": "diagnostics",
-  "Version": "1.8.1",
-  "ToolkitVersion": "1.8.1",
+  "Version": "1.9.0",
+  "ToolkitVersion": "1.9.0",
   "PythonVersion": "3.13.0",
   "ReportJsonPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.json",
   "ReportTextPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.txt",
@@ -252,7 +252,7 @@ Scores a data CSV:
 
 ```text
 python -m kpi_modules score [--csv <path>] [--output <path>]
-    [--config <path>] [--summary <path>] [--no-summary]
+    [--config <path>] [--mapping <path>] [--summary <path>] [--no-summary]
     [--privacy | --no-privacy]
     [--dry-run] [--json] [--quiet]
 ```
@@ -264,6 +264,7 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--summary` | No | `<output_stem>_summary.csv` | Vertical summary CSV |
 | `--no-summary` | No | off | Skip summary file |
 | `--config` | No | package default | Weights / KPI config |
+| `--mapping` | No | none | JSON profile mapping semantic roles to CSV column names (see below) |
 | `--privacy` | No | (config) | Force PHI field masking on scored output |
 | `--no-privacy` | No | (config) | Disable PHI field masking on scored output |
 | `--dry-run` | No | off | No file writes |
@@ -273,6 +274,34 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--quiet` | No | off | Minimal host text |
 
 `--privacy` and `--no-privacy` are mutually exclusive. When omitted, `privacy.enabled` from the JSON config applies (default **on** in package `config_default.json`). Overrides only the master switch; patient/DOB modes still come from config.
+
+**Column mapping**
+
+Every `score` run resolves **roles** (config `fields` keys) to CSV headers:
+
+1. Entries in `--mapping` profile (must match a present header; case/space tolerant)  
+2. Config `fields` names when those headers exist  
+3. Alias auto-detect (e.g. `Service Date` → `service_date`, `Balance` → `out_ins_amt`)
+
+If a metric’s required role is missing, that metric is **skipped** and its weight is redistributed over the remaining active metrics. If **no** metrics can run, `score` fails with exit **1**.
+
+Mapping profile shape:
+
+```json
+{
+  "version": "1.0",
+  "description": "My WQ extract layout",
+  "roles": {
+    "service_date": "Service Date",
+    "out_ins_amt": "Balance",
+    "billed_amount": "Charges",
+    "days_until_appeal_deadline": "Days Until Appeal Deadline",
+    "days_on_wq_tab": "Days on WQ Tab"
+  }
+}
+```
+
+Schema (`wq_schema.json`) remains the canonical vocabulary; mapping is a runtime adapter only.
 
 **Examples**
 
@@ -284,6 +313,7 @@ kpi-analytics.cmd score --csv ..\import\wq_synthetic_data.csv --output ..\output
 kpi-analytics.cmd score --no-privacy --json
 
 kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
+  --mapping D:\exports\my_mapping.json ^
   --output ..\output\wq_scored.csv --privacy --json
 ```
 
@@ -293,7 +323,7 @@ kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
 {
   "Success": true,
   "Command": "score",
-  "Version": "1.8.1",
+  "Version": "1.9.0",
   "InputPath": "C:\\...\\import\\wq_synthetic_data.csv",
   "OutputPath": "C:\\...\\output\\wq_scored.csv",
   "SummaryPath": "C:\\...\\output\\wq_scored_summary.csv",
@@ -306,6 +336,11 @@ kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
   "ScoreMax": 0.80,
   "ScoreMean": 0.25,
   "ScoreColumn": "v1_priority_score",
+  "ActiveMetrics": ["ar_days", "ar_disparity", "out_ins_amt", "billed_amount", "appeal_urgency", "wq_age"],
+  "SkippedMetrics": {},
+  "FieldRoles": {"service_date": "service_date", "out_ins_amt": "out_ins_amt"},
+  "MissingRoles": [],
+  "MappingPath": null,
   "DiagnosticsGate": "cached",
   "KpiTotals": {
     "kpi_total_ar": 284235.94,
@@ -514,4 +549,4 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and package version are aligned at **1.8.1**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, or `kpi_q_*` / summary contracts.
+CLI and package version are aligned at **1.9.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, or `kpi_q_*` / summary contracts.

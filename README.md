@@ -65,7 +65,7 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 |-----|-------------|
 | **kpi-analytics** | Python **3.13.x** on PATH (`py -3.13` or `python`). **No pip packages.** |
 | **excel-toolkit** | Windows PowerShell **5.1** and desktop **Microsoft Excel**. |
-| **Your data** | A CSV with a header row; column names should match the schema when using defaults. |
+| **Your data** | A CSV with a header row. Prefer schema `field_name` headers; otherwise use aliases or `score --mapping` (kpi-analytics 1.9.0+). |
 
 IT / controlled-PC notes: [kpi-analytics security](./kpi-analytics/ENTERPRISE-SECURITY.md) · [excel-toolkit security](./excel-toolkit/ENTERPRISE-SECURITY.md)
 
@@ -115,7 +115,7 @@ kpi-analytics.cmd generate --rows 250 --seed 42
 | [wq_schema.csv](./wq_schema.csv) | Same schema in CSV form |
 | [wq_data.csv](./wq_data.csv) | Sample records—one row per WQ item; first row is `field_name` headers |
 
-The **schema** describes columns; the **data file** holds rows. Types are `str`, `int`, and `float`; empty cells mean missing values. When you bring in a new extract, keep headers aligned with `field_name`.
+The **schema** describes columns; the **data file** holds rows. Types are `str`, `int`, and `float`; empty cells mean missing values. Prefer headers aligned with `field_name`. For extracts with different labels, scoring can auto-detect common synonyms or use an optional mapping profile (`kpi-analytics.cmd score --mapping path.json`).
 
 ---
 
