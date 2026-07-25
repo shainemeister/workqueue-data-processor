@@ -7,12 +7,13 @@ audience:
   - users
   - developers
   - analysts
+doc_type: readme
 related:
   - CLI-GUIDE.md
   - SCORE-METHODOLOGY.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-22"
+last_updated: "2026-07-25"
 ---
 
 # KPI Analytics (`kpi-analytics`)
