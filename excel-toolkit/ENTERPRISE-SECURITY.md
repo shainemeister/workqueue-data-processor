@@ -11,14 +11,14 @@ doc_type: security
 related:
   - README.md
   - CLI-GUIDE.md
-last_updated: "2026-07-22"
+last_updated: "2026-07-25"
 ---
 
 # Excel Toolkit — Enterprise Security & Execution Notes
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.3.0  
+**Toolkit version:** 1.4.0  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 

@@ -11,7 +11,7 @@ related:
   - README.md
   - ENTERPRISE-SECURITY.md
   - diagnostics/README.md
-last_updated: "2026-07-22"
+last_updated: "2026-07-25"
 ---
 
 # Excel Toolkit — CLI Reference
@@ -177,7 +177,7 @@ excel-toolkit.cmd version -Json
 **JSON shape (illustrative)**
 
 ```json
-{"Success":true,"Version":"1.3.0","Command":"version"}
+{"Success":true,"Version":"1.4.0","Command":"version"}
 ```
 
 Without `-Json`, stdout is the bare version string (for example `1.4.0`).
@@ -360,7 +360,7 @@ excel-toolkit.cmd export-csv ^
 {
   "Success": true,
   "Command": "export-csv",
-  "Version": "1.3.0",
+  "Version": "1.4.0",
   "OutputPath": "C:\\...\\output\\export.xlsx",
   "RequestedOutputPath": "C:\\...\\output\\export.xlsx",
   "PathAdjusted": false,
@@ -449,7 +449,7 @@ excel-toolkit.cmd import-excel -ExcelPath ..\import\wq_synthetic_data_protected.
 {
   "Success": true,
   "Command": "import-excel",
-  "Version": "1.3.0",
+  "Version": "1.4.0",
   "ExcelPath": "C:\\...\\import\\wq_synthetic_data.xlsx",
   "OutputPath": "C:\\...\\import\\wq_synthetic_data_1.csv",
   "RequestedOutputPath": "C:\\...\\import\\wq_synthetic_data.csv",
