@@ -9,7 +9,7 @@ audience:
 doc_type: readme
 related:
   - CLI-GUIDE.md
-  - ENTERPRISE-SECURITY.md
+  - SECURITY.md
 last_updated: "{{LAST_UPDATED}}"
 ---
 
@@ -17,10 +17,10 @@ last_updated: "{{LAST_UPDATED}}"
 
 {{ONE_LINE_PURPOSE}}
 
-**Toolkit version:** {{VERSION}}  
-**Folder:** `{{FOLDER_NAME}}\`  
+**Package version:** {{VERSION}}  
+**Folder:** `{{FOLDER_NAME}}/`  
 
-**Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
+**Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [SECURITY.md](./SECURITY.md)
 
 ---
 
@@ -32,7 +32,7 @@ last_updated: "{{LAST_UPDATED}}"
 |-----------|------------|
 | Quick start | [Recommended workflow](#recommended-workflow) |
 | Commands | [CLI-GUIDE.md](./CLI-GUIDE.md) |
-| Security | [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md) |
+| Security | [SECURITY.md](./SECURITY.md) |
 
 ---
 
@@ -48,7 +48,7 @@ last_updated: "{{LAST_UPDATED}}"
 8. [Using from other code](#using-from-other-code)
 9. [CLI quick reference](#cli-quick-reference)
 10. [Validation](#validation)
-11. [Enterprise notes](#enterprise-notes)
+11. [Security notes](#security-notes)
 12. [Troubleshooting](#troubleshooting)
 13. [Out of scope](#out-of-scope)
 
@@ -66,8 +66,19 @@ last_updated: "{{LAST_UPDATED}}"
 
 ## Recommended workflow
 
+Use the block for your host OS. Keep both when the project is multi-platform; drop the unused OS when primary platform is single and declared.
+
+### Windows
+
 ```bat
 cd /d C:\path\to\{{FOLDER_NAME}}
+{{QUICKSTART_COMMANDS}}
+```
+
+### Linux / macOS
+
+```bash
+cd /path/to/{{FOLDER_NAME}}
 {{QUICKSTART_COMMANDS}}
 ```
 
@@ -139,14 +150,14 @@ cd /d C:\path\to\{{FOLDER_NAME}}
 
 ---
 
-## Enterprise notes
+## Security notes
 
 | Topic | Behavior |
 |-------|----------|
 | Elevation | {{ELEVATION}} |
 | Network | {{NETWORK}} |
 
-Full write-up: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
+Full write-up: [SECURITY.md](./SECURITY.md).
 
 ---
 

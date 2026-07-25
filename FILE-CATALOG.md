@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.1.5"
+version: "1.2.0"
 status: current
 audience:
   - developers
@@ -10,19 +10,20 @@ audience:
 doc_type: other
 related:
   - README.md
+  - CHANGELOG.md
   - MARKDOWN-STANDARD.md
   - RULES.md
-last_updated: "2026-07-22"
+last_updated: "2026-07-25"
 ---
 
 # File Catalog
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.1.4  
+**Document version:** 1.2.0  
 **Baseline layout:** repository root  
 
-**Related:** [README.md](./README.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
+**Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
 
 ---
 
@@ -39,6 +40,7 @@ Each row below states **what the file is for** in one sentence. Runtime contract
 | KPI score / generate / validate / diagnostics | `kpi-analytics\kpi-analytics.cmd` |
 | Markdown conventions | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) |
 | Maintenance policy | [RULES.md](./RULES.md) |
+| Project history | [CHANGELOG.md](./CHANGELOG.md) |
 
 Generated artifacts under `output\` and Python `__pycache__\` are intentionally **not** cataloged as source.
 
@@ -66,7 +68,7 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 
 ```text
 workqueue-data-processor/
-  README.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md
+  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md
   wq_schema.json, wq_schema.csv, wq_data.csv
   WQ_Priority_Matrix_Concept.md
   Start-ExcelMenu.cmd
@@ -84,15 +86,16 @@ workqueue-data-processor/
 | Path | Type | Summary |
 |------|------|---------|
 | [README.md](./README.md) | doc | Repository overview: WQ two-file data model, toolkit map, and synthetic → score → Excel flow. |
+| [CHANGELOG.md](./CHANGELOG.md) | doc | Project history (Keep a Changelog); required by repo-kit. Kit version lives in RULES kit baseline only. |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
-| [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, and author checklist. |
-| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, formatting, architecture, data, git, and verification. |
+| [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
+| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline, CHANGELOG policy, formatting, architecture, data, git, and verification. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
 | [wq_data.csv](./wq_data.csv) | data | Small sample WQ fact table; column headers use schema `field_name` values (also generate template). |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
-| [.gitignore](./.gitignore) | config | Excludes `output\`, Python caches, local env dirs, and common editor noise. |
+| [.gitignore](./.gitignore) | config | Excludes `output\`, diagnostics certificates, Python caches, local env dirs, and common editor noise. |
 
 ---
 
@@ -273,3 +276,4 @@ rem Existing destinations require -Force to overwrite
 | 1.1.3 | Synthetic import `.xlsx` fixtures; excel-toolkit 1.2.0 `import-excel` |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
+| 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |

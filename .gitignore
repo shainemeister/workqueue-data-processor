@@ -1,8 +1,43 @@
+# Starter ignore list (repo-kit aligned) plus project-specific paths.
+# Extend for local tooling as needed.
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Secrets / local env
+.env
+.env.*
+
 # Python
 __pycache__/
 *.py[cod]
 *.pyo
+*.egg
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Coverage / test runners
+.coverage
+htmlcov/
+.tox/
 
 # Generated toolkit outputs
 output/
@@ -12,17 +47,3 @@ kpi-analytics/diagnostics/last_diagnostics.json
 kpi-analytics/diagnostics/last_diagnostics.txt
 excel-toolkit/diagnostics/last_diagnostics.json
 excel-toolkit/diagnostics/last_diagnostics.txt
-
-# OS / editor
-Thumbs.db
-Desktop.ini
-.DS_Store
-*.swp
-*~
-.vscode/
-.idea/
-
-# Local env
-.env
-.venv/
-venv/

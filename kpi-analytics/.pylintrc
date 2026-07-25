@@ -1,6 +1,12 @@
 # Developer tooling only — not a product runtime dependency.
 # Product code remains Python 3.13 standard library only (see RULES.md).
 #
+# PURPOSE: PEP-8 / consistent-style gate for Python product code.
+#   Pass criteria (see RULES.md): exit code 0 and score 10.00/10.
+#   Do NOT add pylint as a product runtime dependency for end users.
+#
+# py-version must match this project's supported product Python (3.13).
+#
 # From kpi-analytics\:
 #   py -3.13 -m pylint kpi_modules
 
@@ -8,9 +14,10 @@
 jobs = 1
 py-version = 3.13
 ignore = __pycache__
+
 [MESSAGES CONTROL]
 # PEP-8 / style gate only. Design/refactor (too-many-*, consider-using-*) out of scope.
-# import-outside-toplevel intentionally omitted (smoke-check patterns).
+# import-outside-toplevel intentionally omitted (smoke-check / lazy-import patterns).
 disable = all
 
 enable =
@@ -49,6 +56,7 @@ indent-string = "    "
 expected-line-ending-format =
 
 [BASIC]
+# Project allowlist for short intentional names; extend only when repeated and intentional.
 good-names =
     i,
     j,
@@ -84,6 +92,7 @@ good-names =
     mid
 
 [DESIGN]
+# Not in the enable list; limits apply only if design checks are re-enabled.
 max-args = 8
 max-locals = 40
 max-branches = 20
