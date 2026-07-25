@@ -6,11 +6,12 @@ status: current
 audience:
   - users
   - developers
+doc_type: readme
 related:
   - README.md
   - CLI-GUIDE.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-22"
+last_updated: "2026-07-25"
 ---
 
 # Excel Toolkit (`excel-toolkit`)
@@ -25,6 +26,36 @@ PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including
 **Column layout for export is always driven by your CSV file.** An optional JSON schema can supply display labels. No column names are hard-coded in the engine. Import reads the worksheet used range as-is.
 
 **Collision policy:** existing destinations are **not** overwritten by default. A free sibling path with a numerical suffix is used (`name.csv` → `name_1.csv`). Pass `-Force` only when automation must replace an exact path.
+
+---
+
+## Summary
+
+Excel Toolkit is a **local Windows** PowerShell **5.1** package for controlled desktops. It uses **desktop Excel COM** to export CSV → formatted `.xlsx` and import Excel → CSV (including optional workbook open passwords in process memory only). Everyday users can double-click the menu; automation uses `excel-toolkit.cmd` / `ExcelToolkit.ps1` or `Import-Module ExcelToolkit.psm1`. Menu option **Score CSV → Excel** composes the sibling **`kpi-analytics`** toolkit at the **workflow layer only** (subprocess `kpi-analytics.cmd`, then Excel export)—no scoring math in PowerShell and no Excel COM from Python. Existing outputs are not overwritten by default (unique `name_N` paths). The toolkit does **not** elevate, download code, permanently change execution policy, or force-kill Excel.
+
+| You want… | Start here |
+|-----------|------------|
+| Score then open Excel in one step | [For most users](#for-most-users-recommended) · menu option **1** |
+| Export / import only | Menu options **2–4** or [CLI-GUIDE.md](./CLI-GUIDE.md) |
+| CLI automation | [CLI-GUIDE.md](./CLI-GUIDE.md) |
+| Module API from PowerShell | [Using the toolkit from other PowerShell scripts](#using-the-toolkit-from-other-powershell-scripts) |
+| First-run / locked-down PC | `excel-toolkit.cmd diagnostics` · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md) |
+
+---
+
+## Contents
+
+1. [Summary](#summary)
+2. [Who should use what](#who-should-use-what)
+3. [For most users (recommended)](#for-most-users-recommended)
+4. [Enterprise notes (summary)](#enterprise-notes-summary)
+5. [Prerequisites](#prerequisites)
+6. [Data layout (public-safe design)](#data-layout-public-safe-design)
+7. [Files](#files)
+8. [Using the toolkit from other PowerShell scripts](#using-the-toolkit-from-other-powershell-scripts)
+9. [CLI (Python, Task Scheduler, cmd)](#cli-python-task-scheduler-cmd)
+10. [Troubleshooting](#troubleshooting)
+11. [Out of scope](#out-of-scope)
 
 ---
 
