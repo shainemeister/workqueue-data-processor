@@ -13,6 +13,16 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.0.2] - 2026-07-25
+
+#### Changed
+
+- **kpi-analytics 1.8.1:** retune default chaos entry and weight multipliers in `config_default.json`
+  - `mean_ar_days_factor`: **1.5 → 1.0** (chaos when mean AR days exceeds `ar_day_target`, default 45)
+  - chaos multipliers: `ar_days` **1.0 → 1.2**, `out_ins_amt` **1.0 → 1.5** (still boosts disparity ×1.4 and appeal ×1.5)
+  - `config.py` incomplete-config fallback for `mean_ar_days_factor` matches the new default
+  - SCORE-METHODOLOGY and toolkit version badges aligned; golden fixtures keep pinned configs
+
 ### [1.0.1] - 2026-07-25
 
 #### Changed

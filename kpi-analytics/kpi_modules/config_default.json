@@ -31,14 +31,14 @@
   },
   "chaos": {
     "enabled": true,
-    "mean_ar_days_factor": 1.5,
+    "mean_ar_days_factor": 1.0,
     "share_ar_ge_60": 0.40,
     "share_ar_ge_90": 0.25,
     "share_ar_ge_120": 0.15,
     "multipliers": {
-      "ar_days": 1.0,
+      "ar_days": 1.2,
       "ar_disparity": 1.4,
-      "out_ins_amt": 1.0,
+      "out_ins_amt": 1.5,
       "billed_amount": 1.0,
       "appeal_urgency": 1.5,
       "wq_age": 1.0

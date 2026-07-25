@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Enterprise Security
 description: Security review notes and execution restrictions for KPI Analytics on controlled corporate PCs.
-version: "1.8.0"
+version: "1.8.1"
 status: current
 audience:
   - security
@@ -12,14 +12,14 @@ related:
   - README.md
   - CLI-GUIDE.md
   - diagnostics/README.md
-last_updated: "2026-07-22"
+last_updated: "2026-07-25"
 ---
 
 # KPI Analytics — Enterprise Security & Execution Notes
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate desktops.
 
-**Toolkit version:** 1.8.0  
+**Toolkit version:** 1.8.1  
 **Toolkit folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\`  
 **Runtime:** Python **3.13** standard library only (no third-party packages)
@@ -224,3 +224,4 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | 1.6.0 | Enterprise `diagnostics` command, durable pass/fail report, operational command gate |
 | 1.7.0 | Score-output PHI field masking (`privacy`); patient prefix+token; DOB omit; `--privacy` / `--no-privacy` |
 | 1.8.0 | Default paths: score/generate use tracked `import\`; score outputs still under `output\` |
+| 1.8.1 | Default chaos threshold/multipliers retune in `config_default.json` (no trust-boundary change) |

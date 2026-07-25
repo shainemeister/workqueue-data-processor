@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "1.8.0"
+version: "1.8.1"
 status: current
 audience:
   - users
@@ -13,7 +13,7 @@ related:
   - CLI-GUIDE.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-22"
+last_updated: "2026-07-25"
 ---
 
 # KPI Analytics — Score Methodology & Validation
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 1.8.0  
+**Toolkit version:** 1.8.1  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -136,7 +136,7 @@ Uses batch AR days (parseable service dates only). Chaos if **any** default rule
 
 | Condition | Default |
 |-----------|---------|
-| mean AR days > `ar_day_target × mean_ar_days_factor` | 45 × 1.5 = **67.5** |
+| mean AR days > `ar_day_target × mean_ar_days_factor` | 45 × 1.0 = **45** |
 | share AR ≥ 60 | ≥ **40%** |
 | share AR ≥ 90 | ≥ **25%** |
 | share AR ≥ 120 | ≥ **15%** |
@@ -167,7 +167,7 @@ raw_w_i = base_i × poi_multiplier_i × (chaos_multiplier_i if chaos else 1)
 w_i     = raw_w_i / sum(raw_w_j)
 ```
 
-Default chaos multipliers: `ar_disparity` × **1.4**, `appeal_urgency` × **1.5**.  
+Default chaos multipliers: `ar_days` × **1.2**, `ar_disparity` × **1.4**, `out_ins_amt` × **1.5**, `appeal_urgency` × **1.5** (others × **1.0**).  
 POI multipliers default to 1.0.  
 Audit: `v1_weight_*` (constant across rows in a batch).
 
@@ -460,3 +460,4 @@ Checks include:
 | 1.6.0 | Toolkit version align; enterprise diagnostics gate (no formula change) |
 | 1.7.0 | Score-output PHI masking (`privacy`); patient prefix+token; DOB omit; `--privacy` / `--no-privacy` CLI |
 | 1.8.0 | Default score/generate paths use tracked `import\wq_synthetic_data.csv` (no formula change) |
+| 1.8.1 | Default chaos retune: `mean_ar_days_factor` **1.0** (threshold = `ar_day_target`); chaos multipliers boost `ar_days` ×1.2 and `out_ins_amt` ×1.5 (with existing disparity/appeal boosts) |

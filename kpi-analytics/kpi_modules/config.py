@@ -89,7 +89,7 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(chaos, dict):
         raise ValueError("Config 'chaos' must be an object")
     chaos.setdefault("enabled", True)
-    chaos.setdefault("mean_ar_days_factor", 1.5)
+    chaos.setdefault("mean_ar_days_factor", 1.0)
     chaos.setdefault("share_ar_ge_60", 0.40)
     chaos.setdefault("share_ar_ge_90", 0.25)
     chaos.setdefault("share_ar_ge_120", 0.15)

@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "1.8.0"
+version: "1.8.1"
 status: current
 audience:
   - developers
@@ -12,14 +12,14 @@ related:
   - SCORE-METHODOLOGY.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-22"
+last_updated: "2026-07-25"
 ---
 
 # KPI Analytics — CLI Reference
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 1.8.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 1.8.1 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -156,10 +156,10 @@ Prefer **`--json`** stdout for machine-readable details.
 python -m kpi_modules version [--json]
 ```
 
-Without `--json`, prints the bare version string (e.g. `1.8.0`).
+Without `--json`, prints the bare version string (e.g. `1.8.1`).
 
 ```json
-{"Success":true,"Version":"1.8.0","Command":"version"}
+{"Success":true,"Version":"1.8.1","Command":"version"}
 ```
 ---
 
@@ -209,8 +209,8 @@ Exit **0** if `OverallPass`; **1** if any critical check fails.
   "Success": true,
   "OverallPass": true,
   "Command": "diagnostics",
-  "Version": "1.8.0",
-  "ToolkitVersion": "1.8.0",
+  "Version": "1.8.1",
+  "ToolkitVersion": "1.8.1",
   "PythonVersion": "3.13.0",
   "ReportJsonPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.json",
   "ReportTextPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.txt",
@@ -293,7 +293,7 @@ kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
 {
   "Success": true,
   "Command": "score",
-  "Version": "1.8.0",
+  "Version": "1.8.1",
   "InputPath": "C:\\...\\import\\wq_synthetic_data.csv",
   "OutputPath": "C:\\...\\output\\wq_scored.csv",
   "SummaryPath": "C:\\...\\output\\wq_scored_summary.csv",
@@ -514,4 +514,4 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and package version are aligned at **1.8.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, or `kpi_q_*` / summary contracts.
+CLI and package version are aligned at **1.8.1**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, or `kpi_q_*` / summary contracts.
