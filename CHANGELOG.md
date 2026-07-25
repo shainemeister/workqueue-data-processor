@@ -13,6 +13,14 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.0.1] - 2026-07-25
+
+#### Changed
+
+- Excel toolkit docs: align ENTERPRISE-SECURITY toolkit version badge with **1.4.0**; refresh CLI guide illustrative JSON `Version` fields to **1.4.0**
+- Excel toolkit README: add Summary, Contents, and `doc_type: readme` for MARKDOWN-STANDARD compliance
+- KPI package README: add `doc_type: readme`
+
 ### [1.0.0] - 2026-07-25
 
 #### Added
