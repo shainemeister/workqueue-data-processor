@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Diagnostics Folder
 description: Purpose of the enterprise diagnostics report directory for first-run and gated execution.
-version: "1.9.0"
+version: "2.0.0"
 status: current
 audience:
   - users

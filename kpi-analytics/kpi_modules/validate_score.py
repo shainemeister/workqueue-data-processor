@@ -292,9 +292,13 @@ def validate_score(
                     "patient": r.get("patient"),
                     "account": r.get("account"),
                     "score": r.get(score_col),
-                    "raw_ar_days": r.get(f"{prefix}raw_ar_days"),
+                    "raw_claim_age_days": r.get(
+                        f"{prefix}raw_claim_age_days"
+                    ),
                     "raw_out_ins_amt": r.get(f"{prefix}raw_out_ins_amt"),
-                    "raw_appeal_urgency": r.get(f"{prefix}raw_appeal_urgency"),
+                    "raw_appeal_urgency": r.get(
+                        f"{prefix}raw_appeal_urgency"
+                    ),
                 }
             )
     except Exception:

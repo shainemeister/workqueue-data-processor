@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "1.9.0"
+version: "2.0.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-25"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 1.9.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.0.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -156,10 +156,10 @@ Prefer **`--json`** stdout for machine-readable details.
 python -m kpi_modules version [--json]
 ```
 
-Without `--json`, prints the bare version string (e.g. `1.9.0`).
+Without `--json`, prints the bare version string (e.g. `2.0.0`).
 
 ```json
-{"Success":true,"Version":"1.9.0","Command":"version"}
+{"Success":true,"Version":"2.0.0","Command":"version"}
 ```
 ---
 
@@ -209,8 +209,8 @@ Exit **0** if `OverallPass`; **1** if any critical check fails.
   "Success": true,
   "OverallPass": true,
   "Command": "diagnostics",
-  "Version": "1.9.0",
-  "ToolkitVersion": "1.9.0",
+  "Version": "2.0.0",
+  "ToolkitVersion": "2.0.0",
   "PythonVersion": "3.13.0",
   "ReportJsonPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.json",
   "ReportTextPath": "C:\\...\\kpi-analytics\\diagnostics\\last_diagnostics.txt",
@@ -323,7 +323,7 @@ kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
 {
   "Success": true,
   "Command": "score",
-  "Version": "1.9.0",
+  "Version": "2.0.0",
   "InputPath": "C:\\...\\import\\wq_synthetic_data.csv",
   "OutputPath": "C:\\...\\output\\wq_scored.csv",
   "SummaryPath": "C:\\...\\output\\wq_scored_summary.csv",
@@ -336,7 +336,7 @@ kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
   "ScoreMax": 0.80,
   "ScoreMean": 0.25,
   "ScoreColumn": "v1_priority_score",
-  "ActiveMetrics": ["ar_days", "ar_disparity", "out_ins_amt", "billed_amount", "appeal_urgency", "wq_age"],
+  "ActiveMetrics": ["claim_age_days", "claim_age_disparity", "out_ins_amt", "billed_amount", "appeal_urgency", "wq_age", "balance_weighted_days_outstanding", "denial_count", "days_since_last_worked", "dual_deadline_urgency"],
   "SkippedMetrics": {},
   "FieldRoles": {"service_date": "service_date", "out_ins_amt": "out_ins_amt"},
   "MissingRoles": [],
@@ -549,4 +549,4 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and package version are aligned at **1.9.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, or `kpi_q_*` / summary contracts.
+CLI and package version are aligned at **2.0.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, or `kpi_q_*` / summary contracts.

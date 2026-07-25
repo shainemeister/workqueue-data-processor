@@ -14,23 +14,35 @@ from typing import Any
 
 from .config import METRIC_KEYS
 
-# Semantic roles used by V1 scoring (config ``fields`` keys).
+# Semantic roles used by scoring (config ``fields`` keys).
 ROLE_KEYS: tuple[str, ...] = (
     "service_date",
     "out_ins_amt",
     "billed_amount",
     "days_until_appeal_deadline",
     "days_on_wq_tab",
+    "last_worked_date",
+    "denial_count",
+    "days_until_replacement_deadline",
 )
 
 # Metric key -> roles that must be resolved for the metric to stay active.
 METRIC_REQUIRED_ROLES: dict[str, tuple[str, ...]] = {
-    "ar_days": ("service_date",),
-    "ar_disparity": ("service_date",),
+    "claim_age_days": ("service_date",),
+    "claim_age_disparity": ("service_date",),
     "out_ins_amt": ("out_ins_amt",),
     "billed_amount": ("billed_amount",),
     "appeal_urgency": ("days_until_appeal_deadline",),
     "wq_age": ("days_on_wq_tab",),
+    "balance_weighted_days_outstanding": (
+        "service_date",
+        "out_ins_amt",
+        "billed_amount",
+    ),
+    "denial_count": ("denial_count",),
+    "days_since_last_worked": ("last_worked_date",),
+    # Dual-deadline needs at least one deadline column present
+    "dual_deadline_urgency": (),
 }
 
 # Known synonyms / display labels per role (case/space-insensitive match).
@@ -76,6 +88,27 @@ ROLE_ALIASES: dict[str, tuple[str, ...]] = {
         "wq age",
         "days in wq",
         "work queue age",
+    ),
+    "last_worked_date": (
+        "last_worked_date",
+        "last worked date",
+        "last worked",
+        "date last worked",
+        "last activity date",
+    ),
+    "denial_count": (
+        "denial_count",
+        "denial count",
+        "denials",
+        "number of denials",
+        "denial times",
+    ),
+    "days_until_replacement_deadline": (
+        "days_until_replacement_deadline",
+        "days until replacement deadline",
+        "replacement deadline days",
+        "days to replacement",
+        "replacement days left",
     ),
 }
 
@@ -282,6 +315,17 @@ def active_metrics_for_roles(resolved_roles: dict[str, str]) -> dict[str, Any]:
     active: list[str] = []
     skipped: dict[str, str] = {}
     for metric in METRIC_KEYS:
+        if metric == "dual_deadline_urgency":
+            has_appeal = "days_until_appeal_deadline" in resolved_roles
+            has_repl = "days_until_replacement_deadline" in resolved_roles
+            if not has_appeal and not has_repl:
+                skipped[metric] = (
+                    "missing role(s): days_until_appeal_deadline or "
+                    "days_until_replacement_deadline"
+                )
+            else:
+                active.append(metric)
+            continue
         needed = METRIC_REQUIRED_ROLES.get(metric, ())
         miss = [r for r in needed if r not in resolved_roles]
         if miss:

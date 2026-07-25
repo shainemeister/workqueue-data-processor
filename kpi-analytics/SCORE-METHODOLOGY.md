@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "1.9.0"
+version: "2.0.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 1.9.0  
+**Toolkit version:** 2.0.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -117,18 +117,24 @@ kpi-analytics.cmd validate-score
 
 ## 3. Priority raw metrics
 
-Computed in `metrics.py` using config `fields`.
+Computed in `metrics.py` using config `fields` (metric contract **2.0**).
 
 | Metric key | Formula / source | Unit | Direction after normalize |
 |------------|------------------|------|---------------------------|
-| `ar_days` | `as_of_date − service_date` | days | **higher** = more priority |
-| `ar_disparity` | `ar_days − ar_day_target` | days | **higher** |
+| `claim_age_days` | `as_of_date − service_date` | days | **higher** = more priority |
+| `claim_age_disparity` | `claim_age_days − claim_age_target` | days | **higher** |
 | `out_ins_amt` | CSV outstanding insurance | currency | **higher** |
 | `billed_amount` | CSV billed | currency | **higher** |
 | `appeal_urgency` | `days_until_appeal_deadline` | days left | **lower** raw = more priority |
 | `wq_age` | `days_on_wq_tab` | days | **higher** |
+| `balance_weighted_days_outstanding` | `(out_ins_amt / billed_amount) × claim_age_days` (missing if billed ≤ 0) | days (proxy) | **higher** |
+| `denial_count` | CSV denial count | count | **higher** |
+| `days_since_last_worked` | `as_of_date − last_worked_date` | days | **higher** |
+| `dual_deadline_urgency` | `min(appeal days left, replacement days left)` when both present; else the present one | days left | **lower** raw = more priority |
 
-**Defaults:** `ar_day_target = 45`. `as_of_date` is today unless set (fixtures use `2026-07-22`).
+**Terminology:** `claim_age_days` is **not** industry portfolio **Days in AR** (`kpi_q` uses Total AR ÷ ADC). **Balance-Weighted Days Outstanding** is a claim/queue aging proxy only—never labeled “AR Days.”
+
+**Defaults:** `claim_age_target = 45` (legacy config key `ar_day_target` still accepted). `as_of_date` is today unless set (fixtures use `2026-07-22`).
 
 Missing parseable values → normalization uses `missing_norm_value` (default **0.0**).
 
@@ -142,11 +148,15 @@ On each `score` run, CSV headers are bound to config **roles** (`fields` keys) v
 
 | Metric key | Required role(s) |
 |------------|------------------|
-| `ar_days`, `ar_disparity` | `service_date` |
+| `claim_age_days`, `claim_age_disparity` | `service_date` |
 | `out_ins_amt` | `out_ins_amt` |
 | `billed_amount` | `billed_amount` |
 | `appeal_urgency` | `days_until_appeal_deadline` |
 | `wq_age` | `days_on_wq_tab` |
+| `balance_weighted_days_outstanding` | `service_date`, `out_ins_amt`, `billed_amount` |
+| `denial_count` | `denial_count` |
+| `days_since_last_worked` | `last_worked_date` |
+| `dual_deadline_urgency` | at least one of appeal or replacement deadline days |
 
 If a required role is **unresolved**, that metric is **skipped** for the run (weight **0**). Remaining metrics keep chaos × POI multipliers, then weights are **re-normalized to sum to 1.0**. If no metrics remain, scoring fails with a clear error.
 
@@ -158,42 +168,49 @@ This is independent of cell-level missing values inside a present column (those 
 
 ## 4. Queue mode (healthy vs chaos)
 
-Uses batch AR days (parseable service dates only). Chaos if **any** default rule fires:
+Uses batch **claim age** (parseable service dates only). Chaos if **any** default rule fires:
 
 | Condition | Default |
 |-----------|---------|
-| mean AR days > `ar_day_target × mean_ar_days_factor` | 45 × 1.0 = **45** |
-| share AR ≥ 60 | ≥ **40%** |
-| share AR ≥ 90 | ≥ **25%** |
-| share AR ≥ 120 | ≥ **15%** |
+| mean claim age > `claim_age_target × mean_claim_age_factor` | 45 × 1.0 = **45** |
+| share claim age ≥ 60 | ≥ **40%** |
+| share claim age ≥ 90 | ≥ **25%** |
+| share claim age ≥ 120 | ≥ **15%** |
 
 Written as `v1_queue_mode` and CLI `QueueMode` / `Chaos.reasons`.  
 Chaos changes **priority weights only**, not RCM `kpi_q_*` formulas.
+
+Summary also reports queue **Balance-Weighted Days Outstanding**  
+`Σ(balance × claim_age_days) / Σ(balance)` when balances are positive (informational; not a chaos trigger by default).
 
 ---
 
 ## 5. Weights
 
-### Base weights (default)
+### Base weights (default, 2.0)
 
 | Metric | Base |
 |--------|-----:|
-| ar_days | 0.20 |
-| ar_disparity | 0.20 |
-| out_ins_amt | 0.25 |
-| billed_amount | 0.10 |
-| appeal_urgency | 0.15 |
-| wq_age | 0.10 |
+| claim_age_days | 0.12 |
+| claim_age_disparity | 0.10 |
+| out_ins_amt | 0.18 |
+| billed_amount | 0.06 |
+| appeal_urgency | 0.08 |
+| wq_age | 0.06 |
+| balance_weighted_days_outstanding | 0.14 |
+| denial_count | 0.10 |
+| days_since_last_worked | 0.08 |
+| dual_deadline_urgency | 0.08 |
 | **Sum** | **1.00** |
 
 ### Effective weight
 
 ```text
 raw_w_i = base_i × poi_multiplier_i × (chaos_multiplier_i if chaos else 1)
-w_i     = raw_w_i / sum(raw_w_j)
+w_i     = raw_w_i / sum(raw_w_j)   # over active metrics only when roles missing
 ```
 
-Default chaos multipliers: `ar_days` × **1.2**, `ar_disparity` × **1.4**, `out_ins_amt` × **1.5**, `appeal_urgency` × **1.5** (others × **1.0**).  
+Default chaos multipliers: `claim_age_days` × **1.2**, `claim_age_disparity` × **1.4**, `out_ins_amt` × **1.5**, `appeal_urgency` × **1.5**, `balance_weighted_days_outstanding` × **1.2**, `dual_deadline_urgency` × **1.5** (others × **1.0**).  
 POI multipliers default to 1.0.  
 Audit: `v1_weight_*` (constant across rows in a batch).
 
@@ -488,3 +505,4 @@ Checks include:
 | 1.8.0 | Default score/generate paths use tracked `import\wq_synthetic_data.csv` (no formula change) |
 | 1.8.1 | Default chaos retune: `mean_ar_days_factor` **1.0** (threshold = `ar_day_target`); chaos multipliers boost `ar_days` ×1.2 and `out_ins_amt` ×1.5 (with existing disparity/appeal boosts) |
 | 1.9.0 | Column role resolution + optional mapping profile; availability-aware priority weights (skip metrics with missing roles, renorm); summary/CLI report active and skipped metrics (no change to default formulas when all roles present) |
+| 2.0.0 | **Breaking metric contract:** `ar_days`→`claim_age_days`, `ar_disparity`→`claim_age_disparity`; add BWDO, denial_count, days_since_last_worked, dual_deadline_urgency; new default weights; chaos stats use claim-age vocabulary; legacy config key aliases accepted on load |

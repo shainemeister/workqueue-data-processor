@@ -1,7 +1,7 @@
 ---
 title: Work Queue Data Processor – Development Plan
 description: Living plan for dynamic column mapping, improved aging terminology and metrics, adaptive KPI generation, and simplified end-user workflow.
-version: "0.2.0"
+version: "0.3.0"
 status: current
 audience:
   - developers
@@ -21,7 +21,7 @@ last_updated: "2026-07-25"
 
 Living plan that captures current pain points, proposed solutions, phased delivery, and design decisions for the next evolution of the Work Queue scoring and export tools.
 
-**Document version:** 0.2.0  
+**Document version:** 0.3.0  
 **Status:** current  
 **Related:** [README.md](./README.md) · [RULES.md](./RULES.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) · [kpi-analytics/SCORE-METHODOLOGY.md](./kpi-analytics/SCORE-METHODOLOGY.md)
 
@@ -191,7 +191,7 @@ Automation contracts (`kpi-analytics.cmd`, `excel-toolkit.cmd`) stay stable.
 | Release | Focus | Versions | Status |
 |---------|-------|----------|--------|
 | **R1** | Mapping foundation: roles, aliases, `--mapping`, availability renorm, summary/CLI reporting | repo **1.1.0**, kpi-analytics **1.9.0** | **Shipped** |
-| **R2** | Single breaking metric contract: `claim_age_days` + High metrics + BWDO + docs/fixtures | repo **1.2.0**, kpi-analytics **2.0.0** | Planned (do not split rename vs metrics) |
+| **R2** | Single breaking metric contract: `claim_age_days` + High metrics + BWDO + docs/fixtures | repo **1.2.0**, kpi-analytics **2.0.0** | **Shipped** |
 | **R3** | Menu simplification | repo **1.3.0**, excel-toolkit **1.5.0** | Planned |
 
 **Why this order:** R1 unblocks real extracts without rewriting golden scored columns. R2 batches all `METRIC_KEYS` / fixture / methodology churn into one major. R3 is pure UX after the pipeline is resilient.
@@ -236,9 +236,8 @@ Each release ends with: canonical docs, FILE-CATALOG if needed, CHANGELOG, RULES
 
 1. ~~Lock `claim_age_days` and full BWDO.~~ **Done.**  
 2. ~~Ship R1 mapping foundation (kpi 1.9.0).~~ **Done.**  
-3. Design-note dual-deadline formula + default 2.0 weight table.  
-4. Implement R2 as one coordinated breaking PR.  
-5. R3 menu simplification.
+3. ~~Design-note dual-deadline + default 2.0 weights; implement R2.~~ **Done (kpi 2.0.0).**  
+4. R3 menu simplification (next).
 
 ---
 
@@ -248,3 +247,4 @@ Each release ends with: canonical docs, FILE-CATALOG if needed, CHANGELOG, RULES
 |---------|--------|
 | 0.1.0 | Initial draft. Four tracks; BWDO evaluation; P0–P3 phases. |
 | 0.2.0 | Efficiency releases R1–R3; lock `claim_age_days` + full BWDO; reject overhaul; R1 mapping foundation shipping with kpi-analytics 1.9.0. |
+| 0.3.0 | R2 shipped: metric contract 2.0 (claim_age_days, BWDO, High metrics); next is R3 menu. |

@@ -114,7 +114,7 @@ def apply_quantifiers_to_rows(
         else:
             x_incl = x
         x_list.append(x_incl)
-        ar = raw.get("ar_days")
+        ar = raw.get("claim_age_days")
         ar_list.append(float(ar) if ar is not None else None)
         bi = raw.get("billed_amount")
         billed_list.append(float(bi) if bi is not None else 0.0)

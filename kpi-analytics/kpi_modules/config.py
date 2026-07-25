@@ -10,13 +10,41 @@ from typing import Any
 DEFAULT_CONFIG_PATH = Path(__file__).with_name("config_default.json")
 
 METRIC_KEYS = (
-    "ar_days",
-    "ar_disparity",
+    "claim_age_days",
+    "claim_age_disparity",
     "out_ins_amt",
     "billed_amount",
     "appeal_urgency",
     "wq_age",
+    "balance_weighted_days_outstanding",
+    "denial_count",
+    "days_since_last_worked",
+    "dual_deadline_urgency",
 )
+
+# Legacy metric / config keys accepted when loading older configs (2.0 migration).
+_LEGACY_METRIC_KEYS: dict[str, str] = {
+    "ar_days": "claim_age_days",
+    "ar_disparity": "claim_age_disparity",
+}
+
+_LOWER_DIRECTION_DEFAULTS = frozenset(
+    {
+        "appeal_urgency",
+        "dual_deadline_urgency",
+    }
+)
+
+
+def _migrate_metric_map(mapping: dict[str, Any]) -> dict[str, Any]:
+    """Rename legacy metric keys in a weights/multipliers/direction object."""
+    out = dict(mapping)
+    for old, new in _LEGACY_METRIC_KEYS.items():
+        if old in out and new not in out:
+            out[new] = out.pop(old)
+        elif old in out and new in out:
+            del out[old]
+    return out
 
 
 def load_config(path: str | Path | None = None) -> dict[str, Any]:
@@ -35,13 +63,21 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     """Return a deep-copied config with required keys present."""
     out = deepcopy(cfg)
 
-    if "ar_day_target" not in out:
-        raise ValueError("Config missing required key: ar_day_target")
-    out["ar_day_target"] = float(out["ar_day_target"])
+    # claim_age_target (legacy: ar_day_target)
+    if "claim_age_target" not in out and "ar_day_target" in out:
+        out["claim_age_target"] = out["ar_day_target"]
+    if "claim_age_target" not in out:
+        raise ValueError(
+            "Config missing required key: claim_age_target "
+            "(legacy alias: ar_day_target)"
+        )
+    out["claim_age_target"] = float(out["claim_age_target"])
 
     weights = out.get("weights")
     if not isinstance(weights, dict):
         raise ValueError("Config 'weights' must be an object")
+    weights = _migrate_metric_map(weights)
+    out["weights"] = weights
     for key in METRIC_KEYS:
         if key not in weights:
             raise ValueError(f"Config weights missing metric: {key}")
@@ -50,10 +86,12 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     direction = out.setdefault("metric_direction", {})
     if not isinstance(direction, dict):
         raise ValueError("Config 'metric_direction' must be an object")
+    direction = _migrate_metric_map(direction)
+    out["metric_direction"] = direction
     for key in METRIC_KEYS:
         direction.setdefault(
             key,
-            "lower" if key == "appeal_urgency" else "higher",
+            "lower" if key in _LOWER_DIRECTION_DEFAULTS else "higher",
         )
         if direction[key] not in ("higher", "lower"):
             raise ValueError(
@@ -75,6 +113,9 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
         "billed_amount": "billed_amount",
         "days_until_appeal_deadline": "days_until_appeal_deadline",
         "days_on_wq_tab": "days_on_wq_tab",
+        "last_worked_date": "last_worked_date",
+        "denial_count": "denial_count",
+        "days_until_replacement_deadline": "days_until_replacement_deadline",
     }
     for k, v in defaults.items():
         fields.setdefault(k, v)
@@ -89,13 +130,23 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(chaos, dict):
         raise ValueError("Config 'chaos' must be an object")
     chaos.setdefault("enabled", True)
-    chaos.setdefault("mean_ar_days_factor", 1.0)
-    chaos.setdefault("share_ar_ge_60", 0.40)
-    chaos.setdefault("share_ar_ge_90", 0.25)
-    chaos.setdefault("share_ar_ge_120", 0.15)
+    # Legacy chaos factor / share keys
+    if "mean_claim_age_factor" not in chaos and "mean_ar_days_factor" in chaos:
+        chaos["mean_claim_age_factor"] = chaos["mean_ar_days_factor"]
+    chaos.setdefault("mean_claim_age_factor", 1.0)
+    for thr in (60, 90, 120):
+        new_k = f"share_claim_age_ge_{thr}"
+        old_k = f"share_ar_ge_{thr}"
+        if new_k not in chaos and old_k in chaos:
+            chaos[new_k] = chaos[old_k]
+    chaos.setdefault("share_claim_age_ge_60", 0.40)
+    chaos.setdefault("share_claim_age_ge_90", 0.25)
+    chaos.setdefault("share_claim_age_ge_120", 0.15)
     mult = chaos.setdefault("multipliers", {})
     if not isinstance(mult, dict):
         raise ValueError("chaos.multipliers must be an object")
+    mult = _migrate_metric_map(mult)
+    chaos["multipliers"] = mult
     for key in METRIC_KEYS:
         mult.setdefault(key, 1.0)
         mult[key] = float(mult[key])
@@ -107,6 +158,8 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     poi_m = poi.setdefault("multipliers", {})
     if not isinstance(poi_m, dict):
         raise ValueError("point_of_interest.multipliers must be an object")
+    poi_m = _migrate_metric_map(poi_m)
+    poi["multipliers"] = poi_m
     for key in METRIC_KEYS:
         poi_m.setdefault(key, 1.0)
         poi_m[key] = float(poi_m[key])
@@ -127,7 +180,9 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     if breaks is None:
         kq["aged_day_breaks"] = [30, 60, 90, 120]
     elif not isinstance(breaks, list) or not breaks:
-        raise ValueError("kpi_quantifiers.aged_day_breaks must be a non-empty list")
+        raise ValueError(
+            "kpi_quantifiers.aged_day_breaks must be a non-empty list"
+        )
     else:
         kq["aged_day_breaks"] = [int(x) for x in breaks]
     kq.setdefault("amount_field", "out_ins_amt")
@@ -136,7 +191,6 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     kq.setdefault("adc_mode", "config")
     credit = str(kq.get("credit_policy", "exclude_from_T")).lower()
     if credit not in ("exclude_from_t", "exclude_from_T", "include"):
-        # normalize
         pass
     kq["credit_policy"] = (
         "include" if credit == "include" else "exclude_from_T"

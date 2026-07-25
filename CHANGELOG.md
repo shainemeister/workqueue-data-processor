@@ -13,6 +13,34 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.2.0] - 2026-07-25
+
+#### Added
+
+- **kpi-analytics 2.0.0:** High-priority AR follow-up metrics with full audit columns
+  - `balance_weighted_days_outstanding` — `(balance / billed) × claim_age_days`; queue aggregate in chaos/summary stats
+  - `denial_count` — repeat-denial signal
+  - `days_since_last_worked` — staleness from `last_worked_date`
+  - `dual_deadline_urgency` — min of appeal and replacement days remaining (or whichever is present)
+- New default field roles: `last_worked_date`, `denial_count`, `days_until_replacement_deadline`
+
+#### Changed
+
+- **Breaking (kpi-analytics 2.0.0):** priority metric keys and audit columns
+  - `ar_days` → **`claim_age_days`** (`v1_raw_claim_age_days`, etc.)
+  - `ar_disparity` → **`claim_age_disparity`**
+  - Config target: `claim_age_target` (legacy `ar_day_target` still accepted)
+  - Chaos stats/reasons: `mean_claim_age_days`, `share_claim_age_ge_*` (legacy config keys accepted)
+  - Default weight table redistributed across ten metrics (sum 1.0)
+- Golden fixtures and SCORE-METHODOLOGY updated for the 2.0 contract
+- PLAN.md marks R2 metric contract as shipped
+
+#### Migration
+
+- Update automation that reads `v1_raw_ar_days` / `v1_contrib_ar_days` (and disparity) to the new column names
+- Refresh custom weight JSON to include all ten `METRIC_KEYS` (loader migrates old `ar_days` / `ar_disparity` keys when present)
+- Portfolio RCM **Days in AR** (`kpi_q_*`) is unchanged in meaning; only claim-level age naming moved
+
 ### [1.1.0] - 2026-07-25
 
 #### Added

@@ -1,6 +1,6 @@
 {
-  "version": "1.0",
-  "description": "Default Priority Matrix V1 weights, thresholds, and field map for kpi-analytics",
+  "version": "2.0",
+  "description": "Default Priority Matrix weights, thresholds, and field map for kpi-analytics 2.0",
   "as_of_date": null,
   "date_formats": ["%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y", "%Y/%m/%d"],
   "fields": {
@@ -8,51 +8,70 @@
     "out_ins_amt": "out_ins_amt",
     "billed_amount": "billed_amount",
     "days_until_appeal_deadline": "days_until_appeal_deadline",
-    "days_on_wq_tab": "days_on_wq_tab"
+    "days_on_wq_tab": "days_on_wq_tab",
+    "last_worked_date": "last_worked_date",
+    "denial_count": "denial_count",
+    "days_until_replacement_deadline": "days_until_replacement_deadline"
   },
-  "ar_day_target": 45,
+  "claim_age_target": 45,
   "normalization": "minmax",
   "missing_norm_value": 0.0,
   "weights": {
-    "ar_days": 0.20,
-    "ar_disparity": 0.20,
-    "out_ins_amt": 0.25,
-    "billed_amount": 0.10,
-    "appeal_urgency": 0.15,
-    "wq_age": 0.10
+    "claim_age_days": 0.12,
+    "claim_age_disparity": 0.10,
+    "out_ins_amt": 0.18,
+    "billed_amount": 0.06,
+    "appeal_urgency": 0.08,
+    "wq_age": 0.06,
+    "balance_weighted_days_outstanding": 0.14,
+    "denial_count": 0.10,
+    "days_since_last_worked": 0.08,
+    "dual_deadline_urgency": 0.08
   },
   "metric_direction": {
-    "ar_days": "higher",
-    "ar_disparity": "higher",
+    "claim_age_days": "higher",
+    "claim_age_disparity": "higher",
     "out_ins_amt": "higher",
     "billed_amount": "higher",
     "appeal_urgency": "lower",
-    "wq_age": "higher"
+    "wq_age": "higher",
+    "balance_weighted_days_outstanding": "higher",
+    "denial_count": "higher",
+    "days_since_last_worked": "higher",
+    "dual_deadline_urgency": "lower"
   },
   "chaos": {
     "enabled": true,
-    "mean_ar_days_factor": 1.0,
-    "share_ar_ge_60": 0.40,
-    "share_ar_ge_90": 0.25,
-    "share_ar_ge_120": 0.15,
+    "mean_claim_age_factor": 1.0,
+    "share_claim_age_ge_60": 0.40,
+    "share_claim_age_ge_90": 0.25,
+    "share_claim_age_ge_120": 0.15,
     "multipliers": {
-      "ar_days": 1.2,
-      "ar_disparity": 1.4,
+      "claim_age_days": 1.2,
+      "claim_age_disparity": 1.4,
       "out_ins_amt": 1.5,
       "billed_amount": 1.0,
       "appeal_urgency": 1.5,
-      "wq_age": 1.0
+      "wq_age": 1.0,
+      "balance_weighted_days_outstanding": 1.2,
+      "denial_count": 1.0,
+      "days_since_last_worked": 1.0,
+      "dual_deadline_urgency": 1.5
     }
   },
   "point_of_interest": {
     "name": "default",
     "multipliers": {
-      "ar_days": 1.0,
-      "ar_disparity": 1.0,
+      "claim_age_days": 1.0,
+      "claim_age_disparity": 1.0,
       "out_ins_amt": 1.0,
       "billed_amount": 1.0,
       "appeal_urgency": 1.0,
-      "wq_age": 1.0
+      "wq_age": 1.0,
+      "balance_weighted_days_outstanding": 1.0,
+      "denial_count": 1.0,
+      "days_since_last_worked": 1.0,
+      "dual_deadline_urgency": 1.0
     }
   },
   "output": {

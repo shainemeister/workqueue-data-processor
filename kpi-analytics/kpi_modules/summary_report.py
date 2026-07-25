@@ -412,7 +412,7 @@ def build_summary_rows(
             "queue_mode",
             summary.get("queue_mode"),
             explanation=(
-                "healthy or chaos based on overall AR aging of the batch. "
+                "healthy or chaos based on overall claim-age aging of the batch. "
                 "Chaos only changes priority weights—it does not change RCM kpi_q_* formulas."
             ),
         )
@@ -534,22 +534,48 @@ def build_summary_rows(
                 explanation="True if chaos detection was turned on in config for this run.",
             )
         )
-        if chaos.get("mean_ar_days") is not None:
+        mean_age = chaos.get("mean_claim_age_days")
+        if mean_age is None:
+            mean_age = chaos.get("mean_ar_days")
+        if mean_age is not None:
             rows.append(
                 _row(
                     "Priority chaos",
-                    "mean_ar_days",
-                    chaos.get("mean_ar_days"),
+                    "mean_claim_age_days",
+                    mean_age,
                     unit="days",
                     explanation=(
-                        "Average claim age (AR days) in the batch; "
-                        "used when deciding chaos mode."
+                        "Average claim age in days (as_of − service date) "
+                        "in the batch; used when deciding chaos mode. "
+                        "Not industry portfolio Days in AR (T/ADC)."
                     ),
                 )
             )
-        for key in ("share_ar_ge_60", "share_ar_ge_90", "share_ar_ge_120"):
+        bwdo_agg = chaos.get("balance_weighted_days_outstanding")
+        if bwdo_agg is not None:
+            rows.append(
+                _row(
+                    "Priority chaos",
+                    "balance_weighted_days_outstanding",
+                    bwdo_agg,
+                    unit="days (balance-weighted)",
+                    formula="sum(balance x claim_age_days) / sum(balance)",
+                    explanation=(
+                        "Queue-level Balance-Weighted Days Outstanding. "
+                        "A practical aging proxy—not industry AR Days."
+                    ),
+                )
+            )
+        for key in (
+            "share_claim_age_ge_60",
+            "share_claim_age_ge_90",
+            "share_claim_age_ge_120",
+            "share_ar_ge_60",
+            "share_ar_ge_90",
+            "share_ar_ge_120",
+        ):
             if key in chaos:
-                bucket = key.replace("share_ar_ge_", "")
+                bucket = key.rsplit("_", 1)[-1]
                 rows.append(
                     _row(
                         "Priority chaos",
@@ -557,7 +583,7 @@ def build_summary_rows(
                         chaos.get(key),
                         unit="fraction (0-1)",
                         explanation=(
-                            f"Fraction of claims aged {bucket}+ days. "
+                            f"Fraction of claims with claim age {bucket}+ days. "
                             "High values can trigger chaos mode and raise "
                             "permanent-loss priority weights."
                         ),
