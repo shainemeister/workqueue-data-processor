@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.3.1] - 2026-07-25
+
+#### Removed
+
+- Root `PLAN.md` (living development plan for R1–R3). All three efficiency releases shipped; delivery history remains in this CHANGELOG and git history. FILE-CATALOG updated.
+
 ### [1.3.0] - 2026-07-25
 
 #### Changed

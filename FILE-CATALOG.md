@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.3.0"
+version: "1.3.1"
 status: current
 audience:
   - developers
@@ -13,7 +13,6 @@ related:
   - CHANGELOG.md
   - MARKDOWN-STANDARD.md
   - RULES.md
-  - PLAN.md
 last_updated: "2026-07-25"
 ---
 
@@ -21,16 +20,16 @@ last_updated: "2026-07-25"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.3.0  
+**Document version:** 1.3.1  
 **Baseline layout:** repository root  
 
-**Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md) · [PLAN.md](./PLAN.md)
+**Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
 
 ---
 
 ## Summary
 
-This repository holds a **Work Queue (WQ) data contract** (schema + CSV), two local toolkits (**excel-toolkit**: PowerShell 5.1 + Excel COM; **kpi-analytics**: Python 3.13 stdlib only), design/methodology docs, a living development plan, and markdown templates.
+This repository holds a **Work Queue (WQ) data contract** (schema + CSV), two local toolkits (**excel-toolkit**: PowerShell 5.1 + Excel COM; **kpi-analytics**: Python 3.13 stdlib only), design/methodology docs, and markdown templates.
 
 Each row below states **what the file is for** in one sentence. Runtime contracts live in toolkit READMEs and CLI guides; this catalog does not restate flags or formulas.
 
@@ -41,7 +40,6 @@ Each row below states **what the file is for** in one sentence. Runtime contract
 | KPI score / generate / validate / diagnostics | `kpi-analytics\kpi-analytics.cmd` |
 | Markdown conventions | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) |
 | Maintenance policy | [RULES.md](./RULES.md) |
-| Development plan | [PLAN.md](./PLAN.md) |
 | Project history | [CHANGELOG.md](./CHANGELOG.md) |
 
 Generated artifacts under `output\` and Python `__pycache__\` are intentionally **not** cataloged as source.
@@ -70,7 +68,7 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 
 ```text
 workqueue-data-processor/
-  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md, PLAN.md
+  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md
   wq_schema.json, wq_schema.csv, wq_data.csv
   WQ_Priority_Matrix_Concept.md
   Start-ExcelMenu.cmd
@@ -92,7 +90,6 @@ workqueue-data-processor/
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
 | [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline, CHANGELOG policy, formatting, architecture, data, git, and verification. |
-| [PLAN.md](./PLAN.md) | doc | Living development plan: dynamic column mapping, aging terminology, Balance-Weighted Days Outstanding, new metrics, and menu simplification. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
@@ -279,6 +276,7 @@ rem Existing destinations require -Force to overwrite
 | 1.1.2 | `import\` tracked inputs; default score/generate paths; toolkit 1.8.0 |
 | 1.1.3 | Synthetic import `.xlsx` fixtures; excel-toolkit 1.2.0 `import-excel` |
 | 1.3.0 | `column_map.py` role mapping; kpi-analytics 1.9.0; PLAN.md living plan already cataloged |
+| 1.3.1 | Removed root `PLAN.md` after R1–R3 shipped (history remains in CHANGELOG / git) |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |
