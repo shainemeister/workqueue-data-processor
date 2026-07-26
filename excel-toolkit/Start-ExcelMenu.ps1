@@ -1,21 +1,22 @@
 ﻿#requires -Version 5.1
 <#
 .SYNOPSIS
-    Interactive menu for KPI score-to-Excel pipeline, export, and advanced tools.
+    Interactive menu for guided Process-my-data flow and advanced tools.
 
 .DESCRIPTION
     Double-click Start-ExcelMenu.cmd (recommended) or run this script under
     Windows PowerShell 5.1. No PowerShell syntax knowledge is required for
     common tasks.
 
-    Main menu (happy path first): full Score CSV -> Excel pipeline, score only,
-    export CSV to Excel, and Advanced tools (schema headers export, import,
-    folders, schema, diagnostics, environment).
+    Main menu: Process my data (discover CSV/Excel under import\, print-style
+    multi-select, then full pipeline / score only / export), and Advanced tools
+    (schema-header export, import, folders, schema, diagnostics, environment).
 
     Column layout always comes from your data CSV. An optional schema (JSON or
     CSV) supplies display labels only. Nothing domain-specific is hard-coded.
     Existing output files are not overwritten: a free path with a numerical
-    suffix (name_1.ext) is chosen instead.
+    suffix (name_1.ext) is chosen instead. Optional workbook open password is
+    offered on every menu path that produces Excel.
 
 .NOTES
     Launch via Start-ExcelMenu.cmd so the process uses -ExecutionPolicy Bypass
@@ -39,7 +40,6 @@ $outputDir    = Join-Path $repoRoot 'output'
 $importDir    = Join-Path $repoRoot 'import'
 $kpiAnalyticsDir = Join-Path $repoRoot 'kpi-analytics'
 $kpiAnalyticsCmd = Join-Path $kpiAnalyticsDir 'kpi-analytics.cmd'
-$exportScript = Join-Path $scriptDir 'Export-CsvToExcel.ps1'
 $testScript   = Join-Path $scriptDir 'Test-ExcelCom.ps1'
 $toolkitModulePath = Join-Path $scriptDir 'ExcelToolkit.psm1'
 $modulePath   = Join-Path $scriptDir 'ExcelCom.psm1'
@@ -259,25 +259,6 @@ function Get-SchemaFieldsForDisplay {
     return @($list.ToArray())
 }
 
-function Get-ExportArguments {
-    param([switch]$UseDisplayNames)
-
-    $args = @{}
-    $schemaPath = Get-EffectiveSchemaPath
-    $schemaFormat = Get-EffectiveSchemaFormat -Path $schemaPath
-
-    if (-not [string]::IsNullOrWhiteSpace($schemaPath)) {
-        $args['SchemaPath'] = $schemaPath
-    }
-    if ($schemaFormat -eq 'Json' -or $schemaFormat -eq 'Csv') {
-        $args['SchemaFormat'] = $schemaFormat
-    }
-    if ($UseDisplayNames) {
-        $args['UseDisplayNames'] = $true
-    }
-    return $args
-}
-
 function Invoke-ToolScript {
     param(
         [Parameter(Mandatory = $true)]
@@ -345,102 +326,121 @@ function Invoke-ToolScript {
 function Invoke-ImportExcelMenu {
     Write-Host ''
     Write-Host 'Import Excel to CSV' -ForegroundColor Cyan
-    Write-Host 'Opens a workbook (password-protected files prompt for a password) and writes a CSV under import\ by default.' -ForegroundColor DarkGray
+    Write-Host 'Opens workbook(s) (password-protected files prompt for a password) and writes CSV under import\ by default.' -ForegroundColor DarkGray
     Write-Host ''
 
-    if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
-        throw ("ExcelToolkit.psm1 not found: {0}" -f $toolkitModulePath)
-    }
-    if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
+    $paths = @(Select-ImportInputs -FilterKind Excel -Title 'Excel files under import\:')
+    if ($paths.Count -eq 0) {
+        Write-Host 'No workbook selected.' -ForegroundColor Yellow
         return
     }
 
-    if (-not (Test-Path -LiteralPath $importDir)) {
-        New-Item -ItemType Directory -Path $importDir -Force | Out-Null
+    $ok = 0
+    $fail = 0
+    foreach ($excelPath in $paths) {
+        if (-not (Test-IsExcelPath -Path $excelPath)) {
+            Write-Host ("Skipping non-Excel path: {0}" -f $excelPath) -ForegroundColor Yellow
+            $fail++
+            continue
+        }
+        if (-not (Test-Path -LiteralPath $excelPath)) {
+            Write-Host ("Excel file not found: {0}" -f $excelPath) -ForegroundColor Red
+            $fail++
+            continue
+        }
+        $out = Invoke-ImportExcelFile -ExcelPath $excelPath
+        if ($null -ne $out) { $ok++ } else { $fail++ }
+    }
+    Write-Host ("Import done: {0} succeeded, {1} failed." -f $ok, $fail) -ForegroundColor $(if ($fail -eq 0) { 'Green' } else { 'Yellow' })
+}
+
+function Invoke-ProcessMyData {
+    <#
+    .SYNOPSIS
+        Guided entry: discover import\ files, select with ranges, route to pipeline/score/export/import.
+    #>
+    Write-Host ''
+    Write-Host 'Process my data' -ForegroundColor Cyan
+    Write-Host 'Pick files under import\ (CSV and/or Excel). Ranges like 1-3 or 1,3-5 work.' -ForegroundColor DarkGray
+    Write-Host ''
+
+    $selected = @(Select-ImportInputs -FilterKind All)
+    if ($selected.Count -eq 0) {
+        Write-Host 'No files selected.' -ForegroundColor Yellow
+        return
     }
 
-    $candidates = @()
-    if (Test-Path -LiteralPath $importDir) {
-        $xlsx = @(Get-ChildItem -LiteralPath $importDir -Filter '*.xlsx' -File -ErrorAction SilentlyContinue)
-        $xls = @(Get-ChildItem -LiteralPath $importDir -Filter '*.xls' -File -ErrorAction SilentlyContinue)
-        $candidates = @($xlsx + $xls | Sort-Object Name)
-    }
-
-    if ($candidates.Count -gt 0) {
-        Write-Host 'Workbooks under import\:' -ForegroundColor Cyan
-        for ($i = 0; $i -lt $candidates.Count; $i++) {
-            Write-Host ("  [{0}] {1}" -f ($i + 1), $candidates[$i].Name)
+    $csvPaths = New-Object System.Collections.Generic.List[string]
+    $excelPaths = New-Object System.Collections.Generic.List[string]
+    foreach ($p in $selected) {
+        if (Test-IsCsvPath -Path $p) {
+            $csvPaths.Add($p)
         }
-        Write-Host '  [P] Enter a full path'
-        $pick = Read-Host 'Select workbook (number or P)'
-        if ($pick -match '^[Pp]$') {
-            $excelPath = Read-Host 'Excel file path'
-        }
-        elseif ($pick -match '^\d+$') {
-            $idx = [int]$pick - 1
-            if ($idx -lt 0 -or $idx -ge $candidates.Count) {
-                throw 'Invalid selection.'
-            }
-            $excelPath = $candidates[$idx].FullName
+        elseif (Test-IsExcelPath -Path $p) {
+            $excelPaths.Add($p)
         }
         else {
-            throw 'Invalid selection.'
+            Write-Host ("Unsupported file type (skipped): {0}" -f $p) -ForegroundColor Yellow
         }
     }
-    else {
-        Write-Host ("No .xlsx/.xls found under {0}" -f $importDir) -ForegroundColor Yellow
-        $excelPath = Read-Host 'Excel file path'
+
+    # Import Excel workbooks first so mixed selections become CSVs for downstream actions
+    if ($excelPaths.Count -gt 0) {
+        Write-Host ''
+        Write-Host ("Importing {0} Excel file(s) to CSV..." -f $excelPaths.Count) -ForegroundColor Cyan
+        foreach ($xp in $excelPaths) {
+            $imported = Invoke-ImportExcelFile -ExcelPath $xp
+            if ($null -ne $imported -and -not [string]::IsNullOrWhiteSpace($imported)) {
+                if (-not ($csvPaths -contains $imported)) {
+                    $csvPaths.Add($imported)
+                }
+            }
+        }
     }
 
-    if ([string]::IsNullOrWhiteSpace($excelPath)) {
-        throw 'Excel path is required.'
-    }
-    if (-not (Test-Path -LiteralPath $excelPath)) {
-        throw ("Excel file not found: {0}" -f $excelPath)
+    if ($csvPaths.Count -eq 0) {
+        Write-Host 'No CSV available to process after selection/import.' -ForegroundColor Yellow
+        return
     }
 
-    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($excelPath)
-    $defaultOut = Join-Path $importDir ("{0}.csv" -f $baseName)
-    $outPrompt = Read-Host ("Output CSV path [{0}]" -f $defaultOut)
-    if ([string]::IsNullOrWhiteSpace($outPrompt)) {
-        $outPrompt = $defaultOut
-    }
-
-    try {
-        $outPrompt = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outPrompt.Trim('"'))
-    }
-    catch {
-        throw ("Invalid output path: {0}" -f $_.Exception.Message)
-    }
-
-    Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
     Write-Host ''
-    Write-Host ("Importing: {0}" -f $excelPath) -ForegroundColor Cyan
-    Write-Host ("  Planned: {0}" -f $outPrompt) -ForegroundColor Cyan
-    Write-Host 'If that CSV already exists, a free path with a numerical suffix is used (no overwrite).' -ForegroundColor DarkGray
-
-    $importParams = @{
-        ExcelPath           = $excelPath
-        OutputPath          = $outPrompt
-        AllowPasswordPrompt = $true
+    Write-Host ("Ready to process {0} CSV file(s):" -f $csvPaths.Count) -ForegroundColor Cyan
+    foreach ($c in $csvPaths) {
+        Write-Host ("  - {0}" -f $c) -ForegroundColor DarkGray
     }
 
-    $r = Import-CsvFromExcel @importParams
-    if ($r.Success) {
-        Write-Host ("OK: {0}" -f $r.Message) -ForegroundColor Green
-        Write-Host ("  Output : {0}" -f $r.OutputPath)
-        if ($r.PathAdjusted) {
-            Write-Host ("  Requested: {0}" -f $r.RequestedOutputPath)
-        }
-        Write-Host ("  Sheet  : {0}" -f $r.SheetName)
-        Write-Host ("  Rows   : {0}" -f $r.RowCount)
-        Write-Host ("  Cols   : {0}" -f $r.ColumnCount)
-        if ($r.PasswordUsed) {
-            Write-Host '  Password: used (value not shown)'
-        }
+    # Defaults: full pipeline for CSV work; if selection was pure Excel, still offer pipeline first after import
+    $defaultAction = '1'
+    Write-Host ''
+    Write-Host 'What should I do with the selected file(s)?' -ForegroundColor Cyan
+    Write-Host '  [1] Full pipeline (Score -> Excel)     <- recommended' -ForegroundColor DarkGray
+    Write-Host '  [2] Score only (CSV results)' -ForegroundColor DarkGray
+    Write-Host '  [3] Export only (CSV -> Excel, no scoring)' -ForegroundColor DarkGray
+    $action = Read-Host ("Choice [{0}]" -f $defaultAction)
+    if ([string]::IsNullOrWhiteSpace($action)) {
+        $action = $defaultAction
     }
-    else {
-        Write-Host ("FAIL: {0}" -f $r.Message) -ForegroundColor Red
+
+    $pathsArray = @($csvPaths.ToArray())
+    switch ($action.Trim()) {
+        '1' {
+            Invoke-KpiScoreExportMenu -InputPaths $pathsArray
+        }
+        '2' {
+            Invoke-KpiScoreExportMenu -ScoreOnly -InputPaths $pathsArray
+        }
+        '3' {
+            $pw = Read-OptionalExportPassword
+            if ($null -ne $pw) {
+                Invoke-MenuExportCsv -CsvPaths $pathsArray -Password $pw
+            }
+            else {
+                Invoke-MenuExportCsv -CsvPaths $pathsArray
+            }
+        }
+        default {
+            Write-Host 'Unrecognized choice; cancelling.' -ForegroundColor Yellow
+        }
     }
 }
 
@@ -525,45 +525,95 @@ function Invoke-KpiAnalyticsScore {
     }
 }
 
-function Select-CsvInputsForPipeline {
+function Get-ImportProcessableFiles {
     <#
     .SYNOPSIS
-        List import\ CSVs and accept multi-select indices or a typed path.
+        Discover processable files under import\ (CSV and Excel).
+    .PARAMETER FilterKind
+        All (default), Csv only, or Excel only.
     #>
-    $selected = New-Object System.Collections.Generic.List[string]
+    [CmdletBinding()]
+    param(
+        [ValidateSet('All', 'Csv', 'Excel')]
+        [string]$FilterKind = 'All'
+    )
 
-    $candidates = @()
-    if (Test-Path -LiteralPath $importDir) {
-        $candidates = @(Get-ChildItem -LiteralPath $importDir -Filter '*.csv' -File -ErrorAction SilentlyContinue |
-            Sort-Object Name)
-    }
-
-    if ($candidates.Count -gt 0) {
-        Write-Host 'CSV files under import\:' -ForegroundColor Cyan
-        for ($i = 0; $i -lt $candidates.Count; $i++) {
-            $item = $candidates[$i]
-            Write-Host ("  {0,2}) {1}  ({2:N0} bytes, {3})" -f ($i + 1), $item.Name, $item.Length, $item.LastWriteTime)
-        }
-        Write-Host ''
-        Write-Host 'Enter number(s) e.g. 1 or 1,2 - or a full path to a CSV:' -ForegroundColor DarkGray
-        $raw = Read-Host 'Selection'
-    }
-    else {
-        Write-Host ("No .csv files found under {0}" -f $importDir) -ForegroundColor Yellow
-        $raw = Read-Host 'Enter full path to a data CSV'
-    }
-
-    if ([string]::IsNullOrWhiteSpace($raw)) {
+    $items = New-Object System.Collections.Generic.List[object]
+    if (-not (Test-Path -LiteralPath $importDir)) {
         return @()
     }
 
-    $raw = $raw.Trim().Trim('"')
+    $files = @()
+    if ($FilterKind -eq 'All' -or $FilterKind -eq 'Csv') {
+        $files += @(Get-ChildItem -LiteralPath $importDir -Filter '*.csv' -File -ErrorAction SilentlyContinue)
+    }
+    if ($FilterKind -eq 'All' -or $FilterKind -eq 'Excel') {
+        $files += @(Get-ChildItem -LiteralPath $importDir -Filter '*.xlsx' -File -ErrorAction SilentlyContinue)
+        $files += @(Get-ChildItem -LiteralPath $importDir -Filter '*.xls' -File -ErrorAction SilentlyContinue)
+    }
 
-    # Typed path (contains path separators or ends with .csv and is not pure numbers)
-    $looksLikePath = ($raw -match '[\\/]' -or $raw -match '\.csv$' -or $raw -match '^[A-Za-z]:')
-    $onlyIndexList = ($raw -match '^[\d,\s]+$')
+    foreach ($f in @($files | Sort-Object Name)) {
+        $ext = $f.Extension.ToLowerInvariant()
+        $kind = if ($ext -eq '.csv') { 'CSV' } else { 'Excel' }
+        $items.Add([pscustomobject]@{
+            FullName      = $f.FullName
+            Name          = $f.Name
+            Kind          = $kind
+            Length        = $f.Length
+            LastWriteTime = $f.LastWriteTime
+            Extension     = $ext
+        })
+    }
 
-    if ($looksLikePath -and -not $onlyIndexList) {
+    return @($items.ToArray())
+}
+
+function Format-FileSizeLabel {
+    param([long]$Bytes)
+    if ($Bytes -ge 1MB) {
+        return ('{0:N1} MB' -f ($Bytes / 1MB))
+    }
+    if ($Bytes -ge 1KB) {
+        return ('{0:N0} KB' -f ($Bytes / 1KB))
+    }
+    return ('{0:N0} B' -f $Bytes)
+}
+
+function Parse-SelectionRange {
+    <#
+    .SYNOPSIS
+        Parse print-style multi-select (1, 1,2, 1-3, 1,3-5,8) or a full path.
+    .PARAMETER Raw
+        User selection string.
+    .PARAMETER Candidates
+        Ordered list of objects with FullName (1-based indices).
+    .OUTPUTS
+        String array of unique full paths in selection order.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Raw,
+        [object[]]$Candidates
+    )
+
+    $selected = New-Object System.Collections.Generic.List[string]
+    if ([string]::IsNullOrWhiteSpace($Raw)) {
+        return @()
+    }
+
+    $raw = $Raw.Trim().Trim('"')
+    $count = @($Candidates).Count
+
+    # Path fallback: separators, drive letter, or known data extension
+    $looksLikePath = (
+        $raw -match '[\\/]' -or
+        $raw -match '^[A-Za-z]:' -or
+        $raw -match '\.(csv|xlsx|xls)$'
+    )
+    # Pure index tokens use digits, commas, spaces, semicolons, and hyphens for ranges
+    $onlySelectionTokens = ($raw -match '^[\d,\s;\-]+$')
+
+    if ($looksLikePath -and -not $onlySelectionTokens) {
         try {
             $resolved = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($raw)
         }
@@ -571,22 +621,48 @@ function Select-CsvInputsForPipeline {
             throw ("Invalid path: {0}" -f $_.Exception.Message)
         }
         if (-not (Test-Path -LiteralPath $resolved)) {
-            throw ("CSV not found: {0}" -f $resolved)
+            throw ("File not found: {0}" -f $resolved)
         }
         $selected.Add($resolved)
         return @($selected.ToArray())
     }
 
+    if ($count -lt 1) {
+        throw 'No files available to select by number. Enter a full path instead.'
+    }
+
+    if (-not $onlySelectionTokens) {
+        throw ("Not a valid selection (use numbers, ranges like 1-3, lists like 1,3-5, or a full path): {0}" -f $raw)
+    }
+
     $parts = @($raw -split '[,;\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     foreach ($p in $parts) {
+        if ($p -match '^(\d+)-(\d+)$') {
+            $start = [int]$Matches[1]
+            $end = [int]$Matches[2]
+            if ($start -gt $end) {
+                throw ("Inverted range not allowed: {0} (use ascending, e.g. {1}-{2})" -f $p, $end, $start)
+            }
+            if ($start -lt 1 -or $end -gt $count) {
+                throw ("Selection out of range: {0} (valid 1-{1})" -f $p, $count)
+            }
+            for ($n = $start; $n -le $end; $n++) {
+                $full = [string]$Candidates[$n - 1].FullName
+                if (-not ($selected -contains $full)) {
+                    $selected.Add($full)
+                }
+            }
+            continue
+        }
+
         $n = 0
         if (-not [int]::TryParse($p, [ref]$n)) {
             throw ("Not a valid selection number: {0}" -f $p)
         }
-        if ($n -lt 1 -or $n -gt $candidates.Count) {
-            throw ("Selection out of range: {0} (1-{1})" -f $n, $candidates.Count)
+        if ($n -lt 1 -or $n -gt $count) {
+            throw ("Selection out of range: {0} (valid 1-{1})" -f $n, $count)
         }
-        $full = $candidates[$n - 1].FullName
+        $full = [string]$Candidates[$n - 1].FullName
         if (-not ($selected -contains $full)) {
             $selected.Add($full)
         }
@@ -595,23 +671,284 @@ function Select-CsvInputsForPipeline {
     return @($selected.ToArray())
 }
 
+function Select-ImportInputs {
+    <#
+    .SYNOPSIS
+        List import\ files and accept print-style multi-select or a typed path.
+    .PARAMETER FilterKind
+        All (CSV + Excel), Csv only, or Excel only.
+    .PARAMETER Title
+        Optional list heading.
+    #>
+    [CmdletBinding()]
+    param(
+        [ValidateSet('All', 'Csv', 'Excel')]
+        [string]$FilterKind = 'All',
+
+        [string]$Title = ''
+    )
+
+    $candidates = @(Get-ImportProcessableFiles -FilterKind $FilterKind)
+
+    if ($candidates.Count -gt 0) {
+        if ([string]::IsNullOrWhiteSpace($Title)) {
+            switch ($FilterKind) {
+                'Csv'   { $Title = 'CSV files under import\:' }
+                'Excel' { $Title = 'Excel files under import\:' }
+                default { $Title = 'Files under import\:' }
+            }
+        }
+        Write-Host $Title -ForegroundColor Cyan
+        for ($i = 0; $i -lt $candidates.Count; $i++) {
+            $item = $candidates[$i]
+            $sizeLabel = Format-FileSizeLabel -Bytes ([long]$item.Length)
+            $dateLabel = $item.LastWriteTime.ToString('yyyy-MM-dd')
+            Write-Host ("  {0,2}) {1,-36} ({2}, {3}, {4})" -f ($i + 1), $item.Name, $item.Kind, $sizeLabel, $dateLabel)
+        }
+        Write-Host ''
+        Write-Host 'Enter number(s)/ranges e.g. 1 or 1-3 or 1,3-5 - or a full path:' -ForegroundColor DarkGray
+        $raw = Read-Host 'Selection'
+    }
+    else {
+        $kindNote = switch ($FilterKind) {
+            'Csv'   { '.csv' }
+            'Excel' { '.xlsx/.xls' }
+            default { '.csv/.xlsx/.xls' }
+        }
+        Write-Host ("No {0} files found under {1}" -f $kindNote, $importDir) -ForegroundColor Yellow
+        $openFolder = Read-Host 'Open import\ folder? [y/N]'
+        if ($openFolder -match '^[Yy]') {
+            if (-not (Test-Path -LiteralPath $importDir)) {
+                New-Item -ItemType Directory -Path $importDir -Force | Out-Null
+            }
+            Start-Process -FilePath 'explorer.exe' -ArgumentList $importDir | Out-Null
+        }
+        $raw = Read-Host 'Enter full path to a file'
+    }
+
+    return @(Parse-SelectionRange -Raw $raw -Candidates $candidates)
+}
+
+function Select-CsvInputsForPipeline {
+    <#
+    .SYNOPSIS
+        List import\ CSVs and accept multi-select indices, ranges, or a typed path.
+    #>
+    return @(Select-ImportInputs -FilterKind Csv -Title 'CSV files under import\:')
+}
+
+function Read-OptionalExportPassword {
+    <#
+    .SYNOPSIS
+        Ask whether to protect Excel output with a workbook open password.
+    .OUTPUTS
+        SecureString when the user opts in with a non-empty password; otherwise $null.
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Host ''
+    Write-Host 'Protect the Excel workbook with a password?' -ForegroundColor Cyan
+    Write-Host '  [Y] Yes - set open password' -ForegroundColor DarkGray
+    Write-Host '  [N] No  - leave unprotected (default)' -ForegroundColor DarkGray
+    $ans = Read-Host 'Choice [N]'
+    if ($ans -notmatch '^[Yy]') {
+        return $null
+    }
+
+    $secure = Read-Host -Prompt 'Workbook open password' -AsSecureString
+    if ($null -eq $secure -or $secure.Length -eq 0) {
+        Write-Host 'Empty password - leaving workbook unprotected.' -ForegroundColor Yellow
+        return $null
+    }
+    return $secure
+}
+
+function Test-IsExcelPath {
+    param([string]$Path)
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $false }
+    $ext = [System.IO.Path]::GetExtension($Path)
+    if ([string]::IsNullOrWhiteSpace($ext)) { return $false }
+    $ext = $ext.ToLowerInvariant()
+    return ($ext -eq '.xlsx' -or $ext -eq '.xls')
+}
+
+function Test-IsCsvPath {
+    param([string]$Path)
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $false }
+    $ext = [System.IO.Path]::GetExtension($Path)
+    if ([string]::IsNullOrWhiteSpace($ext)) { return $false }
+    return ($ext.ToLowerInvariant() -eq '.csv')
+}
+
+function Invoke-ImportExcelFile {
+    <#
+    .SYNOPSIS
+        Import one workbook to CSV under import\ (unique path; password prompt if needed).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ExcelPath
+    )
+
+    if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
+        throw ("ExcelToolkit.psm1 not found: {0}" -f $toolkitModulePath)
+    }
+    if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
+        return $null
+    }
+    if (-not (Test-Path -LiteralPath $importDir)) {
+        New-Item -ItemType Directory -Path $importDir -Force | Out-Null
+    }
+
+    Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($ExcelPath)
+    $defaultOut = Join-Path $importDir ("{0}.csv" -f $baseName)
+
+    Write-Host ("Importing: {0}" -f $ExcelPath) -ForegroundColor Cyan
+    Write-Host ("  Planned CSV: {0}" -f $defaultOut) -ForegroundColor DarkGray
+    Write-Host 'If that CSV already exists, a free path with a numerical suffix is used (no overwrite).' -ForegroundColor DarkGray
+
+    $importParams = @{
+        ExcelPath           = $ExcelPath
+        OutputPath          = $defaultOut
+        AllowPasswordPrompt = $true
+    }
+
+    $r = Import-CsvFromExcel @importParams
+    if ($r.Success) {
+        Write-Host ("  OK: {0}" -f $r.OutputPath) -ForegroundColor Green
+        if ($r.PasswordUsed) {
+            Write-Host '  Password: used (value not shown)' -ForegroundColor DarkGray
+        }
+        return [string]$r.OutputPath
+    }
+
+    Write-Host ("  FAIL import: {0}" -f $r.Message) -ForegroundColor Red
+    return $null
+}
+
+function Invoke-MenuExportCsv {
+    <#
+    .SYNOPSIS
+        Export one or more CSVs to Excel in-process (optional workbook password).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$CsvPaths,
+
+        [switch]$UseDisplayNames,
+
+        [SecureString]$Password
+    )
+
+    if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
+        throw ("ExcelToolkit.psm1 not found: {0}" -f $toolkitModulePath)
+    }
+    if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
+        return
+    }
+    if (-not (Test-Path -LiteralPath $outputDir)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+    }
+
+    Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+
+    $schemaPath = Get-EffectiveSchemaPath
+    $schemaFormat = Get-EffectiveSchemaFormat -Path $schemaPath
+
+    $okCount = 0
+    $failCount = 0
+    foreach ($csvPath in @($CsvPaths)) {
+        Write-Host ('-' * 50) -ForegroundColor DarkGray
+        Write-Host ("Export: {0}" -f $csvPath) -ForegroundColor Cyan
+        if (-not (Test-Path -LiteralPath $csvPath)) {
+            Write-Host ("  FAIL: CSV not found: {0}" -f $csvPath) -ForegroundColor Red
+            $failCount++
+            continue
+        }
+
+        $stem = [System.IO.Path]::GetFileNameWithoutExtension($csvPath)
+        if ([string]::IsNullOrWhiteSpace($stem)) { $stem = 'export' }
+        $plannedXlsx = Join-Path $outputDir ('{0}.xlsx' -f $stem)
+
+        $exportParams = @{
+            CsvPath    = $csvPath
+            OutputPath = $plannedXlsx
+        }
+        if (-not [string]::IsNullOrWhiteSpace($schemaPath)) {
+            $exportParams['SchemaPath'] = $schemaPath
+        }
+        if ($schemaFormat -eq 'Json' -or $schemaFormat -eq 'Csv') {
+            $exportParams['SchemaFormat'] = $schemaFormat
+        }
+        if ($UseDisplayNames) {
+            $exportParams['UseDisplayNames'] = $true
+        }
+        if ($null -ne $Password -and $Password.Length -gt 0) {
+            $exportParams['Password'] = $Password
+        }
+
+        try {
+            $r = Export-ExcelFromCsv @exportParams
+            if ($r.Success) {
+                Write-Host ("  OK: {0}" -f $r.OutputPath) -ForegroundColor Green
+                $okCount++
+            }
+            else {
+                Write-Host ("  FAIL: {0}" -f $r.Message) -ForegroundColor Red
+                $failCount++
+            }
+        }
+        catch {
+            Write-Host ("  FAIL: {0}" -f $_.Exception.Message) -ForegroundColor Red
+            $failCount++
+        }
+    }
+
+    Write-Host ('-' * 50) -ForegroundColor DarkGray
+    Write-Host ("Done: {0} succeeded, {1} failed." -f $okCount, $failCount) -ForegroundColor $(if ($failCount -eq 0) { 'Green' } else { 'Yellow' })
+
+    if ($okCount -gt 0) {
+        $open = Read-Host 'Open output folder? [y/N]'
+        if ($open -match '^[Yy]') {
+            Open-OutputFolder
+        }
+    }
+}
+
 function Invoke-KpiScoreExportMenu {
     <#
     .SYNOPSIS
         Score selected CSVs via kpi-analytics; optionally export scored + summary to Excel.
     .PARAMETER ScoreOnly
         When set, write scored and summary CSVs only (no Excel COM export).
+    .PARAMETER InputPaths
+        Optional preselected CSV paths (skips interactive file pick).
+    .PARAMETER Password
+        Optional workbook open password for Excel exports (SecureString).
+    .PARAMETER SkipPasswordPrompt
+        When set with Excel export, do not prompt; use -Password as-is (may be $null).
     #>
     [CmdletBinding()]
     param(
-        [switch]$ScoreOnly
+        [switch]$ScoreOnly,
+
+        [string[]]$InputPaths,
+
+        [SecureString]$Password,
+
+        [switch]$SkipPasswordPrompt
     )
 
     Write-Host ''
     if ($ScoreOnly) {
         Write-Host 'Score only (KPI CSV)' -ForegroundColor Cyan
         Write-Host 'Runs kpi-analytics score; writes scored + summary CSVs under output\.' -ForegroundColor DarkGray
-        Write-Host 'No Excel export on this path (use menu option 1 or 3 for workbooks).' -ForegroundColor DarkGray
+        Write-Host 'No Excel export on this path.' -ForegroundColor DarkGray
     }
     else {
         Write-Host 'Run full pipeline (Score CSV -> Excel)' -ForegroundColor Cyan
@@ -634,7 +971,13 @@ function Invoke-KpiScoreExportMenu {
         New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
     }
 
-    $inputs = @(Select-CsvInputsForPipeline)
+    $inputs = @()
+    if ($null -ne $InputPaths -and @($InputPaths).Count -gt 0) {
+        $inputs = @($InputPaths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    }
+    else {
+        $inputs = @(Select-CsvInputsForPipeline)
+    }
     if ($inputs.Count -eq 0) {
         Write-Host 'No CSV selected.' -ForegroundColor Yellow
         return
@@ -653,6 +996,16 @@ function Invoke-KpiScoreExportMenu {
     if (-not $ScoreOnly) {
         if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
             return
+        }
+    }
+
+    $exportPassword = $null
+    if (-not $ScoreOnly) {
+        if ($SkipPasswordPrompt) {
+            $exportPassword = $Password
+        }
+        else {
+            $exportPassword = Read-OptionalExportPassword
         }
     }
 
@@ -740,7 +1093,14 @@ function Invoke-KpiScoreExportMenu {
             $plannedSummaryXlsx = [System.IO.Path]::ChangeExtension($actualSummaryCsv, '.xlsx')
 
             Write-Host '  Exporting scored workbook...' -ForegroundColor Cyan
-            $ex1 = Export-ExcelFromCsv -CsvPath $actualScoredCsv -OutputPath $plannedScoredXlsx
+            $ex1Params = @{
+                CsvPath    = $actualScoredCsv
+                OutputPath = $plannedScoredXlsx
+            }
+            if ($null -ne $exportPassword -and $exportPassword.Length -gt 0) {
+                $ex1Params['Password'] = $exportPassword
+            }
+            $ex1 = Export-ExcelFromCsv @ex1Params
             if (-not $ex1.Success) {
                 Write-Host ("  FAIL scored Excel: {0}" -f $ex1.Message) -ForegroundColor Red
                 Write-Host ("  Scored CSV still at: {0}" -f $actualScoredCsv) -ForegroundColor Yellow
@@ -755,7 +1115,14 @@ function Invoke-KpiScoreExportMenu {
                 $failCount++
                 continue
             }
-            $ex2 = Export-ExcelFromCsv -CsvPath $actualSummaryCsv -OutputPath $plannedSummaryXlsx
+            $ex2Params = @{
+                CsvPath    = $actualSummaryCsv
+                OutputPath = $plannedSummaryXlsx
+            }
+            if ($null -ne $exportPassword -and $exportPassword.Length -gt 0) {
+                $ex2Params['Password'] = $exportPassword
+            }
+            $ex2 = Export-ExcelFromCsv @ex2Params
             if (-not $ex2.Success) {
                 Write-Host ("  FAIL summary Excel: {0}" -f $ex2.Message) -ForegroundColor Red
                 Write-Host ("  Summary CSV still at: {0}" -f $actualSummaryCsv) -ForegroundColor Yellow
@@ -1176,14 +1543,12 @@ function Show-Menu {
     Write-Host '================================================' -ForegroundColor Cyan
     Write-Host '  Work Queue Data Tools' -ForegroundColor Cyan
     Write-Host '================================================' -ForegroundColor Cyan
-    Write-Host '  1) Run full pipeline (Score CSV -> Excel)'
-    Write-Host '  2) Score only (CSV -> scored + summary CSV)'
-    Write-Host '  3) Export CSV to Excel'
-    Write-Host '  4) Advanced tools...'
+    Write-Host '  1) Process my data'
+    Write-Host '  2) Advanced tools...'
     Write-Host '  0) Exit'
     Write-Host '================================================' -ForegroundColor Cyan
     Write-Host ''
-    Write-Host 'Happy path: place data under import\, choose 1, pick the file.' -ForegroundColor DarkGray
+    Write-Host 'Happy path: place CSV/Excel under import\, choose 1, pick files (1-3 or 1,3-5).' -ForegroundColor DarkGray
     Write-Host ("Schema (Advanced): {0}" -f $schemaNote) -ForegroundColor DarkGray
     Write-Host 'Existing outputs are not overwritten (unique name_N.ext when needed).' -ForegroundColor DarkGray
 }
@@ -1220,7 +1585,24 @@ function Invoke-AdvancedMenu {
         $sub = Read-Host 'Select an advanced option'
         switch ($sub) {
             '1' {
-                $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments -UseDisplayNames)
+                try {
+                    $csvList = @(Select-CsvInputsForPipeline)
+                    if ($csvList.Count -eq 0) {
+                        Write-Host 'No CSV selected.' -ForegroundColor Yellow
+                    }
+                    else {
+                        $pw = Read-OptionalExportPassword
+                        if ($null -ne $pw) {
+                            Invoke-MenuExportCsv -CsvPaths $csvList -UseDisplayNames -Password $pw
+                        }
+                        else {
+                            Invoke-MenuExportCsv -CsvPaths $csvList -UseDisplayNames
+                        }
+                    }
+                }
+                catch {
+                    Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                }
                 Wait-ForEnter
             }
             '2' {
@@ -1294,7 +1676,7 @@ while ($running) {
     switch ($choice) {
         '1' {
             try {
-                Invoke-KpiScoreExportMenu
+                Invoke-ProcessMyData
             }
             catch {
                 Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
@@ -1302,19 +1684,6 @@ while ($running) {
             Wait-ForEnter
         }
         '2' {
-            try {
-                Invoke-KpiScoreExportMenu -ScoreOnly
-            }
-            catch {
-                Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
-            }
-            Wait-ForEnter
-        }
-        '3' {
-            $null = Invoke-ToolScript -Path $exportScript -Arguments (Get-ExportArguments)
-            Wait-ForEnter
-        }
-        '4' {
             try {
                 Invoke-AdvancedMenu
             }
