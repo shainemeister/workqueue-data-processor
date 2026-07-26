@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.4.1] - 2026-07-25
+
+#### Removed
+
+- Root `PLAN.md` (menu simplification / dynamic processing plan). Repo **1.4.0** / excel-toolkit **1.6.0** shipped; delivery history remains in this CHANGELOG and git history. FILE-CATALOG updated.
+
 ### [1.4.0] - 2026-07-25
 
 #### Added
