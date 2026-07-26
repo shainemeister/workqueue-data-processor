@@ -13,6 +13,25 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.4.0] - 2026-07-25
+
+#### Added
+
+- **excel-toolkit 1.6.0:** guided interactive menu and flexible file selection
+  - Main menu: **Process my data** / Advanced tools / Exit
+  - Unified discovery of `.csv`, `.xlsx`, and `.xls` under `import\`
+  - Print-style multi-select: `1`, `1,2,3`, `1-3`, `1,3-5,8`, or a full path
+  - Action choice after selection: full pipeline, score only, or export only
+  - Excel selections import to CSV first (open-password prompt when needed), then continue
+  - Optional workbook **open password** on every menu path that produces Excel (SecureString; never logged)
+- Root `PLAN.md` for menu simplification / dynamic processing (this release)
+
+#### Changed
+
+- Interactive happy path no longer forces the user to choose pipeline vs score vs export before seeing files
+- Advanced tools retain schema-header export, import, folders, schema, diagnostics (export uses in-process path with password prompt)
+- Automation CLIs (`excel-toolkit.cmd`, `kpi-analytics.cmd`) unchanged; kpi-analytics remains **2.0.0**
+
 ### [1.3.1] - 2026-07-25
 
 #### Removed

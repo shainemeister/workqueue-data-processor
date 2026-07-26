@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.3.1"
+version: "1.4.0"
 status: current
 audience:
   - developers
@@ -20,7 +20,7 @@ last_updated: "2026-07-25"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.3.1  
+**Document version:** 1.4.0  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -68,7 +68,7 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 
 ```text
 workqueue-data-processor/
-  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md
+  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md, PLAN.md
   wq_schema.json, wq_schema.csv, wq_data.csv
   WQ_Priority_Matrix_Concept.md
   Start-ExcelMenu.cmd
@@ -90,6 +90,7 @@ workqueue-data-processor/
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
 | [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline, CHANGELOG policy, formatting, architecture, data, git, and verification. |
+| [PLAN.md](./PLAN.md) | doc | Living plan for menu simplification, unified discovery/ranges, guided Process my data, optional export password (repo 1.4.0 / excel-toolkit 1.6.0). |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
@@ -127,7 +128,7 @@ Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-
 | [diagnostics/README.md](./excel-toolkit/diagnostics/README.md) | doc | Explains pass certificate files and first-run gate (json/txt are gitignored). |
 | [excel-toolkit.cmd](./excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](./excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
-| [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: full pipeline (1), score only (2), export CSV→Excel (3), Advanced (schema export, import, folders, schema, diagnostics); unique output paths (`name_N.ext`) by default. |
+| [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
 | [Export-CsvToExcel.ps1](./excel-toolkit/Export-CsvToExcel.ps1) | script | Thin menu/legacy wrapper around `Export-ExcelFromCsv` in the high-level module. |
 | [Export-WqDataToExcel.ps1](./excel-toolkit/Export-WqDataToExcel.ps1) | script | Compatibility forwarder to `Export-CsvToExcel.ps1` (legacy entry name). |
 | [Test-ExcelCom.ps1](./excel-toolkit/Test-ExcelCom.ps1) | script | Dry-run and full smoke tests for COM readiness and workbook operations. |
@@ -150,6 +151,7 @@ Minimal probes for locked-down corporate PCs: can `.cmd`, `.ps1`, and `.psm1` ex
 | [Test-Psm1.ps1](./excel-toolkit/sample-test/Test-Psm1.ps1) | script | Imports `SampleTools.psm1` and asserts the ping export returns `PING_OK`. |
 | [Test-Env.cmd](./excel-toolkit/sample-test/Test-Env.cmd) | launcher | Double-click entry for the enterprise environment checks. |
 | [Test-Env.ps1](./excel-toolkit/sample-test/Test-Env.ps1) | script | Reports LanguageMode, process policy, module load, Excel COM, and temp write. |
+| [Test-SelectionRange.ps1](./excel-toolkit/sample-test/Test-SelectionRange.ps1) | script | Dev smoke test: parse `Start-ExcelMenu.ps1` and unit-check print-style selection ranges. |
 
 ---
 
@@ -277,6 +279,7 @@ rem Existing destinations require -Force to overwrite
 | 1.1.3 | Synthetic import `.xlsx` fixtures; excel-toolkit 1.2.0 `import-excel` |
 | 1.3.0 | `column_map.py` role mapping; kpi-analytics 1.9.0; PLAN.md living plan already cataloged |
 | 1.3.1 | Removed root `PLAN.md` after R1–R3 shipped (history remains in CHANGELOG / git) |
+| 1.4.0 | excel-toolkit 1.6.0 guided Process my data menu; re-catalog PLAN.md; `Test-SelectionRange.ps1` |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |
