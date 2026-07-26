@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.5.0"
+version: "1.5.1"
 status: current
 audience:
   - developers
@@ -20,7 +20,7 @@ last_updated: "2026-07-25"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.5.0  
+**Document version:** 1.5.1  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -281,6 +281,7 @@ rem Existing destinations require -Force to overwrite
 | 1.4.0 | excel-toolkit 1.6.0 guided Process my data menu; re-catalog PLAN.md; `Test-SelectionRange.ps1` |
 | 1.4.1 | Removed root `PLAN.md` after 1.4.0 / excel-toolkit 1.6.0 menu work shipped (history remains in CHANGELOG / git) |
 | 1.5.0 | kpi-analytics 2.1.0 mapping verification + guided mapping; PLAN.md for dynamic schema adaptation marked implemented |
+| 1.5.1 | Removed root `PLAN.md` after 1.5.0 / kpi-analytics 2.1.0 mapping work shipped (history remains in CHANGELOG / git) |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |
