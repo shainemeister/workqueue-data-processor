@@ -54,10 +54,12 @@ def resolve_as_of(cfg: dict[str, Any]) -> date:
 
 
 def _field(fields: dict[str, Any], role: str) -> str:
-    """Return configured column name for a role, defaulting to the role key."""
+    """Return configured column name for a role, or empty if unmapped."""
+    if role not in fields:
+        return ""
     val = fields.get(role)
     if val is None or not str(val).strip():
-        return role
+        return ""
     return str(val)
 
 

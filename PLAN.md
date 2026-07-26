@@ -1,8 +1,8 @@
 ---
 title: Work Queue Data Processor – Dynamic Schema Adaptation & Guided Mapping Plan
 description: Living plan for stronger header discrepancy detection, sample-based verification, interactive/guided column-role mapping, and safe integration with the score path so missing or mismatched schema dependencies no longer produce silent incorrect results.
-version: "0.1.0"
-status: current
+version: "0.2.0"
+status: implemented
 audience:
   - developers
   - analysts
@@ -22,8 +22,8 @@ last_updated: "2026-07-25"
 
 Living plan to stop silent incorrect scoring when CSV headers do not match expected schema roles. Delivers stronger discrepancy detection, data-content verification, interactive/guided mapping, and clear reporting while preserving the existing auto-detect + profile path for clean extracts.
 
-**Document version:** 0.1.0  
-**Status:** current (ready for S1)  
+**Document version:** 0.2.0  
+**Status:** implemented (repo **1.5.0** / kpi-analytics **2.1.0**)  
 **Related:** [README.md](./README.md) · [RULES.md](./RULES.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [CHANGELOG.md](./CHANGELOG.md) · kpi-analytics docs and `column_map.py`
 
 ---
@@ -306,11 +306,11 @@ Any AI agent implementing this plan **must** follow these rules:
 
 ## 11. Immediate next actions
 
-1. Implement **S1** – harden `column_map.py` (remove or gate silent fallback, add sample heuristics, enrich report). Keep existing tests / fixtures green.
-2. Implement **S2** – guided helper + `--interactive-mapping` (or `map` verb) on the CLI.
-3. Implement **S3** – wire into `score_csv`, re-verify, optional different-file signal.
-4. **S4** – bump to kpi-analytics **2.1.0** / repo **1.5.0**, update CLI-GUIDE, FILE-CATALOG, CHANGELOG, mark this PLAN implemented.
-5. Manual verification matrix (clean file, missing role, wrong-type column, interactive walk-through, non-TTY failure mode).
+**Shipped in 1.5.0 / kpi-analytics 2.1.0.** Optional follow-ons:
+
+1. Wire Excel “Process my data” to `score --interactive-mapping` (excel-toolkit bump if included).
+2. Optional dedicated `map` CLI verb for profile-only sessions.
+3. Manual TTY walk-through on real-world extract layouts as they appear.
 
 ---
 
@@ -319,3 +319,4 @@ Any AI agent implementing this plan **must** follow these rules:
 | Version | Notes |
 |---------|-------|
 | 0.1.0 | Initial plan after observation that header discrepancies produce silent incorrect scores. Covers detection hardening, sample verification, interactive guided mapping, score-path integration, and version targets 1.5.0 / kpi-analytics 2.1.0. |
+| 0.2.0 | Marked **implemented**: silent fallback removed, sample verification + report fields, `--interactive-mapping` guided recovery, docs/version 1.5.0 / kpi 2.1.0. Excel menu wiring deferred. |

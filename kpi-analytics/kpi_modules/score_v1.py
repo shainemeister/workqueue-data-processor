@@ -6,7 +6,17 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from .column_map import apply_mapping_to_config, load_mapping_profile
+import sys
+
+from .column_map import (
+    MappingGuideAbort,
+    apply_mapping_to_config,
+    guide_mapping,
+    load_mapping_profile,
+    mapping_has_problems,
+    offer_save_mapping_profile,
+    problems_summary,
+)
 from .config import METRIC_KEYS, effective_weights, load_config
 from .io_csv import read_csv_rows, write_csv_rows
 from .kpi_quantifiers import apply_quantifiers_to_rows
@@ -154,6 +164,31 @@ def score_rows(
             if mapping_report is not None
             else []
         ),
+        "ambiguous_roles": (
+            dict(mapping_report.get("ambiguous") or {})
+            if mapping_report is not None
+            else {}
+        ),
+        "low_confidence_roles": (
+            list(mapping_report.get("low_confidence_roles") or [])
+            if mapping_report is not None
+            else []
+        ),
+        "mapping_sources": (
+            dict(mapping_report.get("sources") or {})
+            if mapping_report is not None
+            else {}
+        ),
+        "role_confidence": (
+            dict(mapping_report.get("role_confidence") or {})
+            if mapping_report is not None
+            else {}
+        ),
+        "type_checks": (
+            dict(mapping_report.get("type_checks") or {})
+            if mapping_report is not None
+            else {}
+        ),
     }
     return out_fields, out_rows, summary
 
@@ -168,6 +203,7 @@ def score_csv(
     write_summary: bool = True,
     privacy_enabled: bool | None = None,
     mapping_path: str | Path | None = None,
+    interactive_mapping: bool = False,
 ) -> dict[str, Any]:
     """
     Score a data CSV and write an enriched CSV.
@@ -181,6 +217,9 @@ def score_csv(
     Headers are always inspected (case/space tolerant + aliases); the profile
     overrides auto-detect for listed roles.
 
+    interactive_mapping: when True and mapping problems exist, run guided
+    resolution on a TTY; on non-TTY fail clearly instead of hanging.
+
     Returns a result dict suitable for CLI JSON output.
     """
     cfg = load_config(config_path)
@@ -192,17 +231,84 @@ def score_csv(
         privacy["enabled"] = bool(privacy_enabled)
 
     fieldnames, rows = read_csv_rows(csv_path)
+    input_resolved = Path(csv_path).resolve()
 
-    profile_roles = None
+    profile_roles: dict[str, str] | None = None
     if mapping_path is not None:
         profile_roles = load_mapping_profile(mapping_path)
 
+    # Defer the zero-metrics hard-fail until after optional guided recovery.
     cfg, mapping_report = apply_mapping_to_config(
         cfg,
         fieldnames,
         profile_roles=profile_roles,
-        require_active_metric=True,
+        require_active_metric=False,
+        sample_rows=rows,
     )
+
+    saved_mapping_path: str | None = (
+        str(Path(mapping_path).resolve()) if mapping_path else None
+    )
+    guided = False
+
+    if interactive_mapping and mapping_has_problems(mapping_report):
+        tty = bool(sys.stdin.isatty() and sys.stdout.isatty())
+        if not tty:
+            raise ValueError(
+                "Interactive mapping required but no TTY available. "
+                "Problems: "
+                + problems_summary(mapping_report)
+                + ". Provide a --mapping profile or run from an interactive console."
+            )
+        try:
+            guided_roles = guide_mapping(
+                fieldnames,
+                mapping_report,
+                sample_rows=rows,
+                existing_roles=profile_roles,
+            )
+        except MappingGuideAbort as exc:
+            raise ValueError(str(exc)) from exc
+
+        # Re-load config so guided profile fully rewrites fields.
+        cfg = load_config(config_path)
+        if privacy_enabled is not None:
+            privacy = cfg.setdefault("privacy", {})
+            if not isinstance(privacy, dict):
+                privacy = {}
+                cfg["privacy"] = privacy
+            privacy["enabled"] = bool(privacy_enabled)
+
+        profile_roles = guided_roles
+        cfg, mapping_report = apply_mapping_to_config(
+            cfg,
+            fieldnames,
+            profile_roles=profile_roles,
+            require_active_metric=False,
+            sample_rows=rows,
+        )
+        guided = True
+        suggest = input_resolved.with_name(
+            f"{input_resolved.stem}_mapping.json"
+        )
+        written = offer_save_mapping_profile(
+            guided_roles,
+            suggest_path=suggest,
+        )
+        if written is not None:
+            saved_mapping_path = str(written)
+
+    if not mapping_report.get("active_metrics"):
+        missing = ", ".join(mapping_report.get("missing_roles") or []) or (
+            "(none listed)"
+        )
+        raise ValueError(
+            "No priority metrics can run: required columns missing "
+            "for all metrics. "
+            f"Unresolved roles: {missing}. "
+            "Provide correctly named headers, a --mapping profile, "
+            "or re-run with --interactive-mapping on a TTY."
+        )
 
     out_fields, out_rows, summary = score_rows(
         fieldnames,
@@ -221,7 +327,7 @@ def score_csv(
     result: dict[str, Any] = {
         "Success": True,
         "Command": "score",
-        "InputPath": str(Path(csv_path).resolve()),
+        "InputPath": str(input_resolved),
         "OutputPath": str(out_resolved),
         "SummaryPath": str(sum_path) if write_summary else None,
         "RowCount": summary["row_count"],
@@ -243,9 +349,14 @@ def score_csv(
         "SkippedMetrics": summary.get("skipped_metrics") or {},
         "FieldRoles": summary.get("field_roles") or {},
         "MissingRoles": summary.get("missing_roles") or [],
-        "MappingPath": (
-            str(Path(mapping_path).resolve()) if mapping_path else None
-        ),
+        "AmbiguousRoles": summary.get("ambiguous_roles") or {},
+        "LowConfidenceRoles": summary.get("low_confidence_roles") or [],
+        "MappingSources": summary.get("mapping_sources") or {},
+        "RoleConfidence": summary.get("role_confidence") or {},
+        "TypeChecks": summary.get("type_checks") or {},
+        "MappingPath": saved_mapping_path,
+        "InteractiveMapping": bool(interactive_mapping),
+        "GuidedMappingApplied": guided,
         "PrivacyEnabled": bool((summary.get("privacy") or {}).get("enabled")),
         "PrivacyPatientMode": (summary.get("privacy") or {}).get(
             "patient_mode"

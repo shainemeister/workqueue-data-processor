@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics
 description: Python 3.13 stdlib toolkit for Work Queue priority scoring, RCM claim-level KPI impacts, synthetic data, and validation.
-version: "2.0.0"
+version: "2.1.0"
 status: current
 audience:
   - users
@@ -28,7 +28,7 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 6. **Enterprise diagnostics** — first-run runtime/import dry-run with a durable pass/fail report and a gate on operational commands.  
 7. **PHI field masking** — optional score-output masking of patient name and DOB (config-driven; default on).
 
-**Toolkit version:** 2.0.0  
+**Toolkit version:** 2.1.0  
 **Product folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\` (implementation; name differs from the product folder on purpose)
 
@@ -39,7 +39,7 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 | [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) | RCM dual-attribution theory (proof of concept) |
 | [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md) | Trust boundary for controlled PCs |
 
-Column **order** always comes from your data CSV. Scoring appends fields; it does not invent missing business columns. Metric field names are configurable (defaults match the repo WQ schema).
+Column **order** always comes from your data CSV. Scoring appends fields; it does not invent missing business columns. Metric field names are configurable (defaults match the repo WQ schema). When headers differ, use aliases, `score --mapping`, or `score --interactive-mapping` (TTY) — see [CLI-GUIDE.md](./CLI-GUIDE.md).
 
 ---
 

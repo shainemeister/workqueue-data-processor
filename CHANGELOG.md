@@ -13,6 +13,29 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.5.0] - 2026-07-25
+
+#### Added
+
+- **kpi-analytics 2.1.0:** dynamic schema adaptation and guided mapping
+  - Sample-based verification of resolved role columns (date / numeric heuristics)
+  - Richer mapping report on every `score` run: `AmbiguousRoles`, `LowConfidenceRoles`, `MappingSources`, `RoleConfidence`, `TypeChecks`
+  - `score --interactive-mapping`: TTY guided column assignment for missing / ambiguous / low-confidence roles; optional save of a mapping profile next to the input CSV
+  - Non-TTY + `--interactive-mapping` with mapping problems fails clearly (no hang on `input()`)
+  - `NEED_DIFFERENT_FILE` message when the operator aborts guided mapping to choose another source
+
+#### Changed
+
+- Unresolved roles are no longer silently filled with the role name in config `fields` (metrics skip cleanly; weights renorm over active metrics as before)
+- `metrics._field` returns empty string when a role is unmapped (no accidental role-name column lookup)
+- Root `PLAN.md` status marked implemented for this release
+- CLI-GUIDE, SCORE-METHODOLOGY, FILE-CATALOG, and kpi-analytics README updated for mapping verification and interactive mode
+
+#### Unchanged
+
+- excel-toolkit remains **1.6.0** (menu does not yet pass `--interactive-mapping`; automation CLIs unchanged except new score flag)
+- Priority formulas and `kpi_q_*` contracts unchanged when all roles resolve
+
 ### [1.4.1] - 2026-07-25
 
 #### Removed

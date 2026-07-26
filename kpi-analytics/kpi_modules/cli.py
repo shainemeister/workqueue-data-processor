@@ -226,6 +226,16 @@ def build_parser() -> argparse.ArgumentParser:
             "(see CLI-GUIDE). Auto-detect still runs for unlisted roles."
         ),
     )
+    p_score.add_argument(
+        "--interactive-mapping",
+        dest="interactive_mapping",
+        action="store_true",
+        help=(
+            "When mapping problems exist (missing / ambiguous / low-confidence "
+            "roles), guide column assignment on a TTY; fail clearly if no TTY. "
+            "Clean files are not prompted."
+        ),
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -493,6 +503,9 @@ def main(argv: list[str] | None = None) -> int:
                     ),
                     privacy_enabled=getattr(args, "privacy_override", None),
                     mapping_path=getattr(args, "mapping_path", None),
+                    interactive_mapping=bool(
+                        getattr(args, "interactive_mapping", False)
+                    ),
                 )
             except (FileNotFoundError, ValueError, OSError) as exc:
                 _emit(

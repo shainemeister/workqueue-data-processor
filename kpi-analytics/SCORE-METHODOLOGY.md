@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.0.0"
+version: "2.1.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 2.0.0  
+**Toolkit version:** 2.1.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -138,13 +138,15 @@ Computed in `metrics.py` using config `fields` (metric contract **2.0**).
 
 Missing parseable values → normalization uses `missing_norm_value` (default **0.0**).
 
-### Column role resolution (1.9.0+)
+### Column role resolution (1.9.0+; verification & guided mapping 2.1.0+)
 
 On each `score` run, CSV headers are bound to config **roles** (`fields` keys) via:
 
 1. Optional mapping profile (`--mapping`)  
 2. Config field names present in the header row  
 3. Case/space-tolerant aliases (e.g. display-style “Service Date”)
+
+Unresolved roles are **not** silently filled with the role name. Mapping is a runtime adapter only — it never mutates `wq_schema.json`.
 
 | Metric key | Required role(s) |
 |------------|------------------|
@@ -160,7 +162,9 @@ On each `score` run, CSV headers are bound to config **roles** (`fields` keys) v
 
 If a required role is **unresolved**, that metric is **skipped** for the run (weight **0**). Remaining metrics keep chaos × POI multipliers, then weights are **re-normalized to sum to 1.0**. If no metrics remain, scoring fails with a clear error.
 
-Skipped vs active metrics appear in the vertical summary and in CLI JSON (`ActiveMetrics`, `SkippedMetrics`, `FieldRoles`, `MissingRoles`).
+**Sample verification (2.1.0+):** after headers are chosen, a small sample of non-empty cells is checked with the same date/float parsers used by metrics. Roles whose samples do not parse as expected are marked **low confidence** (`LowConfidenceRoles`, `TypeChecks`, `RoleConfidence`). This is **advisory** for non-interactive `score` (does not change formulas). Use `score --interactive-mapping` on a TTY to correct missing / ambiguous / low-confidence roles and optionally save a mapping profile.
+
+Skipped vs active metrics appear in the vertical summary and in CLI JSON (`ActiveMetrics`, `SkippedMetrics`, `FieldRoles`, `MissingRoles`, plus the 2.1.0 mapping-quality fields).
 
 This is independent of cell-level missing values inside a present column (those still use `missing_norm_value`).
 
@@ -506,3 +510,4 @@ Checks include:
 | 1.8.1 | Default chaos retune: `mean_ar_days_factor` **1.0** (threshold = `ar_day_target`); chaos multipliers boost `ar_days` ×1.2 and `out_ins_amt` ×1.5 (with existing disparity/appeal boosts) |
 | 1.9.0 | Column role resolution + optional mapping profile; availability-aware priority weights (skip metrics with missing roles, renorm); summary/CLI report active and skipped metrics (no change to default formulas when all roles present) |
 | 2.0.0 | **Breaking metric contract:** `ar_days`→`claim_age_days`, `ar_disparity`→`claim_age_disparity`; add BWDO, denial_count, days_since_last_worked, dual_deadline_urgency; new default weights; chaos stats use claim-age vocabulary; legacy config key aliases accepted on load |
+| 2.1.0 | Sample verification + richer mapping report; stop silent role-name field fallback; optional `--interactive-mapping` guided recovery (no formula change when all roles present) |

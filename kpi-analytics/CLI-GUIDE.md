@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.0.0"
+version: "2.1.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-25"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.0.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.1.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -252,7 +252,8 @@ Scores a data CSV:
 
 ```text
 python -m kpi_modules score [--csv <path>] [--output <path>]
-    [--config <path>] [--mapping <path>] [--summary <path>] [--no-summary]
+    [--config <path>] [--mapping <path>] [--interactive-mapping]
+    [--summary <path>] [--no-summary]
     [--privacy | --no-privacy]
     [--dry-run] [--json] [--quiet]
 ```
@@ -265,6 +266,7 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--no-summary` | No | off | Skip summary file |
 | `--config` | No | package default | Weights / KPI config |
 | `--mapping` | No | none | JSON profile mapping semantic roles to CSV column names (see below) |
+| `--interactive-mapping` | No | off | When missing / ambiguous / low-confidence roles exist, guide assignment on a TTY; fail clearly if no TTY. Clean files are not prompted. |
 | `--privacy` | No | (config) | Force PHI field masking on scored output |
 | `--no-privacy` | No | (config) | Disable PHI field masking on scored output |
 | `--dry-run` | No | off | No file writes |
@@ -283,7 +285,20 @@ Every `score` run resolves **roles** (config `fields` keys) to CSV headers:
 2. Config `fields` names when those headers exist  
 3. Alias auto-detect (e.g. `Service Date` → `service_date`, `Balance` → `out_ins_amt`)
 
-If a metric’s required role is missing, that metric is **skipped** and its weight is redistributed over the remaining active metrics. If **no** metrics can run, `score` fails with exit **1**.
+After headers are chosen, **sample verification** peeks non-empty cells and flags date/numeric roles that do not parse as expected (`LowConfidenceRoles`, `TypeChecks`, `RoleConfidence`). This is advisory for normal `score`; it does not block automation.
+
+Unresolved roles are **not** silently filled with the role name. If a metric’s required role is missing, that metric is **skipped** and its weight is redistributed over the remaining active metrics. If **no** metrics can run, `score` fails with exit **1**.
+
+**Interactive mapping (`--interactive-mapping`)**
+
+| Context | Behavior |
+|---------|----------|
+| Flag off | Auto-detect + optional `--mapping` only (automation-safe) |
+| Flag on + clean mapping | No prompts; score normally |
+| Flag on + problems + TTY | Guided prompts (index / header name / skip / different file / quit); optional save of a mapping profile next to the input CSV (`{stem}_mapping.json`) |
+| Flag on + problems + non-TTY | Exit **1** with a clear message listing problems (does not call `input()`) |
+
+Guided mode truncates sample values and redacts headers that look like patient/DOB/account identifiers. Schema (`wq_schema.json`) remains the canonical vocabulary; mapping is a runtime adapter only.
 
 Mapping profile shape:
 
@@ -301,8 +316,6 @@ Mapping profile shape:
 }
 ```
 
-Schema (`wq_schema.json`) remains the canonical vocabulary; mapping is a runtime adapter only.
-
 **Examples**
 
 ```bat
@@ -315,6 +328,9 @@ kpi-analytics.cmd score --no-privacy --json
 kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
   --mapping D:\exports\my_mapping.json ^
   --output ..\output\wq_scored.csv --privacy --json
+
+kpi-analytics.cmd score --csv D:\exports\odd_headers.csv ^
+  --interactive-mapping --output ..\output\wq_scored.csv --json
 ```
 
 **JSON shape (illustrative)**
@@ -323,7 +339,7 @@ kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
 {
   "Success": true,
   "Command": "score",
-  "Version": "2.0.0",
+  "Version": "2.1.0",
   "InputPath": "C:\\...\\import\\wq_synthetic_data.csv",
   "OutputPath": "C:\\...\\output\\wq_scored.csv",
   "SummaryPath": "C:\\...\\output\\wq_scored_summary.csv",
@@ -340,7 +356,14 @@ kpi-analytics.cmd score --csv D:\exports\wq_export.csv ^
   "SkippedMetrics": {},
   "FieldRoles": {"service_date": "service_date", "out_ins_amt": "out_ins_amt"},
   "MissingRoles": [],
+  "AmbiguousRoles": {},
+  "LowConfidenceRoles": [],
+  "MappingSources": {"service_date": "config", "out_ins_amt": "config"},
+  "RoleConfidence": {"service_date": "high", "out_ins_amt": "high"},
+  "TypeChecks": {"service_date": "looks_date", "out_ins_amt": "looks_numeric"},
   "MappingPath": null,
+  "InteractiveMapping": false,
+  "GuidedMappingApplied": false,
   "DiagnosticsGate": "cached",
   "KpiTotals": {
     "kpi_total_ar": 284235.94,
