@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.3.0"
+version: "1.3.1"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ Policy for keeping **workqueue-data-processor** professional, auditable, and saf
 
 **If you only need to score work or export Excel:** start with the root [README.md](./README.md) and the toolkit guides. Come back here when you edit code, docs, schema, or release behavior.
 
-**Document version:** 1.3.0  
+**Document version:** 1.3.1  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc)
 
@@ -320,7 +320,7 @@ Durable record of **which kit version** this project adopted and **where upgrade
 
 | Field | Value |
 |-------|--------|
-| Adopted kit version | **1.1.1** |
+| Adopted kit version | **1.1.2** |
 | Adopted on | **2026-07-25** |
 | Kit source | https://github.com/shainemeister/repo-kit |
 
@@ -414,13 +414,83 @@ Scopes are advisory: consistency within this repo matters more than matching any
 
 #### Optional footers
 
-Useful when needed; **not** mandatory:
+Useful when needed; **not** mandatory (except the AI disclosure block, which is **required when applicable**):
 
 | Footer | Use when |
 |--------|----------|
 | `BREAKING CHANGE: <description>` | Public contract breaks; describe migration |
 | `Refs: <issue-or-doc>` | Link a tracker item or canonical doc |
 | `Co-authored-by: Name <email>` | Shared authorship |
+| AI disclosure block (`Assisted-by` / `Compliance` / `Instructed-by`) | **Required** when AI meaningfully assisted; `Assisted-by` = actual make/model; `Instructed-by` = `git config user.name`; see [AI-assisted commits](#ai-assisted-commits-required-disclosure) |
+
+#### AI-assisted commits (required disclosure)
+
+When an AI system meaningfully assists with the **change itself** (code, docs, configuration, or the commit message), the commit **must** include the following footer block. Pure human-only commits omit it.
+
+| Trailer | Required content |
+|---------|------------------|
+| `Assisted-by:` | AI make / model (and optional tool) that assisted **this** commit — fill at commit time |
+| `Compliance:` | Explicit reference to this file (`RULES.md`) |
+| `Instructed-by:` | Directing human — **value of** `git config user.name` for the committer |
+
+**Template form** (copy structure; resolve fields at commit time):
+
+```text
+Assisted-by: <AI make / model>
+Compliance: RULES.md
+Instructed-by: <git config user.name>
+```
+
+**How to resolve fields**
+
+| Field | Resolution |
+|-------|------------|
+| `Assisted-by` | Name the AI make/model/tool that actually performed the work for this commit (examples below). Do not hardcode a vendor from documentation. |
+| `Instructed-by` | Run `git config user.name` and use that exact string. If unset, configure it before committing so disclosure matches Git author identity. |
+
+```text
+git config user.name
+```
+
+**Example values for `Assisted-by`** (use the one that actually did the work):
+
+| Situation | Example value |
+|-----------|----------------|
+| xAI Grok assistant | `Grok (xAI)` |
+| Anthropic Claude | `Claude 4 Sonnet` (or the exact model name used) |
+| GitHub Copilot | `GitHub Copilot` |
+| Cursor agent | `Cursor Agent` |
+| Other | Name the primary assistant for this commit |
+
+**Rules**
+
+1. Place the three lines at the end of the commit message (after any body or other footers).
+2. **`Assisted-by` is dynamic:** use the real AI make/model (and tool if useful) that performed the work for **this** commit. Never treat a single brand in the docs as the only allowed value.
+3. **`Instructed-by` is dynamic:** set it to the output of `git config user.name`. Never omit it; do not invent a different name unless it is also the configured Git user for that commit.
+4. The presence of this block asserts that the human (Git-configured committer) reviewed the result and that the change follows the contracts in this RULES.md.
+5. Do **not** put the AI disclosure in the subject line. Keep the subject focused on the change.
+
+**When it is required**
+
+| Situation | Disclosure |
+|-----------|------------|
+| AI wrote or substantially edited product code, docs, or config | **Required** |
+| AI drafted the commit message itself | **Required** |
+| AI only suggested a one-line fix that the human rewrote | Optional (prefer to include) |
+| Pure human work | Omit |
+
+**Good example** (illustrative AI only; `Instructed-by` must match `git config user.name` on the machine that commits — `Shaine Meister` is the current local Git user name when this policy shipped):
+
+```text
+docs: upgrade repo-kit baseline to 1.1.2 with AI disclosure rules
+
+Add Assisted-by / Compliance / Instructed-by trailers so AI
+participation is transparent and auditable years later.
+
+Assisted-by: Grok (xAI)
+Compliance: RULES.md
+Instructed-by: Shaine Meister
+```
 
 #### Examples (match this voice)
 
@@ -435,6 +505,7 @@ docs: catalog diagnostics module and diagnostics folder
 chore: gitignore enterprise diagnostics certificate files
 fix(excel-toolkit): retry Excel Quit before warning the user
 docs: adopt repo-kit 1.1.1 baseline and add CHANGELOG
+docs: upgrade repo-kit baseline to 1.1.2 with AI disclosure rules
 ```
 
 **Bad → good:**
@@ -470,7 +541,8 @@ Commit messages and **what is staged** must stay consistent with the documentati
 6. If product Python changed, will the pylint gate pass?  
 7. If release-worthy: is [CHANGELOG.md](./CHANGELOG.md) updated?  
 8. Would a reviewer find the subject by searching the feature name used in the README?  
-9. Would this subject still make sense **two years** from now without the PR description?
+9. Would this subject still make sense **two years** from now without the PR description?  
+10. If AI assisted: are `Assisted-by` / `Compliance` / `Instructed-by` present? Does `Assisted-by` name the AI that did the work? Does `Instructed-by` match `git config user.name`?
 
 ### Suggested commit workflow
 
@@ -570,6 +642,7 @@ Before you commit or share a change:
 - [ ] Subject would still make sense years later; one logical surface preferred  
 - [ ] Canonical docs for any behavior change are in the same change set  
 - [ ] If kit pieces changed: [Kit baseline](#kit-baseline) version/date updated and CHANGELOG notes the upgrade  
+- [ ] If AI assisted: commit includes `Assisted-by` / `Compliance` / `Instructed-by` (`Assisted-by` = actual make/model; `Instructed-by` = `git config user.name`)  
 
 ---
 
@@ -583,3 +656,4 @@ Before you commit or share a change:
 | 1.2.1 | Output collision rule (unique suffix by default); workflow composition via Excel menu → kpi-analytics |
 | 1.2.2 | End-user pointer in lead; dual diagnostics certificates (KPI + Excel) in authority map / git rules; clearer README role |
 | 1.3.0 | Aligned with repo-kit **1.1.1**: root hygiene, mandatory CHANGELOG, three version surfaces, kit baseline + upgrade path, non-Python style gates, stronger checklists/anti-patterns |
+| 1.3.1 | Aligned with repo-kit **1.1.2**: required AI-assisted commit disclosure footers (`Assisted-by` / `Compliance` / `Instructed-by`); pre-commit and contributor checklist updates |

@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.5.2] - 2026-07-25
+
+#### Changed
+
+- Upgraded repo-kit baseline to **1.1.2** (required AI-assisted commit disclosure in RULES git rules: `Assisted-by` / `Compliance` / `Instructed-by`)
+
 ### [1.5.1] - 2026-07-25
 
 #### Removed
