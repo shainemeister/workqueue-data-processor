@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.5.3] - 2026-07-28
+
+#### Changed
+
+- Upgraded repo-kit baseline to **1.1.7** (security documentation modularity + advisory language-scoped SAST gates in RULES; upgrade-path CHANGELOG discipline; TEMPLATE-SECURITY modularity notes)
+
 ### [1.5.2] - 2026-07-25
 
 #### Changed

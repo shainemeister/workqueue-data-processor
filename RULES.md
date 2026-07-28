@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.3.1"
+version: "1.4.0"
 status: current
 audience:
   - developers
@@ -16,7 +16,7 @@ related:
   - excel-toolkit/ENTERPRISE-SECURITY.md
   - kpi-analytics/ENTERPRISE-SECURITY.md
   - kpi-analytics/.pylintrc
-last_updated: "2026-07-25"
+last_updated: "2026-07-28"
 ---
 
 # Repository Maintenance Rules
@@ -25,7 +25,7 @@ Policy for keeping **workqueue-data-processor** professional, auditable, and saf
 
 **If you only need to score work or export Excel:** start with the root [README.md](./README.md) and the toolkit guides. Come back here when you edit code, docs, schema, or release behavior.
 
-**Document version:** 1.3.1  
+**Document version:** 1.4.0  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc)
 
@@ -64,7 +64,7 @@ The product is a **Work Queue data contract** plus two **independent** toolkits:
 5. [Formatting and style](#formatting-and-style) (includes [Python style gate (pylint)](#python-style-gate-pylint) and [Non-Python style gates](#non-python-style-gates))
 6. [Architecture and boundaries](#architecture-and-boundaries)
 7. [Data and schema rules](#data-and-schema-rules)
-8. [Security and enterprise constraints](#security-and-enterprise-constraints)
+8. [Security and enterprise constraints](#security-and-enterprise-constraints) (includes [Security documentation modularity](#security-documentation-modularity) and [Security / SAST gates](#security--sast-gates-advisory))
 9. [Versioning and change control](#versioning-and-change-control)
 10. [Git rules](#git-rules)
 11. [Verification before ship](#verification-before-ship)
@@ -265,6 +265,42 @@ Canonical detail:
 
 Policy-sensitive environments: run `excel-toolkit\sample-test\` probes before claiming the toolkit “works on locked-down PCs.”
 
+### Security documentation modularity
+
+Create or maintain a package security doc **only when** the package has an **execution surface**, **network access**, **elevated privilege**, or **handles secrets**. Pure documentation packages and pure libraries with **no runtime side effects** may **omit** security documentation entirely—do not create empty files to satisfy a template habit.
+
+| Situation | Security doc |
+|-----------|--------------|
+| Docs-only / standards-only surface | **Omit** |
+| Pure library, no network / privilege / secrets handling | **Omit** (optional short note in package README if helpful) |
+| CLI, service, automation, or other execution surface | **Required** |
+| Handles credentials, tokens, or elevated install | **Required** |
+| Monorepo | Per package: required only for packages that meet the triggers above |
+
+**This repository:** both `excel-toolkit` (PowerShell + Excel COM automation) and `kpi-analytics` (Python CLI / scoring execution surface) **require** their `ENTERPRISE-SECURITY.md` files. Keep trust-boundary detail in those canonical files—not duplicated into the root README. When a future package has no execution surface, omit its security doc and do not add a Security / trust boundary row for it in the [authority map](#authority-map).
+
+### Security / SAST gates (advisory)
+
+Optional **developer-tooling** gates for security-oriented static analysis. These are **not** style gates (see [Non-Python style gates](#non-python-style-gates)) and are **not** product runtime dependencies.
+
+**Modularity rule:** Declare **only** tools for **languages and surfaces this repo ships**. Multi-language monorepos add **one verification row per language surface that exists**—never paste a full multi-language kit table. Prefer official or near-official tools with a small install footprint.
+
+| Surface this repo ships | Primary tool | Typical command (pass = exit 0 / clean) | Notes |
+|-------------------------|--------------|------------------------------------------|--------|
+| **Python** product code (`kpi_modules`) | **Bandit** (PyCQA) | From `kpi-analytics\`: `py -3.13 -m bandit -r kpi_modules` | Optional until the team requires it as a ship gate |
+| **Python** third-party deps | **pip-audit** (PyPA) | `pip-audit` | **Usually skip here** — product code is stdlib-only; no product `requirements.txt` |
+| **PowerShell** (`excel-toolkit`) | **PSScriptAnalyzer** (Microsoft) | `Invoke-ScriptAnalyzer -Path excel-toolkit -Severity Error` | Optional; complements the [manual PS 5.1 parse / BOM gate](#non-python-style-gates) |
+| **Secrets** (whole repo) | **Gitleaks** (preferred) | `gitleaks detect` | Optional whole-repo secret scan |
+
+**Product dependency:** **No.** Bandit, pip-audit, PSScriptAnalyzer, Gitleaks, and similar tools are **developer tooling** only. Do **not** add them as required installs for end users. Do not treat the full multi-language kit table as a checklist for this project.
+
+**Rules:**
+
+1. Name the tool and pass criteria when a gate is **required**—do not leave “we scan somehow” implied.  
+2. Install tools in the **developer** environment only.  
+3. Until a tool is declared as a required ship gate in the [verification table](#verification-before-ship), it remains optional advisory practice.  
+4. Do not paste unused language rows (Go, Rust, npm, etc.) into this file.
+
 ---
 
 ## Versioning and change control
@@ -320,8 +356,8 @@ Durable record of **which kit version** this project adopted and **where upgrade
 
 | Field | Value |
 |-------|--------|
-| Adopted kit version | **1.1.2** |
-| Adopted on | **2026-07-25** |
+| Adopted kit version | **1.1.7** |
+| Adopted on | **2026-07-28** |
 | Kit source | https://github.com/shainemeister/repo-kit |
 
 **Kit source** is always **https://github.com/shainemeister/repo-kit** for this standards kit. Update **Adopted kit version** and **Adopted on** on every kit upgrade.
@@ -330,14 +366,14 @@ Durable record of **which kit version** this project adopted and **where upgrade
 
 1. Open **https://github.com/shainemeister/repo-kit** and read `CHANGELOG.md` (and releases if present).  
 2. Compare this file’s **Adopted kit version** to the latest kit version under `## repo-kit`.  
-3. Review CHANGELOG entries since the adopted version.  
+3. **Read only** the kit CHANGELOG entries since the current Adopted kit version; merge only what you need; **never** copy the full kit history into the project CHANGELOG.  
 4. Copy or merge wanted pieces (`RULES.md` policy sections, `MARKDOWN-STANDARD.md`, `templates/`, pylintrc patterns, `.gitignore`). **Preserve** this project’s authority-map paths, verification commands, architecture, data, and security tables.  
 5. Update **Adopted kit version** and **Adopted on**; keep Kit source unchanged.  
 6. Add a project CHANGELOG entry (e.g. under Changed: “Upgraded repo-kit baseline to X.Y.Z”).  
 7. Re-check authority map, verification table, and any new kit contracts.  
 8. Do **not** leave a permanent root `SETUP.md` after initiation.
 
-No automation is required—policy and the [contributor checklist](#contributor-checklist) enforce the practice.
+No automation is required—policy and the [contributor checklist](#contributor-checklist) enforce the practice. Upstream upgrade prompt: [repo-kit README — How to use (quick path)](https://github.com/shainemeister/repo-kit#how-to-use-quick-path).
 
 ### Consistency rules
 
@@ -506,6 +542,7 @@ chore: gitignore enterprise diagnostics certificate files
 fix(excel-toolkit): retry Excel Quit before warning the user
 docs: adopt repo-kit 1.1.1 baseline and add CHANGELOG
 docs: upgrade repo-kit baseline to 1.1.2 with AI disclosure rules
+docs: upgrade repo-kit baseline to 1.1.7 with security modularity
 ```
 
 **Bad → good:**
@@ -574,6 +611,7 @@ A remote is optional. When one exists, do not assume write access to `main`/`mas
 | Excel COM / export path | `excel-toolkit.cmd probe` and/or `Test-ExcelCom.ps1 -DryRun` |
 | Excel enterprise first-run / gate | `excel-toolkit.cmd diagnostics` (certificate under `excel-toolkit\diagnostics\`) |
 | PowerShell product scripts | Parse under PS 5.1; UTF-8 BOM; see [Non-Python style gates](#non-python-style-gates) |
+| Security / SAST (language-specific) | Optional unless required above: Bandit on `kpi_modules`, PSScriptAnalyzer on `excel-toolkit`, Gitleaks for secrets — see [Security / SAST gates](#security--sast-gates-advisory). Omit run when none declared as required. |
 | Enterprise execution risk | `excel-toolkit\sample-test\` probes as appropriate |
 | Schema or sample data | Headers match schema; score and/or export still consume sample paths |
 | Docs only | [Author checklist](./MARKDOWN-STANDARD.md#author-checklist); relative links resolve |
@@ -623,6 +661,9 @@ Do not claim a scoring or export change is complete if the relevant probe/valida
 | Putting kit release history into project CHANGELOG | Keep kit version only in the [Kit baseline](#kit-baseline) table |
 | Inventing an alternate kit source URL | Use https://github.com/shainemeister/repo-kit |
 | Leaving SETUP.md forever at root after adoption | Do not re-add SETUP; keep Kit baseline instead |
+| Empty security doc for a surface with no execution/network/privilege/secrets | Omit the file and the authority-map row ([modularity](#security-documentation-modularity)) |
+| Pasting the full multi-language SAST table into this repo | Declare only tools for languages we ship (Python, PowerShell; optional secrets scan) |
+| Shipping Bandit / PSScriptAnalyzer / Gitleaks as product runtime deps | Keep security / SAST tools developer-only |
 
 ---
 
@@ -657,3 +698,4 @@ Before you commit or share a change:
 | 1.2.2 | End-user pointer in lead; dual diagnostics certificates (KPI + Excel) in authority map / git rules; clearer README role |
 | 1.3.0 | Aligned with repo-kit **1.1.1**: root hygiene, mandatory CHANGELOG, three version surfaces, kit baseline + upgrade path, non-Python style gates, stronger checklists/anti-patterns |
 | 1.3.1 | Aligned with repo-kit **1.1.2**: required AI-assisted commit disclosure footers (`Assisted-by` / `Compliance` / `Instructed-by`); pre-commit and contributor checklist updates |
+| 1.4.0 | Aligned with repo-kit **1.1.7**: security documentation modularity; advisory language-scoped SAST gates (Python/PowerShell/secrets only); upgrade procedure CHANGELOG discipline (read only since baseline; never paste full kit history); kit baseline **1.1.7** |

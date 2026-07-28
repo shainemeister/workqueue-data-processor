@@ -39,6 +39,9 @@ env/
 htmlcov/
 .tox/
 
+# Node (light — mixed or frontend-adjacent tooling)
+node_modules/
+
 # Generated toolkit outputs
 output/
 

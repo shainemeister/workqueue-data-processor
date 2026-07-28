@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.5.1"
+version: "1.5.2"
 status: current
 audience:
   - developers
@@ -13,14 +13,14 @@ related:
   - CHANGELOG.md
   - MARKDOWN-STANDARD.md
   - RULES.md
-last_updated: "2026-07-25"
+last_updated: "2026-07-28"
 ---
 
 # File Catalog
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.5.1  
+**Document version:** 1.5.2  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -89,7 +89,7 @@ workqueue-data-processor/
 | [CHANGELOG.md](./CHANGELOG.md) | doc | Project history (Keep a Changelog); required by repo-kit. Kit version lives in RULES kit baseline only. |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
-| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline, CHANGELOG policy, formatting, architecture, data, git, and verification. |
+| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline, CHANGELOG policy, security modularity / advisory SAST, formatting, architecture, data, git, and verification. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
@@ -282,6 +282,7 @@ rem Existing destinations require -Force to overwrite
 | 1.4.1 | Removed root `PLAN.md` after 1.4.0 / excel-toolkit 1.6.0 menu work shipped (history remains in CHANGELOG / git) |
 | 1.5.0 | kpi-analytics 2.1.0 mapping verification + guided mapping; PLAN.md for dynamic schema adaptation marked implemented |
 | 1.5.1 | Removed root `PLAN.md` after 1.5.0 / kpi-analytics 2.1.0 mapping work shipped (history remains in CHANGELOG / git) |
+| 1.5.2 | repo-kit baseline **1.1.7** (RULES security modularity + SAST; TEMPLATE-SECURITY modularity notes; no path add/remove) |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |
