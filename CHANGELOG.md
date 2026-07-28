@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.5.4] - 2026-07-28
+
+#### Changed
+
+- Upgraded repo-kit baseline to **1.2.0** (language surface inventory; SAST required when declared for Python + PowerShell; Gitleaks opt-in only; optional certification schema deferred; completion rule; TEMPLATE-CERTIFICATION-README)
+
 ### [1.5.3] - 2026-07-28
 
 #### Changed

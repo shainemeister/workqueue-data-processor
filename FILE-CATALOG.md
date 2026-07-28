@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.5.2"
+version: "1.5.3"
 status: current
 audience:
   - developers
@@ -20,7 +20,7 @@ last_updated: "2026-07-28"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.5.2  
+**Document version:** 1.5.3  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -89,13 +89,13 @@ workqueue-data-processor/
 | [CHANGELOG.md](./CHANGELOG.md) | doc | Project history (Keep a Changelog); required by repo-kit. Kit version lives in RULES kit baseline only. |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
-| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline, CHANGELOG policy, security modularity / advisory SAST, formatting, architecture, data, git, and verification. |
+| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline (**1.2.0**), CHANGELOG policy, language surface inventory (Python + PowerShell declared; Gitleaks opt-in), SAST required-when-declared, optional certification schema (folder deferred), formatting, architecture, data, git, and verification. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
 | [wq_data.csv](./wq_data.csv) | data | Small sample WQ fact table; column headers use schema `field_name` values (also generate template). |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
-| [.gitignore](./.gitignore) | config | Excludes `output\`, diagnostics certificates, Python caches, local env dirs, and common editor noise. |
+| [.gitignore](./.gitignore) | config | Excludes `output\`, package diagnostics certificates, formal `certification/last_certification.*`, Python caches, local env dirs, and common editor noise. |
 
 ---
 
@@ -233,7 +233,8 @@ Copy-paste skeletons aligned with [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md)
 | [TEMPLATE-README.md](./templates/TEMPLATE-README.md) | template | Skeleton for product/toolkit README (`doc_type: readme`). |
 | [TEMPLATE-CLI.md](./templates/TEMPLATE-CLI.md) | template | Skeleton for CLI reference (`doc_type: cli`). |
 | [TEMPLATE-METHODOLOGY.md](./templates/TEMPLATE-METHODOLOGY.md) | template | Skeleton for formula / how-it-works methodology docs. |
-| [TEMPLATE-SECURITY.md](./templates/TEMPLATE-SECURITY.md) | template | Skeleton for enterprise security and execution notes. |
+| [TEMPLATE-SECURITY.md](./templates/TEMPLATE-SECURITY.md) | template | Skeleton for enterprise security and execution notes (SAST / inventory pointers). |
+| [TEMPLATE-CERTIFICATION-README.md](./templates/TEMPLATE-CERTIFICATION-README.md) | template | Skeleton for optional root `certification/README.md` (security + code-validation self-attestation). |
 | [TEMPLATE-CONCEPT.md](./templates/TEMPLATE-CONCEPT.md) | template | Skeleton for progressive or multi-version design concepts. |
 | [TEMPLATE-GENERIC.md](./templates/TEMPLATE-GENERIC.md) | template | Minimal generic document skeleton (`doc_type: other`). |
 
@@ -246,7 +247,9 @@ These paths are produced at runtime or by the interpreter. They are listed for o
 | Path | Note |
 |------|------|
 | `output\` | Scored CSVs, summary CSVs, and Excel workbooks from toolkit runs (not tracked inputs). |
-| `kpi-analytics\diagnostics\last_diagnostics.*` | Regenerable enterprise diagnostics certificates. |
+| `kpi-analytics\diagnostics\last_diagnostics.*` | Regenerable package diagnostics certificates. |
+| `excel-toolkit\diagnostics\last_diagnostics.*` | Regenerable package diagnostics certificates. |
+| `certification\last_certification.*` | Regenerable formal security + code-validation certs (if folder adopted; not package diagnostics). |
 | `**/__pycache__\` / `*.pyc` | Python bytecode cache under `kpi_modules` and elsewhere. |
 | `.venv\` / `venv\` | Local virtual environments if created (not required; stdlib-only runtime). |
 
@@ -283,6 +286,7 @@ rem Existing destinations require -Force to overwrite
 | 1.5.0 | kpi-analytics 2.1.0 mapping verification + guided mapping; PLAN.md for dynamic schema adaptation marked implemented |
 | 1.5.1 | Removed root `PLAN.md` after 1.5.0 / kpi-analytics 2.1.0 mapping work shipped (history remains in CHANGELOG / git) |
 | 1.5.2 | repo-kit baseline **1.1.7** (RULES security modularity + SAST; TEMPLATE-SECURITY modularity notes; no path add/remove) |
+| 1.5.3 | repo-kit baseline **1.2.0**: TEMPLATE-CERTIFICATION-README; RULES inventory/certification; `.gitignore` formal cert outputs; Gitleaks opt-in; kit reflection notes |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |

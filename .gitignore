@@ -50,3 +50,9 @@ kpi-analytics/diagnostics/last_diagnostics.json
 kpi-analytics/diagnostics/last_diagnostics.txt
 excel-toolkit/diagnostics/last_diagnostics.json
 excel-toolkit/diagnostics/last_diagnostics.txt
+
+# Formal security + code-validation certificates (regenerable; see RULES.md)
+# Distinct from package diagnostics above — do not merge folders.
+certification/last_certification.json
+certification/last_certification.txt
+certification/logs/

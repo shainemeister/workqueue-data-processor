@@ -110,7 +110,7 @@ Summarize:
 
 ## 6. Recommended validation
 
-> **Delete unused OS blocks.** Keep both when multi-platform; drop the unused OS when primary platform is single and declared. Prefer language-specific developer gates from [RULES — Security / SAST gates](../RULES.md#security--sast-gates-advisory) only for languages this package ships.
+> **Delete unused OS blocks.** Keep both when multi-platform; drop the unused OS when primary platform is single and declared. Prefer language-specific developer gates from the project [language surface inventory](../RULES.md#language-surface-inventory) and [RULES — Security / SAST gates](../RULES.md#security--sast-gates-required-when-declared) only for languages this package ships. Declared Domain A/B gates are **required** before task completion. For formal self-attestation certificates (optional), see [RULES — Certification](../RULES.md#security-and-code-validation-certification) and [TEMPLATE-CERTIFICATION-README.md](./TEMPLATE-CERTIFICATION-README.md).
 
 **Windows**
 

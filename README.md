@@ -139,9 +139,9 @@ Policy and inventory (not required for day-to-day scoring or export):
 
 | Document | Purpose |
 |----------|---------|
-| [RULES.md](./RULES.md) | How we maintain docs, boundaries, git, verification, and kit baseline |
-| [CHANGELOG.md](./CHANGELOG.md) | Project history (Keep a Changelog) |
+| [RULES.md](./RULES.md) | Maintenance policy; **kit baseline** (adopted repo-kit version lives only there) |
+| [CHANGELOG.md](./CHANGELOG.md) | Project history (Keep a Changelog); kit upgrades get a short note only—not kit release history |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | Purpose of every intentional source file |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | How we structure documentation |
-| [templates/](./templates/) | Skeletons for toolkit README, CLI, methodology, security |
-| [repo-kit](https://github.com/shainemeister/repo-kit) | Upstream standards kit (upgrade via RULES kit baseline) |
+| [templates/](./templates/) | Skeletons for toolkit README, CLI, methodology, security, optional certification README |
+| [repo-kit](https://github.com/shainemeister/repo-kit) | Upstream standards kit — compare latest to [RULES kit baseline](./RULES.md#kit-baseline) before upgrading |
