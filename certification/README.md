@@ -104,7 +104,8 @@ Commands and pass criteria for this repository (also encoded in [checks.json](./
 | Python (`kpi_modules`) | From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules` | From `kpi-analytics\`: `py -3.13 -m bandit -r kpi_modules` | Exit 0; pylint **10.00/10** (`RequirePylintScore`); Bandit clean |
 | PowerShell (`excel-toolkit` product scripts) | PS 5.1 parse + UTF-8 BOM (or pure ASCII) on product `*.ps1`/`*.psm1` (**`sample-test` excluded**) | PSScriptAnalyzer **Error** on the **same** product file set (**`sample-test` excluded**) | Zero Error findings; scripts load |
 | Secrets (whole repo) | — | **Gitleaks dual mode:** working tree (`--no-git`) **and** git history | Exit 0 on **both** modes; no leaks |
-| Python contract | `kpi-analytics.cmd validate-score` | — | Exit 0; fixtures green |
+| Python contract | `kpi-analytics.cmd validate-score` (handcalc defaults) | — | Exit 0; handcalc fixtures green |
+| Python contract (RCM) | `kpi-analytics.cmd validate-score` with `fixtures/rcm_impact_*` | — | Exit 0; RCM dual-attribution golden green |
 
 **Required surfaces:** Python, PowerShell, Secrets. All required checks run on **every** certification renewal.
 

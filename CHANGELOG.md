@@ -13,6 +13,18 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.8.1] - 2026-07-28
+
+#### Added
+
+- **kpi-analytics 2.5.0:** privacy column alias resolution (`Patient Name`, `Date of Birth`, …)
+- Certification Domain B: **validate-score-rcm** (RCM dual-attribution golden fixtures)
+
+#### Changed
+
+- **kpi-analytics 2.5.0:** default privacy patient `token_digits` **3 → 4** (`DOE0001,JOH0001`; max 9999 uniques per batch)
+- Score JSON reports `PrivacyPatientField` / `PrivacyDobField` / sources / `PrivacyTokenDigits`
+
 ### [1.8.0] - 2026-07-28
 
 #### Added

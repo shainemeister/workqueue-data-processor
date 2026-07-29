@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.4.0"
+version: "2.5.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 2.4.0  
+**Toolkit version:** 2.5.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -384,17 +384,19 @@ Default in `config_default.json`: **enabled**.
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `enabled` | `true` | Master switch for score-output masking |
-| `patient_field` | `patient` | Column name to mask |
-| `dob_field` | `dob` | Column name to mask |
+| `patient_field` | `patient` | Preferred column name (resolved against headers + aliases) |
+| `dob_field` | `dob` | Preferred DOB column name (resolved against headers + aliases) |
 | `patient.mode` | `prefix_token` | `prefix_token` · `omit` · `passthrough` |
 | `patient.name_order` | `last_first` | Parse order of comma-separated name (`first_last` supported) |
 | `patient.prefix_len` | `3` | Letter prefix length per name part |
-| `patient.token_digits` | `3` | Zero-padded ordinal width (max 999 uniques) |
-| `patient.token_mode` | `alpha_order` | Unique names sorted A→Z → `001`…`N` |
+| `patient.token_digits` | **`4`** | Zero-padded ordinal width (max **9999** uniques) |
+| `patient.token_mode` | `alpha_order` | Unique names sorted A→Z → `0001`…`N` |
 | `patient.uppercase` | `true` | Uppercase prefixes and sort keys |
 | `patient.pad_char` | `X` | Right-pad short letter prefixes |
-| `patient.empty_policy` | `leave_empty` | Or `placeholder` → `UNK000,UNK000` |
+| `patient.empty_policy` | `leave_empty` | Or `placeholder` → `UNK0000,UNK0000` (width = token_digits) |
 | `dob.mode` | `omit` | `omit` (blank) or `passthrough` |
+
+**Column resolution (2.5.0+):** config field name if present in headers (case/space tolerant), else common aliases (e.g. `Patient Name`, `Date of Birth`). Score JSON reports `PrivacyPatientField` / `PrivacyDobField` and sources (`config` \| `alias` \| `unresolved`).
 
 Golden fixtures set `"privacy": { "enabled": false }` so handcalc patient labels stay stable.
 
@@ -402,12 +404,12 @@ Golden fixtures set `"privacy": { "enabled": false }` so handcalc patient labels
 
 1. Parse name using `name_order` (default **LAST,FIRST**).  
 2. Normalize key: collapse spaces, optional uppercasing → `LAST,FIRST`.  
-3. Collect **unique** keys in the batch; sort A→Z; assign `001`…`N`.  
+3. Collect **unique** keys in the batch; sort A→Z; assign `0001`…`N` (default **4** digits).  
 4. Emit:
 
 ```text
 {LAST_PREFIX}{TOKEN},{FIRST_PREFIX}{TOKEN}
-DOE,JOHN  →  DOE001,JOH001
+DOE,JOHN  →  DOE0001,JOH0001
 ```
 
 - Prefixes use **letters only** (e.g. `O'BRIEN` → `OBR`).  
@@ -485,7 +487,7 @@ Checks include:
 | Days in AR looks high/low | Check `adc` and `adc_source` (estimate vs true practice ADC) |
 | Sum of aging **deltas** ≠ aging % | Expected — deltas are resolution impacts, not static shares |
 | Summary/detail write fails | File open in Excel (permission denied) |
-| Same person different `DOE00n` across two score runs | Batch-relative privacy tokens (different unique sets) |
+| Same person different `DOE000n` across two score runs | Batch-relative privacy tokens (different unique sets) |
 | Patient looks “backwards” | Check `privacy.patient.name_order` (`last_first` vs `first_last`) |
 
 ---
@@ -519,3 +521,4 @@ Checks include:
 | 2.2.0 | Parse Windows Excel serial day numbers in date roles (default `date_excel_serial`); fixes empty claim age / 0% aging KPIs on Excel→CSV extracts |
 | 2.3.0 | Metric value coverage (`MetricValueCoverage` / `LowCoverageMetrics`) — role resolved vs raw values present |
 | 2.4.0 | Rank completeness + `--strict roles\|full` fail-closed optional |
+| 2.5.0 | Privacy header aliases; default patient `token_digits` **4** (`DOE0001`) |

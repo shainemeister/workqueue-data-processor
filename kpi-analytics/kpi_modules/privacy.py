@@ -8,6 +8,37 @@ from __future__ import annotations
 
 from typing import Any
 
+# Default ordinal width for prefix_token masks (DOE0001,JOH0001).
+_DEFAULT_TOKEN_DIGITS = 4
+
+# Header aliases for privacy columns (case/space-insensitive match).
+PRIVACY_ALIASES: dict[str, tuple[str, ...]] = {
+    "patient": (
+        "patient",
+        "patient name",
+        "patient_name",
+        "member name",
+        "member_name",
+        "member",
+        "subscriber name",
+        "subscriber_name",
+        "subscriber",
+        "beneficiary name",
+        "beneficiary_name",
+        "beneficiary",
+    ),
+    "dob": (
+        "dob",
+        "date of birth",
+        "date_of_birth",
+        "birth date",
+        "birth_date",
+        "birthdate",
+        "patient dob",
+        "patient_dob",
+    ),
+}
+
 
 def _privacy_root(cfg: dict[str, Any]) -> dict[str, Any]:
     root = cfg.get("privacy")
@@ -27,6 +58,48 @@ def _dob_cfg(cfg: dict[str, Any]) -> dict[str, Any]:
 def privacy_enabled(cfg: dict[str, Any]) -> bool:
     """Return True when score-output PHI masking is active."""
     return bool(_privacy_root(cfg).get("enabled", False))
+
+
+def _normalize_header(name: str | None) -> str:
+    """Lowercase, strip, collapse internal whitespace for header comparison."""
+    if name is None:
+        return ""
+    text = str(name).strip().lower()
+    return " ".join(text.split())
+
+
+def _header_lookup(headers: list[str]) -> dict[str, str]:
+    """normalized header → first original header with that normalization."""
+    out: dict[str, str] = {}
+    for h in headers:
+        key = _normalize_header(h)
+        if key and key not in out:
+            out[key] = h
+    return out
+
+
+def resolve_privacy_column(
+    role: str,
+    headers: list[str],
+    cfg_field: str,
+) -> tuple[str | None, str]:
+    """
+    Resolve which CSV/header name to mask for patient or dob.
+
+    Returns (original_header_or_None, source) where source is
+    config | alias | unresolved.
+    """
+    lookup = _header_lookup(headers)
+    cfg_key = _normalize_header(cfg_field)
+    if cfg_key and cfg_key in lookup:
+        return lookup[cfg_key], "config"
+
+    for alias in PRIVACY_ALIASES.get(role, ()):
+        akey = _normalize_header(alias)
+        if akey and akey in lookup:
+            return lookup[akey], "alias"
+
+    return None, "unresolved"
 
 
 def _letters_only(value: str) -> str:
@@ -133,7 +206,7 @@ def build_patient_token_map(
     raw_names: list[str],
     *,
     name_order: str = "last_first",
-    token_digits: int = 3,
+    token_digits: int = _DEFAULT_TOKEN_DIGITS,
     uppercase: bool = True,
 ) -> dict[str, str]:
     """
@@ -183,7 +256,7 @@ def mask_patient_value(
     text = (raw or "").strip()
     if not text:
         if empty_policy == "placeholder":
-            digits = int(pcfg.get("token_digits", 3))
+            digits = int(pcfg.get("token_digits", _DEFAULT_TOKEN_DIGITS))
             zero = "0" * digits
             return f"UNK{zero},UNK{zero}"
         return ""
@@ -199,7 +272,7 @@ def mask_patient_value(
     )
     if key is None:
         if empty_policy == "placeholder":
-            digits = int(pcfg.get("token_digits", 3))
+            digits = int(pcfg.get("token_digits", _DEFAULT_TOKEN_DIGITS))
             zero = "0" * digits
             return f"UNK{zero},UNK{zero}"
         return ""
@@ -233,17 +306,29 @@ def apply_privacy_to_rows(
     """
     In-place mask patient/DOB fields on scored output rows.
 
-    Returns a small stats dict for CLI/summary (no original PHI values).
+    Resolves column names via config field names and common header aliases
+    (e.g. Patient Name, Date of Birth). Returns a small stats dict for
+    CLI/summary (no original PHI values).
     """
     root = _privacy_root(cfg)
     enabled = bool(root.get("enabled", False))
     pcfg = _patient_cfg(cfg)
     dcfg = _dob_cfg(cfg)
 
-    patient_field = str(root.get("patient_field", "patient"))
-    dob_field = str(root.get("dob_field", "dob"))
+    cfg_patient = str(root.get("patient_field", "patient"))
+    cfg_dob = str(root.get("dob_field", "dob"))
     patient_mode = str(pcfg.get("mode", "prefix_token")).lower()
     dob_mode = str(dcfg.get("mode", "omit")).lower()
+    token_digits = int(pcfg.get("token_digits", _DEFAULT_TOKEN_DIGITS))
+
+    headers: list[str] = []
+    if rows:
+        headers = [str(k) for k in rows[0].keys()]
+
+    patient_field, patient_source = resolve_privacy_column(
+        "patient", headers, cfg_patient
+    )
+    dob_field, dob_source = resolve_privacy_column("dob", headers, cfg_dob)
 
     stats: dict[str, Any] = {
         "enabled": enabled,
@@ -251,6 +336,9 @@ def apply_privacy_to_rows(
         "dob_mode": dob_mode if enabled else "passthrough",
         "patient_field": patient_field,
         "dob_field": dob_field,
+        "patient_source": patient_source if enabled else "unresolved",
+        "dob_source": dob_source if enabled else "unresolved",
+        "token_digits": token_digits,
         "unique_patients": 0,
         "rows_touched": 0,
     }
@@ -260,10 +348,9 @@ def apply_privacy_to_rows(
 
     name_order = str(pcfg.get("name_order", "last_first")).lower()
     uppercase = bool(pcfg.get("uppercase", True))
-    token_digits = int(pcfg.get("token_digits", 3))
 
     token_map: dict[str, str] = {}
-    if patient_mode == "prefix_token":
+    if patient_field and patient_mode == "prefix_token":
         raw_names = [str(r.get(patient_field, "") or "") for r in rows]
         token_map = build_patient_token_map(
             raw_names,
@@ -275,11 +362,11 @@ def apply_privacy_to_rows(
 
     for row in rows:
         touched = False
-        if patient_field in row:
+        if patient_field is not None and patient_field in row:
             raw_p = str(row.get(patient_field, "") or "")
             row[patient_field] = mask_patient_value(raw_p, token_map, pcfg)
             touched = True
-        if dob_field in row:
+        if dob_field is not None and dob_field in row:
             raw_d = str(row.get(dob_field, "") or "")
             row[dob_field] = mask_dob_value(raw_d, dcfg)
             touched = True

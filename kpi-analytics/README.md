@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics
 description: Python 3.13 stdlib toolkit for Work Queue priority scoring, RCM claim-level KPI impacts, synthetic data, and validation.
-version: "2.4.0"
+version: "2.5.0"
 status: current
 audience:
   - users
@@ -28,7 +28,7 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 6. **Enterprise diagnostics** — first-run runtime/import dry-run with a durable pass/fail report and a gate on operational commands.  
 7. **PHI field masking** — optional score-output masking of patient name and DOB (config-driven; default on).
 
-**Toolkit version:** 2.4.0  
+**Toolkit version:** 2.5.0  
 **Product folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\` (implementation; name differs from the product folder on purpose)
 
@@ -311,7 +311,7 @@ Default: `kpi_modules\config_default.json`.
 | RCM KPI Q | `kpi_quantifiers.adc`, `aged_day_breaks`, `credit_policy`, `emit_static_share`, `emit_exact_delta`, `dual_sign_columns` |
 | Privacy (score output) | `privacy.enabled`, `privacy.patient.mode` (`prefix_token` / `omit` / `passthrough`), `privacy.patient.name_order`, `privacy.dob.mode` (`omit` / `passthrough`) |
 
-**PHI masking (default on):** scored CSV writes patient as `DOE001,JOH001`-style tokens (3-letter prefixes + batch alpha-order index) and blanks DOB. This is **operational masking**, not a HIPAA Safe Harbor claim. Input files are never modified. Override per run with `score --privacy` or `score --no-privacy`. See [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [CLI-GUIDE.md](./CLI-GUIDE.md).
+**PHI masking (default on):** scored CSV writes patient as `DOE0001,JOH0001`-style tokens (3-letter prefixes + **4-digit** batch alpha-order index) and blanks DOB. Headers may be schema `patient`/`dob` or common aliases (`Patient Name`, `Date of Birth`). This is **operational masking**, not a HIPAA Safe Harbor claim. Input files are never modified. Override per run with `score --privacy` or `score --no-privacy`. See [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [CLI-GUIDE.md](./CLI-GUIDE.md).
 
 ---
 

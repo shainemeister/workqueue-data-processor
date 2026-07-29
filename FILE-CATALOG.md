@@ -183,7 +183,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.4.0). |
+| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.5.0). |
 | [__main__.py](./kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--interactive-mapping`), `generate`, `validate-score`; diagnostics gate. |
 | [column_map.py](./kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
@@ -194,7 +194,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 | [io_csv.py](./kpi-analytics/kpi_modules/io_csv.py) | module | Stdlib CSV read/write helpers shared by score and generate paths. |
 | [metrics.py](./kpi-analytics/kpi_modules/metrics.py) | module | Raw priority metrics (claim age, BWDO, denial count, dual-deadline, balances, appeal, WQ age); date parse including Excel serials. |
 | [normalize.py](./kpi-analytics/kpi_modules/normalize.py) | module | Normalizes raw metrics to [0, 1] via minmax or percentile ranks. |
-| [privacy.py](./kpi-analytics/kpi_modules/privacy.py) | module | Score-output PHI masking for patient name / DOB (prefix+token; configurable omit). |
+| [privacy.py](./kpi-analytics/kpi_modules/privacy.py) | module | Score-output PHI masking for patient name / DOB (header aliases; prefix+4-digit token by default; configurable omit). |
 | [score_v1.py](./kpi-analytics/kpi_modules/score_v1.py) | module | Orchestrates metrics → queue mode → weights → norms → contributions → final score. |
 | [kpi_quantifiers.py](./kpi-analytics/kpi_modules/kpi_quantifiers.py) | module | Portfolio KPIs plus per-claim static share and resolution-delta (`kpi_q_*`) columns. |
 | [summary_report.py](./kpi-analytics/kpi_modules/summary_report.py) | module | Builds the vertical summary CSV (metric rows with values, formulas, explanations). |

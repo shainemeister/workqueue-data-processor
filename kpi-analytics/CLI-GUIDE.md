@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.4.0"
+version: "2.5.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-25"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.4.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.5.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -531,7 +531,7 @@ Start in: `...\kpi-analytics`
 | `v1_*` | Priority audit + `v1_priority_score` |
 | `kpi_q_*` | Static RCM share/contrib + exact resolution Δ (pos/neg where configured) |
 
-Patient default: `DOE,JOHN` → `DOE001,JOH001` (batch alpha-order token). DOB default: blank. See [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) §12. Not a HIPAA Safe Harbor claim.
+Patient default: `DOE,JOHN` → `DOE0001,JOH0001` (batch alpha-order token, **4** digits). Headers may resolve via aliases (`Patient Name`, `Date of Birth`). DOB default: blank. See [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) §12. Not a HIPAA Safe Harbor claim.
 
 ### 7.2 `score` summary CSV
 

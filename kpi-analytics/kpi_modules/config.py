@@ -236,7 +236,7 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     p_patient["prefix_len"] = int(p_patient["prefix_len"])
     if p_patient["prefix_len"] < 1:
         raise ValueError("privacy.patient.prefix_len must be >= 1")
-    p_patient.setdefault("token_digits", 3)
+    p_patient.setdefault("token_digits", 4)
     p_patient["token_digits"] = int(p_patient["token_digits"])
     if p_patient["token_digits"] < 1:
         raise ValueError("privacy.patient.token_digits must be >= 1")

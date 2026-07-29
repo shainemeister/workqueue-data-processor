@@ -100,7 +100,7 @@
       "mode": "prefix_token",
       "name_order": "last_first",
       "prefix_len": 3,
-      "token_digits": 3,
+      "token_digits": 4,
       "token_mode": "alpha_order",
       "uppercase": true,
       "pad_char": "X",

@@ -447,6 +447,17 @@ def score_csv(
             "patient_mode"
         ),
         "PrivacyDobMode": (summary.get("privacy") or {}).get("dob_mode"),
+        "PrivacyPatientField": (summary.get("privacy") or {}).get(
+            "patient_field"
+        ),
+        "PrivacyDobField": (summary.get("privacy") or {}).get("dob_field"),
+        "PrivacyPatientSource": (summary.get("privacy") or {}).get(
+            "patient_source"
+        ),
+        "PrivacyDobSource": (summary.get("privacy") or {}).get("dob_source"),
+        "PrivacyTokenDigits": (summary.get("privacy") or {}).get(
+            "token_digits"
+        ),
         "PrivacyUniquePatients": (summary.get("privacy") or {}).get(
             "unique_patients"
         ),

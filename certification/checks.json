@@ -81,11 +81,33 @@
       "Surface": "Python",
       "Required": true,
       "Severity": "critical",
-      "PassCriteria": "kpi-analytics.cmd validate-score exit 0 (fixtures green)",
+      "PassCriteria": "kpi-analytics.cmd validate-score exit 0 (handcalc fixtures green)",
       "WorkingDirectory": "kpi-analytics",
       "Kind": "process",
       "Executable": "kpi-analytics.cmd",
       "Arguments": ["validate-score"],
+      "SuccessExitCodes": [0]
+    },
+    {
+      "Id": "validate-score-rcm",
+      "Name": "validate-score-rcm",
+      "Domain": "CodeValidation",
+      "Surface": "Python",
+      "Required": true,
+      "Severity": "critical",
+      "PassCriteria": "kpi-analytics.cmd validate-score with RCM dual-attribution golden fixtures exit 0",
+      "WorkingDirectory": "kpi-analytics",
+      "Kind": "process",
+      "Executable": "kpi-analytics.cmd",
+      "Arguments": [
+        "validate-score",
+        "--csv",
+        "fixtures/rcm_impact_example.csv",
+        "--config",
+        "fixtures/rcm_impact_config.json",
+        "--expected",
+        "fixtures/rcm_impact_expected.json"
+      ],
       "SuccessExitCodes": [0]
     }
   ]

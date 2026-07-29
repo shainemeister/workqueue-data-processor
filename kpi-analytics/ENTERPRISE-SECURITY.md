@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Enterprise Security
 description: Security review notes and execution restrictions for KPI Analytics on controlled corporate PCs.
-version: "2.4.0"
+version: "2.5.0"
 status: current
 audience:
   - security
@@ -20,7 +20,7 @@ last_updated: "2026-07-28"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate desktops.
 
-**Toolkit version:** 2.4.0  
+**Toolkit version:** 2.5.0  
 **Toolkit folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\`  
 **Runtime:** Python **3.13** standard library only (no third-party packages)
@@ -102,7 +102,7 @@ Excel export, if needed, is a separate step via **`excel-toolkit\`** (its own en
 
 Synthetic `generate` creates **fake** WQ rows (`Doe,John*` / `Doe,Jane*`, DOB day fixed to 01) for testing only.
 
-**Score-output privacy (default on):** `score` masks the `patient` column (prefix + batch ordinal, e.g. `DOE001,JOH001`) and blanks `dob` unless config disables or changes `privacy`. Override per run with CLI `--privacy` / `--no-privacy`. This reduces accidental exposure in scored exports; it does **not** make the file HIPAA Safe Harbor de-identified. Callers remain responsible for handling source extracts that still contain full PHI.
+**Score-output privacy (default on):** `score` masks the patient name column (prefix + **4-digit** batch ordinal, e.g. `DOE0001,JOH0001`) and blanks DOB when those columns are present (schema names or common aliases such as `Patient Name` / `Date of Birth`), unless config disables or changes `privacy`. Override per run with CLI `--privacy` / `--no-privacy`. This reduces accidental exposure in scored exports; it does **not** make the file HIPAA Safe Harbor de-identified. Callers remain responsible for handling source extracts that still contain full PHI.
 
 ---
 
