@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.5.1"
+version: "1.6.0"
 status: current
 audience:
   - developers
@@ -16,6 +16,7 @@ related:
   - excel-toolkit/ENTERPRISE-SECURITY.md
   - kpi-analytics/ENTERPRISE-SECURITY.md
   - kpi-analytics/.pylintrc
+  - certification/README.md
   - templates/TEMPLATE-CERTIFICATION-README.md
 last_updated: "2026-07-28"
 ---
@@ -26,9 +27,9 @@ Policy for keeping **workqueue-data-processor** professional, auditable, and saf
 
 **If you only need to score work or export Excel:** start with the root [README.md](./README.md) and the toolkit guides. Come back here when you edit code, docs, schema, or release behavior.
 
-**Document version:** 1.5.1  
+**Document version:** 1.6.0  
 
-**Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc)
+**Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc) · [certification/README.md](./certification/README.md)
 
 ---
 
@@ -54,7 +55,7 @@ The product is a **Work Queue data contract** plus two **independent** toolkits:
 | Keep [language surface inventory](#language-surface-inventory) accurate; run declared style + SAST before complete | Paste the full multi-language SAST table without inventory evidence |
 | Verify before sharing scoring or COM changes | Claim complete when a **declared** style or SAST gate was skipped or failed |
 | Preserve explainable score / dual KPI attribution | Force-kill Excel or permanently alter ExecutionPolicy |
-| Regenerate `certification/` outputs when that folder is maintained | Commit `last_certification.*` or treat certification as a product launcher gate |
+| After product/code changes: renew certification via the **full** harness (Domain B **and** Domain A, including pylint + Gitleaks) | Partial recert; skip pylint or security on renewal; hand-edit cert JSON; commit `last_certification.*`; treat certification as a product launcher gate |
 | Coordinated schema / scored-column renames with fixtures + docs | Silently rename schema fields or scored columns |
 
 ---
@@ -100,8 +101,8 @@ Update the **owner** document for a change. Cross-link; do not paste full contra
 | KPI enterprise / offline posture | [kpi-analytics/ENTERPRISE-SECURITY.md](./kpi-analytics/ENTERPRISE-SECURITY.md) |
 | Excel diagnostics certificate folder | [excel-toolkit/diagnostics/README.md](./excel-toolkit/diagnostics/README.md) |
 | KPI diagnostics certificate folder | [kpi-analytics/diagnostics/README.md](./kpi-analytics/diagnostics/README.md) |
-| Language surface inventory | [Language surface inventory](#language-surface-inventory) in this file (filled for languages this repo ships) |
-| Security & code-validation certification | `certification/README.md` — **omit** until the project maintains a `certification/` folder (package diagnostics stay under each toolkit; do not merge them here) |
+| Language surface inventory | [Language surface inventory](#language-surface-inventory) in this file (Status + tool names; commands in certification) |
+| Security & code-validation certification | [certification/README.md](./certification/README.md) (operator guide + harness; renewal policy in this file). Package diagnostics stay under each toolkit — do **not** merge them here |
 | Field definitions | [wq_schema.json](./wq_schema.json) (CSV twin: [wq_schema.csv](./wq_schema.csv)) |
 | Sample fact rows | [wq_data.csv](./wq_data.csv) |
 | Default score config | [kpi-analytics/kpi_modules/config_default.json](./kpi-analytics/kpi_modules/config_default.json) |
@@ -136,7 +137,7 @@ Keep the repository root **scannable**: entry points and policy first; purpose d
 | Templates | `templates/` |
 | Style configs | Package-local (e.g. `kpi-analytics/.pylintrc`) |
 | Toolkit contracts | Inside `excel-toolkit/` or `kpi-analytics/` |
-| Formal security + code-validation certificates | `certification/` when maintained (see [Security and code-validation certification](#security-and-code-validation-certification)); regenerable outputs gitignored — **not** package diagnostics |
+| Formal security + code-validation certificates | `certification/` (**maintained** — see [Security and code-validation certification](#security-and-code-validation-certification)); regenerable outputs gitignored — **not** package diagnostics |
 | Tracked demo inputs | `import/` |
 | Regenerable output | `output/` — never committed |
 | Ephemeral adoption guide | Do not re-add `SETUP.md` after initiation |
@@ -288,53 +289,53 @@ Create or maintain a package security doc **only when** the package has an **exe
 
 ### Language surface inventory
 
-Declare **which product language and security surfaces this repository ships**. The inventory is the **source of truth** for style gates, SAST gates, verification rows, and (when maintained) formal certification checks. Copy **only** rows that apply—never paste the full multi-language kit catalog.
+Declare **which product language and security surfaces this repository ships**. The inventory records **Status** and **tool identity**. **Executable commands and pass criteria** for formal certification live in [certification/README.md](./certification/README.md) and [certification/checks.json](./certification/checks.json)—do not re-paste long command tables here when only a Status or tool name changes.
 
 | Surface | Status | Domain B — style / validation | Domain A — security / SAST | Typical pass | Notes |
 |---------|--------|-------------------------------|----------------------------|--------------|--------|
-| **Python** product code (`kpi_modules`) | **Declared** | **pylint** (exit 0, score **10.00/10**) | **Bandit** (`py -3.13 -m bandit -r kpi_modules` from `kpi-analytics\`) | Style + SAST clean | Required when shipping KPI product Python |
-| **PowerShell** (`excel-toolkit`) | **Declared** | PS 5.1 parse + UTF-8 **BOM** policy (see [Non-Python style gates](#non-python-style-gates)) | **PSScriptAnalyzer** (`Invoke-ScriptAnalyzer -Path excel-toolkit -Severity Error`) | Zero Error findings; scripts load under PS 5.1 | Required when shipping Excel toolkit product scripts |
-| **Python** dependencies | **Not declared** | — | pip-audit | — | Product is **stdlib-only**; no product `requirements.txt` |
-| **Secrets** (whole repo) | **Not declared** (opt-in) | — | Gitleaks (`gitleaks detect`) when opted in | No leaks | **Does not** block [Completion rule](#completion-rule); see SAST table |
+| **Python** product code (`kpi_modules`) | **Declared** | **pylint** (exit 0, score **10.00/10**) | **Bandit** | Style + SAST clean | Commands: [certification/README.md](./certification/README.md) |
+| **PowerShell** (`excel-toolkit`) | **Declared** | PS 5.1 parse + UTF-8 **BOM** policy | **PSScriptAnalyzer** Error | Zero Error findings; scripts load | Commands: certification package |
+| **Secrets** (whole repo) | **Declared** | — | **Gitleaks** | No leaks | **Required** for completion and every certification renewal |
+| **Python** dependencies | **Not declared** | — | pip-audit | — | Product is **stdlib-only** |
 | JS/TS, Go, Rust, Shell, Semgrep | **Not present** | — | — | — | Do not invent gates for surfaces this repo does not ship |
 
-**Declared surfaces for this repository:** **Python** and **PowerShell** only. Domain A/B gates for those surfaces are **required when touched**. Gitleaks remains **opt-in** and is **not** a declared required surface.
+**Declared surfaces for this repository:** **Python**, **PowerShell**, and **Secrets**. Domain A/B (and Secrets) gates are **required**. Prefer the [certification harness](./certification/Invoke-Certification.ps1) so all declared surfaces run together.
 
 **Rules:**
 
-1. Inventory drives the [verification table](#verification-before-ship)—each **declared** surface needs named commands and pass criteria.  
-2. Adding a language later updates inventory, verification, authority map (if needed), and certification checks in the **same change set**.  
+1. Inventory Status drives the [completion rule](#completion-rule) and [certification renewal](#certification-renewal-enforcement-required).  
+2. Adding a language later updates inventory, certification `checks.json` / README, and authority map in the **same change set**.  
 3. **Python product** and **Python dependencies** are separate (Bandit vs pip-audit). This repo declares product Python only.  
 4. Prefer declared inventory over heuristic filesystem scans.  
-5. **Secrets / Gitleaks:** optional developer practice only unless the inventory Status for Secrets is later changed to **Declared**.
+5. **Secrets / Gitleaks:** **Declared and required** — skipping Gitleaks fails completion and fails certification renewal.
 
 ### Security / SAST gates (required when declared)
 
-**Developer-tooling** gates for security-oriented static analysis. These are **not** style gates (see [Non-Python style gates](#non-python-style-gates) and [Language surface inventory](#language-surface-inventory)) and are **not** product runtime dependencies.
+**Developer-tooling** gates for security-oriented static analysis. These are **not** style gates and are **not** product runtime dependencies.
 
-**Posture:** When a language or security surface is **Declared** in the inventory, its Domain A tool is **required** before task completion and ship (see [Completion rule](#completion-rule)). Surfaces that are **Not declared** (including opt-in Secrets/Gitleaks) must not be implied as required. Missing **required** developer tools is a **failed** gate, not a silent skip.
+**Posture:** When a language or security surface is **Declared** in the inventory, its Domain A tool is **required** before task completion and ship (see [Completion rule](#completion-rule)). Missing **required** developer tools is a **failed** gate, not a silent skip.
 
 **Modularity rule:** Declare **only** tools for **languages and surfaces this repo ships**. Never paste unused language rows (Go, Rust, npm, etc.).
 
-| Surface | Posture | Primary tool | Command (pass = exit 0 / clean) | Secondary (optional) |
-|---------|---------|--------------|----------------------------------|----------------------|
-| **Python** product (`kpi_modules`) | **Required** (declared) | **Bandit** (PyCQA) | From `kpi-analytics\`: `py -3.13 -m bandit -r kpi_modules` | — |
-| **PowerShell** (`excel-toolkit`) | **Required** (declared) | **PSScriptAnalyzer** (Microsoft) | `Invoke-ScriptAnalyzer -Path excel-toolkit -Severity Error` | Security-rules subset only |
-| **Secrets** | **Opt-in only** (not declared) | **Gitleaks** (preferred) | `gitleaks detect` | TruffleHog |
+| Surface | Posture | Primary tool | Where commands live |
+|---------|---------|--------------|---------------------|
+| **Python** product (`kpi_modules`) | **Required** (declared) | **Bandit** (PyCQA) | [certification/checks.json](./certification/checks.json) |
+| **PowerShell** (`excel-toolkit`) | **Required** (declared) | **PSScriptAnalyzer** (Microsoft) | certification package |
+| **Secrets** | **Required** (declared) | **Gitleaks** | certification package (full harness) |
 
 **Product dependency:** **No.** Bandit, PSScriptAnalyzer, Gitleaks, and similar tools are **developer tooling** only. Do **not** add them as required installs for end users of the product.
 
 **Rules:**
 
-1. Name the tool and pass criteria in the verification table for **declared** surfaces—do not leave “we scan somehow” implied.  
+1. Operational commands and pass criteria live under `certification/`—keep this section as posture + tool identity.  
 2. Install tools in the **developer** environment only.  
 3. Warning-level findings (e.g. PSScriptAnalyzer **Warning**) stay advisory unless the project promotes them to critical.  
-4. Package diagnostics (`kpi-analytics\diagnostics\`, `excel-toolkit\diagnostics\`) answer “can **this machine** run the product?”—they are **not** Domain A/B substitutes for Bandit / PSScriptAnalyzer / pylint.  
-5. Skipping Gitleaks does **not** fail the [Completion rule](#completion-rule) while Secrets remains **Not declared**.
+4. Package diagnostics (`kpi-analytics\diagnostics\`, `excel-toolkit\diagnostics\`) answer “can **this machine** run the product?”—they are **not** Domain A/B substitutes.  
+5. **Gitleaks is required.** Skipping it fails the [Completion rule](#completion-rule) and [certification renewal](#certification-renewal-enforcement-required).
 
 ### Security and code-validation certification
 
-Optional formal **developer self-attestation** that, for git commit *C* at time *T*, declared product surfaces passed **Domain A (security / SAST)** and **Domain B (code validation)**. This is **not** a third-party audit, SOC 2, ISO seal, or product runtime diagnostics gate.
+This repository **maintains** a formal **developer self-attestation** package under `certification/`: for git commit *C* at time *T*, declared surfaces passed **Domain A (security / SAST + secrets)** and **Domain B (code validation)** in **one** certificate pair. This is **not** a third-party audit, SOC 2, ISO seal, or product runtime diagnostics gate.
 
 | This **is** | This **is not** |
 |-------------|-----------------|
@@ -345,21 +346,24 @@ Optional formal **developer self-attestation** that, for git commit *C* at time 
 
 #### Single-folder rule
 
-When the project maintains formal certificates, **all** of them live under one folder:
+**All** formal certificates live under one folder:
 
 ```text
 certification/
   README.md                    # operator guide + disclaimer (versioned)
+  checks.json                  # declarative required checks (tracked)
+  Invoke-Certification.ps1     # full-suite harness (tracked; developer-only)
   last_certification.json      # gitignored, regenerable
   last_certification.txt       # gitignored, regenerable
+  logs/                        # gitignored optional tool reports
 ```
 
 | Rule | Detail |
 |------|--------|
 | One folder | No split `security-cert/` vs `validation-cert/`; no extra root purpose directories |
 | One certificate pair | Both domains appear **inside** the same JSON/TXT |
-| Regenerable | Never commit `last_certification.*` |
-| Optional | This repository may omit the folder until formal certs are needed; start from [templates/TEMPLATE-CERTIFICATION-README.md](./templates/TEMPLATE-CERTIFICATION-README.md) |
+| Regenerable | Never commit `last_certification.*` or `certification/logs/` |
+| Maintained | This repository **keeps** `certification/`; operator guide is [certification/README.md](./certification/README.md) |
 | Not package diagnostics | Do **not** merge `excel-toolkit\diagnostics\` or `kpi-analytics\diagnostics\` into `certification/` |
 
 #### Domains and OverallPass
@@ -370,12 +374,14 @@ Domains.CodeValidation.OverallPass
 OverallPass = AND of domains that apply for declared inventory surfaces
 ```
 
-**OverallPass** means: every **critical** check that ran passed, **and** no required critical tool was missing.
+**OverallPass** means: every **required critical** check that ran passed, **and** no required critical tool was missing.
 
 | Domain | Covers (this repo) |
 |--------|---------------------|
-| **Security** | Declared Domain A: Bandit on `kpi_modules`; PSScriptAnalyzer Error on `excel-toolkit`. Gitleaks only if Secrets is later **Declared** (currently opt-in, not required) |
-| **Code validation** | Declared Domain B: pylint on `kpi_modules`; PS 5.1 parse/BOM policy; plus project contract checks (`validate-score`, probes) listed in verification |
+| **Security** | Bandit on `kpi_modules`; PSScriptAnalyzer Error on `excel-toolkit`; **Gitleaks** on the repo |
+| **Code validation** | pylint on `kpi_modules` (10.00/10); PS 5.1 parse/BOM; `validate-score` fixtures |
+
+Commands: [certification/checks.json](./certification/checks.json).
 
 #### Certificate shape (illustrative)
 
@@ -383,9 +389,23 @@ OverallPass = AND of domains that apply for declared inventory surfaces
 
 **Human-readable** (`last_certification.txt`): same facts in sections. **Privacy:** paths, versions, rule ids, counts only—never secrets, passwords, PHI, or claim rows.
 
+#### Certification renewal enforcement (required)
+
+When this repository maintains `certification/` (it does):
+
+1. **Renew after code changes.** Any change set that edits product Python under `kpi-analytics\kpi_modules\`, product PowerShell under `excel-toolkit\`, certification gate definitions (`checks.json`, harness, `.pylintrc`), or [language surface inventory](#language-surface-inventory) **invalidates** the prior certificate for completion purposes.  
+2. **Full package only.** Renewal **must** execute the full certification package ([Invoke-Certification.ps1](./certification/Invoke-Certification.ps1) / **all** required rows in [checks.json](./certification/checks.json)):  
+   - **Domain B (code validation):** **pylint** (exit 0, **10.00/10**), PowerShell parse/BOM, `validate-score`, and any other required CodeValidation checks.  
+   - **Domain A (security):** Bandit, PSScriptAnalyzer Error, **Gitleaks**, and any other required Security checks.  
+3. **No partial renewal.** Re-running a subset of tools (only pylint, only Bandit, only Gitleaks, or only one domain) and writing a new cert pair is a **policy violation**. Both domains must be freshly executed in the **same** renewal run.  
+4. **Completion rule.** Work that made certification stale is **not complete** until the harness finishes with `OverallPass = true` (or the change is reverted). Missing required tools **fail** the run; they do not exempt renewal.  
+5. **Harness path.** Preferred renewal command from repo root: `.\certification\Invoke-Certification.ps1`. Manual hand-edits of a prior cert without re-running tools are **invalid**.  
+6. **Narrow docs-only exception.** Pure documentation edits that cannot affect gate results may skip renewal; if unsure, renew.  
+7. **Outputs.** Leave `last_certification.*` **untracked**. Never stage or commit them.
+
 #### Certification rule
 
-When the repository maintains `certification/`, regenerate `last_certification.json` and `.txt` after critical gates for the change set; leave regenerable outputs **untracked**. Missing required tools yield `OverallPass = false`, not a silent skip. A future harness may automate generation; until then, operators may produce the pair manually or with project scripts that match this schema.
+Regenerate `last_certification.json` and `.txt` only by running the **full** suite per [Certification renewal enforcement](#certification-renewal-enforcement-required). Missing required tools yield `OverallPass = false`, not a silent skip.
 
 ---
 
@@ -663,8 +683,8 @@ Commit messages and **what is staged** must stay consistent with the documentati
 3. If CLI verbs, flags, exit codes, or JSON shapes changed, is [CLI-GUIDE](./kpi-analytics/CLI-GUIDE.md) / [excel-toolkit CLI-GUIDE](./excel-toolkit/CLI-GUIDE.md) updated in this change set?  
 4. If trust/execution model changed, is the matching ENTERPRISE-SECURITY updated?  
 5. If formulas or `v1_*` / `kpi_q_*` contracts changed, are methodology + fixtures updated?  
-6. If product Python changed, will the pylint gate pass? If Python is in the language inventory, will Bandit pass?  
-7. Were **declared** Domain A/B gates for other touched language surfaces (e.g. PowerShell / PSScriptAnalyzer) run?  
+6. If product code or gate config changed: will the **full** certification harness pass (pylint + security + Gitleaks)?  
+7. Is partial recert avoided (no security-only or pylint-only cert rewrite)?  
 8. If release-worthy: is [CHANGELOG.md](./CHANGELOG.md) updated?  
 9. Would a reviewer find the subject by searching the feature name used in the README?  
 10. Would this subject still make sense **two years** from now without the PR description?  
@@ -693,38 +713,36 @@ A remote is optional. When one exists, do not assume write access to `main`/`mas
 
 | Change type | Minimum verification |
 |-------------|----------------------|
-| KPI scoring, columns, config | `kpi-analytics.cmd validate-score` (fixtures) |
-| KPI Python product code style | From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules` (must pass; see [Python style gate](#python-style-gate-pylint)) |
-| KPI Python SAST (declared) | From `kpi-analytics\`: `py -3.13 -m bandit -r kpi_modules` (must pass; see [Security / SAST gates](#security--sast-gates-required-when-declared)) |
+| **Product code, gate config, or inventory** | **Full certification package:** `.\certification\Invoke-Certification.ps1` (Domain B **and** Domain A, including pylint + Bandit + PSSA + Gitleaks + validate-score). Confirm `OverallPass`; do not stage outputs. See [renewal enforcement](#certification-renewal-enforcement-required) |
+| KPI scoring, columns, config | Covered by harness `validate-score`; may also run `kpi-analytics.cmd validate-score` alone while iterating |
 | KPI environment / packaging | `kpi-analytics.cmd probe` |
-| KPI enterprise first-run / gate | `kpi-analytics.cmd diagnostics` (certificate under `diagnostics\`) |
+| KPI enterprise first-run / gate | `kpi-analytics.cmd diagnostics` (certificate under `diagnostics\`) — **not** a substitute for certification |
 | Excel COM / export path | `excel-toolkit.cmd probe` and/or `Test-ExcelCom.ps1 -DryRun` |
-| Excel enterprise first-run / gate | `excel-toolkit.cmd diagnostics` (certificate under `excel-toolkit\diagnostics\`) |
-| PowerShell product scripts (Domain B) | Parse under PS 5.1; UTF-8 BOM; see [Non-Python style gates](#non-python-style-gates) |
-| PowerShell SAST (declared) | `Invoke-ScriptAnalyzer -Path excel-toolkit -Severity Error` (zero Error findings) |
-| Secrets scan (opt-in) | **Not required.** Optional: `gitleaks detect` when the operator opts in. Does not block completion while Secrets is Not declared |
-| Formal certification | If `certification/` is maintained: regenerate `last_certification.json` / `.txt` after critical gates; confirm OverallPass; do not stage outputs |
+| Excel enterprise first-run / gate | `excel-toolkit.cmd diagnostics` — **not** a substitute for certification |
 | Enterprise execution risk | `excel-toolkit\sample-test\` probes as appropriate |
 | Schema or sample data | Headers match schema; score and/or export still consume sample paths |
-| Docs only | [Author checklist](./MARKDOWN-STANDARD.md#author-checklist); relative links resolve |
+| Docs only (no product/gate impact) | [Author checklist](./MARKDOWN-STANDARD.md#author-checklist); relative links resolve; certification renewal optional per narrow exception |
 | New/removed source files | [FILE-CATALOG.md](./FILE-CATALOG.md) updated; [language surface inventory](#language-surface-inventory) if languages added/removed |
 | Release-worthy / version bump | [CHANGELOG.md](./CHANGELOG.md) entry under the version section that ships the change |
 
+Individual Domain A/B commands remain documented in [certification/README.md](./certification/README.md). For ship/complete after code changes, use the **full harness**—not a subset.
+
 ### Completion rule
 
-Do **not** mark a change complete, and do **not** claim ship readiness, if any **declared** Domain B (code validation / style) or Domain A (security / SAST) gate for a **surface present in the inventory** was skipped or failed. Missing required developer tools is a **failed** gate, not a skip. Package diagnostics gates remain required for scoring/export paths as before; they do not replace Domain A/B tools.
+Do **not** mark a change complete, and do **not** claim ship readiness, if any **declared** Domain B (code validation / style) or Domain A (security / SAST / secrets) gate was skipped or failed. **Gitleaks is required.** Missing required developer tools is a **failed** gate, not a skip.
+
+When product code, certification gate definitions, or inventory Status changed: certification is **stale** until `.\certification\Invoke-Certification.ps1` completes with `OverallPass = true`. Partial renewal (security-only or pylint-only) does **not** satisfy completion. Package diagnostics gates remain required for scoring/export paths as before; they do not replace Domain A/B tools or formal certification.
 
 ### Before marking work complete
 
 Ordered steps for humans and AI agents:
 
-1. Read **language surface inventory** in this file (**Declared:** Python, PowerShell; Secrets = opt-in only).  
-2. Run **Domain B** gates for every **declared** surface touched by the change (pylint; PS 5.1 parse/BOM as applicable).  
-3. Run **Domain A** gates for every **declared** surface touched (Bandit; PSScriptAnalyzer Error as applicable). Do **not** treat Gitleaks as required.  
-4. Run project contract checks as applicable (`validate-score`, probes, diagnostics).  
+1. Read **language surface inventory** (**Declared:** Python, PowerShell, **Secrets**).  
+2. If product code, gate config, or inventory changed: run **full** certification (`.\certification\Invoke-Certification.ps1`) — this **must** re-run Domain B (including **pylint**) **and** Domain A (including **Gitleaks**) together. Confirm `OverallPass`; leave outputs unstaged.  
+3. Otherwise (narrow docs-only): run any applicable lightweight checks; renewal optional per exception.  
+4. Run package probes/diagnostics as needed for product paths (separate from certification).  
 5. Update canonical docs / [CHANGELOG.md](./CHANGELOG.md) per the authority map.  
-6. If `certification/` is maintained: regenerate the certificate pair; confirm OverallPass; leave outputs unstaged.  
-7. Only then state the task is complete.
+6. Only then state the task is complete.
 
 ---
 
@@ -733,12 +751,11 @@ Ordered steps for humans and AI agents:
 | Trigger | Action |
 |---------|--------|
 | Every source path add/remove/rename | Update [FILE-CATALOG.md](./FILE-CATALOG.md) |
-| Language surface added or removed | Update [language surface inventory](#language-surface-inventory) + verification rows (+ certification checks if maintained) |
+| Language surface added or removed | Update [language surface inventory](#language-surface-inventory) + `certification/checks.json` / README |
 | Every release-worthy toolkit behavior change | Bump code version; refresh CLI guide and status blocks; update [CHANGELOG.md](./CHANGELOG.md) |
-| Every `kpi_modules` Python edit | Run pylint gate; keep exit 0 / 10.00 score; run **Bandit** (declared Domain A) |
-| Every product edit in `excel-toolkit` PowerShell | PS 5.1 parse/BOM; run **PSScriptAnalyzer** Error severity (declared Domain A) |
-| Security-relevant change | Update matching ENTERPRISE-SECURITY; re-run declared SAST + sample-test or probe; CHANGELOG entry |
-| Formal certification maintained | Regenerate `last_certification.*` after critical gates; do not commit outputs |
+| Every product code edit (`kpi_modules` or excel-toolkit product scripts) | Run **full** [certification harness](./certification/Invoke-Certification.ps1) (pylint + security + Gitleaks); do not partial-recert |
+| Security-relevant change | Update matching ENTERPRISE-SECURITY; full certification renewal; CHANGELOG entry |
+| Formal certification | Always renew via full suite after qualifying changes; never commit outputs |
 | Fixture failure after intentional math change | Refresh expected JSON only with methodology note |
 | Stale `last_updated` on heavily edited docs | Set ISO date when merging |
 | Kit upgrade available upstream | Follow [Upgrading the kit](#upgrading-the-kit-post-initiation); update baseline + project CHANGELOG |
@@ -772,12 +789,15 @@ Ordered steps for humans and AI agents:
 | Leaving SETUP.md forever at root after adoption | Do not re-add SETUP; keep Kit baseline instead |
 | Empty security doc for a surface with no execution/network/privilege/secrets | Omit the file and the authority-map row ([modularity](#security-documentation-modularity)) |
 | Pasting the full multi-language SAST table into this repo | Declare only tools for languages we ship ([language surface inventory](#language-surface-inventory)) |
-| Claiming complete while skipping a **declared** style or SAST gate | Run inventory gates; see [Completion rule](#completion-rule) |
-| Treating optional Gitleaks as a required ship gate | Keep Secrets **Not declared** / opt-in unless inventory Status is changed deliberately |
+| Claiming complete while skipping a **declared** style or SAST gate | Run inventory gates / full harness; see [Completion rule](#completion-rule) |
+| Skipping Gitleaks or treating Secrets as opt-in | Secrets is **Declared**; Gitleaks required on every renewal |
+| Partial recert (only pylint, only Bandit, only Gitleaks) | Always run full `Invoke-Certification.ps1` after code changes |
+| Hand-editing `last_certification.*` without re-running tools | Invalid; only harness-produced outputs count |
+| Claiming complete with a pre-change certificate | Renew after product/code/gate/inventory changes |
 | Shipping Bandit / PSScriptAnalyzer / Gitleaks as product runtime deps | Keep security / SAST tools developer-only |
 | Committing `certification/last_certification.*` | Gitignore regenerable cert outputs; regenerate locally |
 | Treating certification as a product launcher / diagnostics gate | Certification attests **source tree** policy only; package diagnostics stay under each toolkit |
-| Empty language inventory while shipping product code | Keep inventory filled for Python and PowerShell |
+| Empty language inventory while shipping product code | Keep inventory filled for Python, PowerShell, and Secrets |
 | Merging package diagnostics into `certification/` | Keep `diagnostics/` for machine readiness; `certification/` for source-tree self-attestation only |
 
 ---
@@ -792,10 +812,8 @@ Before you commit or share a change:
 - [ ] Versions and `last_updated` bumped where contracts changed  
 - [ ] **CHANGELOG.md** updated when required (release-worthy behavior, version bump, security, kit adopt/upgrade)  
 - [ ] Required **verification** from the table above has been run ([Completion rule](#completion-rule))  
-- [ ] If `kpi_modules` Python changed: **pylint** and **Bandit** passed (from `kpi-analytics\`)  
-- [ ] If Excel toolkit PowerShell changed: PS 5.1 parse/BOM and **PSScriptAnalyzer** Error severity passed  
-- [ ] Gitleaks only if opted in (not required for completion)  
-- [ ] If `certification/` is maintained: certificate regenerated; OverallPass true; outputs not staged  
+- [ ] If product code, gate config, or inventory changed: **full** certification harness passed (`OverallPass` true) — includes **pylint**, Bandit, PSScriptAnalyzer, **Gitleaks**, validate-score  
+- [ ] No partial recert; outputs not staged  
 - [ ] No secrets, PHI, `output\`, caches, diagnostics certificates, or `last_certification.*` staged  
 - [ ] Markdown follows [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) when docs were edited  
 - [ ] Commit message uses `type(scope):` format and matches the staged files  
@@ -820,3 +838,4 @@ Before you commit or share a change:
 | 1.4.0 | Aligned with repo-kit **1.1.7**: security documentation modularity; advisory language-scoped SAST gates (Python/PowerShell/secrets only); upgrade procedure CHANGELOG discipline (read only since baseline; never paste full kit history); kit baseline **1.1.7** |
 | 1.5.0 | Aligned with repo-kit **1.2.0**: language surface inventory (Python + PowerShell **Declared**); SAST **required when declared** (Bandit, PSScriptAnalyzer); Secrets/Gitleaks **opt-in only**; security & code-validation certification schema (optional `certification/` deferred); completion rule + before-complete steps; kit baseline **1.2.0** |
 | 1.5.1 | Kit reflection pass: inventory Status column (Declared vs Not declared); Gitleaks explicitly non-blocking; verification/checklist/anti-pattern alignment |
+| 1.6.0 | Certification **maintained**: full package under `certification/`; Secrets/Gitleaks **Declared** and required; [certification renewal enforcement](#certification-renewal-enforcement-required) (full Domain A+B every renewal after code changes; no partial recert); operational commands live in certification; verification/checklist/anti-patterns aligned |

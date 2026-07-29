@@ -13,6 +13,25 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.6.0] - 2026-07-28
+
+#### Added
+
+- **Security and code-validation certification package** under `certification/`
+  - Operator guide (`README.md`), declarative `checks.json`, and full-suite harness `Invoke-Certification.ps1`
+  - One certificate pair covers Domain A (Bandit, PSScriptAnalyzer Error, **Gitleaks**) and Domain B (pylint 10.00/10, PS parse/BOM, `validate-score`)
+  - Regenerable `last_certification.json` / `.txt` remain gitignored (not package diagnostics)
+
+#### Changed
+
+- **Secrets / Gitleaks** promoted to **Declared** and **required** for completion and every certification renewal
+- **RULES.md 1.6.0:** certification renewal enforcement — after product/code or gate changes, renew only via the **full** harness (no partial recert; pylint and security always together); operational commands live in `certification/`; verification, checklist, and anti-patterns aligned
+- FILE-CATALOG and root README point maintainers at the certification package
+
+#### Security
+
+- Bandit B311 on synthetic PRNG in `kpi_modules/synthesize.py` documented with `# nosec B311` (demo data only, not cryptography)
+
 ### [1.5.4] - 2026-07-28
 
 #### Changed
