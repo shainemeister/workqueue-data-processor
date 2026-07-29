@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.2.0"
+version: "2.3.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-25"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.2.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.3.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -288,6 +288,8 @@ Every `score` run resolves **roles** (config `fields` keys) to CSV headers:
 After headers are chosen, **sample verification** peeks non-empty cells and flags date/numeric roles that do not parse as expected (`LowConfidenceRoles`, `TypeChecks`, `RoleConfidence`). This is advisory for normal `score`; it does not block automation.
 
 **Date values (2.2.0+):** `service_date` / `last_worked_date` accept the usual `date_formats` strings **and**, by default, Windows **Excel serial** day numbers (e.g. `46103`). This matches many Excel → CSV exports. Disable with config `"date_excel_serial": false` if needed.
+
+**Metric value coverage (2.3.0+):** score JSON includes `MetricValueCoverage` (share of rows with non-null raw per active metric) and `LowCoverageMetrics` (below 50% by default). A role can be active while coverage is low if cells do not parse.
 
 Unresolved roles are **not** silently filled with the role name. If a metric’s required role is missing, that metric is **skipped** and its weight is redistributed over the remaining active metrics. If **no** metrics can run, `score` fails with exit **1**.
 

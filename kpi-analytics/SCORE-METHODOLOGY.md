@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.2.0"
+version: "2.3.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 2.2.0  
+**Toolkit version:** 2.3.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -516,3 +516,4 @@ Checks include:
 | 2.0.0 | **Breaking metric contract:** `ar_days`→`claim_age_days`, `ar_disparity`→`claim_age_disparity`; add BWDO, denial_count, days_since_last_worked, dual_deadline_urgency; new default weights; chaos stats use claim-age vocabulary; legacy config key aliases accepted on load |
 | 2.1.0 | Sample verification + richer mapping report; stop silent role-name field fallback; optional `--interactive-mapping` guided recovery (no formula change when all roles present) |
 | 2.2.0 | Parse Windows Excel serial day numbers in date roles (default `date_excel_serial`); fixes empty claim age / 0% aging KPIs on Excel→CSV extracts |
+| 2.3.0 | Metric value coverage (`MetricValueCoverage` / `LowCoverageMetrics`) — role resolved vs raw values present |

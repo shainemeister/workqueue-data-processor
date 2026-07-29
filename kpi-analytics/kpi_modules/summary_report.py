@@ -507,6 +507,43 @@ def build_summary_rows(
                 )
             )
 
+        coverage = summary.get("metric_value_coverage") or {}
+        if coverage:
+            cov_text = " | ".join(
+                f"{k}={coverage[k]:.0%}"
+                if isinstance(coverage.get(k), (int, float))
+                else f"{k}={coverage[k]}"
+                for k in sorted(coverage.keys())
+            )
+            rows.append(
+                _row(
+                    "Priority batch",
+                    "metric_value_coverage",
+                    cov_text,
+                    explanation=(
+                        "Share of rows with a non-null raw value for each "
+                        "active metric (roles resolved does not guarantee "
+                        "dates/numbers parse). Low coverage means blank raws "
+                        "and weak priority signal for that metric."
+                    ),
+                )
+            )
+        low_cov = summary.get("low_coverage_metrics") or []
+        if low_cov:
+            thr = summary.get("low_coverage_threshold", 0.5)
+            rows.append(
+                _row(
+                    "Priority batch",
+                    "low_coverage_metrics",
+                    ", ".join(str(m) for m in low_cov),
+                    explanation=(
+                        f"Active metrics with raw value coverage below "
+                        f"{thr:.0%}. Check date formats, Excel serials, or "
+                        "wrong column mapping."
+                    ),
+                )
+            )
+
     for mk, wv in weights.items():
         rows.append(
             _row(

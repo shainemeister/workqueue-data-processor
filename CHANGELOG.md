@@ -13,6 +13,20 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.7.4] - 2026-07-28
+
+#### Added
+
+- **kpi-analytics 2.3.0:** metric value coverage on every score run
+  - JSON: `MetricValueCoverage`, `LowCoverageMetrics`, `LowCoverageThreshold`
+  - Summary CSV Priority batch rows for coverage and low-coverage metrics
+  - Distinguishes “role column resolved” (ActiveMetrics) from “raw values present”
+
+#### Changed
+
+- **excel-toolkit 1.7.3:** Process my data forces guided mapping only for **missing** or **ambiguous** roles
+  - Low-confidence samples warn and continue (optional remap no longer required)
+
 ### [1.7.3] - 2026-07-28
 
 #### Fixed

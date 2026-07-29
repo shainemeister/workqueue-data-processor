@@ -473,11 +473,11 @@ function Test-ExcelMenuHostInteractive {
     return $true
 }
 
-function Test-KpiScoreMappingProblems {
+function Test-KpiScoreMappingNeedsGuide {
     <#
     .SYNOPSIS
-        True when score JSON reports missing / ambiguous / low-confidence roles.
-        Mirrors kpi_modules.column_map.mapping_has_problems.
+        True when missing or ambiguous roles require guided mapping.
+        Low-confidence alone does not force a guide (warn + continue instead).
     #>
     [CmdletBinding()]
     param(
@@ -500,20 +500,38 @@ function Test-KpiScoreMappingProblems {
     }
 
     if ($names -contains 'AmbiguousRoles' -and $null -ne $ScoreJson.AmbiguousRoles) {
-        $ambProps = @($ScoreJson.AmbiguousRoles.PSObject.Properties)
-        if ($ambProps.Count -gt 0) {
-            return $true
-        }
-    }
-
-    if ($names -contains 'LowConfidenceRoles') {
-        $low = @($ScoreJson.LowConfidenceRoles)
-        if ($low.Count -gt 0) {
+        $ak = @(
+            $ScoreJson.AmbiguousRoles.PSObject.Properties |
+                ForEach-Object { [string]$_.Name } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        )
+        if ($ak.Count -gt 0) {
             return $true
         }
     }
 
     return $false
+}
+
+function Get-KpiScoreLowConfidenceRoles {
+    <#
+    .SYNOPSIS
+        Return low-confidence role names from score JSON (empty if none).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        $ScoreJson
+    )
+
+    if ($null -eq $ScoreJson) {
+        return @()
+    }
+    if ($ScoreJson.PSObject.Properties.Name -notcontains 'LowConfidenceRoles') {
+        return @()
+    }
+    return @($ScoreJson.LowConfidenceRoles | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
 }
 
 function Get-KpiSiblingMappingPath {
@@ -860,8 +878,16 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         return $preflight
     }
 
-    $hasProblems = Test-KpiScoreMappingProblems -ScoreJson $preJson
-    if (-not $hasProblems) {
+    $needsGuide = Test-KpiScoreMappingNeedsGuide -ScoreJson $preJson
+    $lowRoles = @(Get-KpiScoreLowConfidenceRoles -ScoreJson $preJson)
+
+    if (-not $needsGuide) {
+        if ($lowRoles.Count -gt 0) {
+            Write-Host (
+                "  Warning: low-confidence date/number samples for: {0}. " +
+                "Scoring continues with current mapping; check TypeChecks / metric coverage if results look wrong."
+            ) -f ($lowRoles -join ', ') -ForegroundColor Yellow
+        }
         $runParams = @{
             CsvPath     = $CsvPath
             OutputPath  = $OutputPath
@@ -873,7 +899,7 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @runParams))
     }
 
-    # Summarize problems for the operator.
+    # Missing and/or ambiguous roles — guided mapping required.
     $bits = New-Object System.Collections.Generic.List[string]
     if ($null -ne $preJson) {
         if ($preJson.PSObject.Properties.Name -contains 'MissingRoles') {
@@ -892,11 +918,8 @@ function Invoke-KpiAnalyticsScoreWithMapping {
                 $bits.Add(('ambiguous: {0}' -f ($ak -join ', ')))
             }
         }
-        if ($preJson.PSObject.Properties.Name -contains 'LowConfidenceRoles') {
-            $lc = @($preJson.LowConfidenceRoles)
-            if ($lc.Count -gt 0) {
-                $bits.Add(('low confidence: {0}' -f ($lc -join ', ')))
-            }
+        if ($lowRoles.Count -gt 0) {
+            $bits.Add(('low confidence: {0}' -f ($lowRoles -join ', ')))
         }
     }
     $problemText = if ($bits.Count -gt 0) { ($bits -join '; ') } else { 'column mapping needs review' }

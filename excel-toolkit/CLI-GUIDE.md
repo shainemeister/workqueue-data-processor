@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.7.2"
+version: "1.7.3"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-07-25"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.7.2 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.7.3 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -621,7 +621,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.7.2** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.7.3** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.7.3 notes:** guided mapping only for missing/ambiguous roles; low-confidence warns and continues.
 
 **1.7.2 notes:** menu file discovery no longer double-lists `.xlsx` (Windows `-Filter '*.xls'` quirk).
 

@@ -35,6 +35,41 @@ def _fmt_num(value: float | None, digits: int = 6) -> str:
     return f"{value:.{digits}f}".rstrip("0").rstrip(".")
 
 
+def _metric_value_coverage(
+    raw_list: list[dict[str, float | None]],
+    active: list[str],
+    *,
+    low_threshold: float = 0.5,
+) -> dict[str, Any]:
+    """
+    Fraction of rows with non-null raw values per active metric.
+
+    ActiveMetrics means the role column was resolved; coverage means the
+    metric actually produced a numeric raw for the row (dates/numbers parsed).
+    """
+    n = len(raw_list)
+    coverage: dict[str, float] = {}
+    low: list[str] = []
+    for key in active:
+        if n <= 0:
+            coverage[key] = 0.0
+            low.append(key)
+            continue
+        present = sum(
+            1 for raw in raw_list if raw.get(key) is not None
+        )
+        ratio = present / n
+        coverage[key] = round(ratio, 6)
+        if ratio < low_threshold:
+            low.append(key)
+    return {
+        "coverage": coverage,
+        "low_coverage_metrics": low,
+        "low_coverage_threshold": low_threshold,
+        "row_count": n,
+    }
+
+
 def score_rows(
     fieldnames: list[str],
     rows: list[dict[str, str]],
@@ -66,6 +101,7 @@ def score_rows(
         skipped = {}
 
     raw_list = [compute_raw_metrics(row, cfg, as_of) for row in rows]
+    coverage_info = _metric_value_coverage(raw_list, active)
     chaos_mode, chaos_stats = detect_chaos_mode(raw_list, cfg)
     weights = effective_weights(cfg, chaos_mode, active_metrics=active)
     ratios = normalize_all(raw_list, cfg)
@@ -154,6 +190,9 @@ def score_rows(
         "privacy": privacy_stats,
         "active_metrics": list(active),
         "skipped_metrics": skipped,
+        "metric_value_coverage": coverage_info["coverage"],
+        "low_coverage_metrics": coverage_info["low_coverage_metrics"],
+        "low_coverage_threshold": coverage_info["low_coverage_threshold"],
         "field_roles": (
             dict(mapping_report.get("resolved") or {})
             if mapping_report is not None
@@ -347,6 +386,9 @@ def score_csv(
         "KpiColumns": summary.get("kpi_columns") or [],
         "ActiveMetrics": summary.get("active_metrics") or [],
         "SkippedMetrics": summary.get("skipped_metrics") or {},
+        "MetricValueCoverage": summary.get("metric_value_coverage") or {},
+        "LowCoverageMetrics": summary.get("low_coverage_metrics") or [],
+        "LowCoverageThreshold": summary.get("low_coverage_threshold"),
         "FieldRoles": summary.get("field_roles") or {},
         "MissingRoles": summary.get("missing_roles") or [],
         "AmbiguousRoles": summary.get("ambiguous_roles") or {},

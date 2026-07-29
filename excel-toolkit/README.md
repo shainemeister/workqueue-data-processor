@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.7.2"
+version: "1.7.3"
 status: current
 audience:
   - users
@@ -18,7 +18,7 @@ last_updated: "2026-07-28"
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), guided **Process my data** menu (via sibling `kpi-analytics` for scoring), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.7.2  
+**Toolkit version:** 1.7.3  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
@@ -118,9 +118,9 @@ Composes the two toolkits at the **workflow** layer only (no shared process, no 
 4. Score via `kpi-analytics` with **mapping preflight**:
    - Auto-apply sibling `<stem>_mapping.json` next to the CSV when present.
    - Dry-run score to inspect column roles (missing / ambiguous / low-confidence).
-   - **Clean headers** → full score with JSON (automation-friendly).
-   - **Mapping problems** on an interactive console → guided column mapping (`--interactive-mapping` on a TTY); optional save of a mapping profile next to the input.
-   - **Mapping problems** when non-interactive → fail with a clear message (no hang); use CLI `score --mapping` / `--interactive-mapping` instead.
+   - **Clean headers** (or only low-confidence samples) → full score; low-confidence roles print a warning and continue.
+   - **Missing or ambiguous roles** on an interactive console → guided column mapping (`--interactive-mapping` on a TTY); optional save of a mapping profile next to the input.
+   - **Missing or ambiguous roles** when non-interactive → fail with a clear message (no hang); use CLI `score --mapping` / `--interactive-mapping` instead.
 5. Optionally set a workbook open password, then export both CSVs to `.xlsx` (unique paths if those workbooks already exist).
 
 **Score only** stops after scoring (CSV only; no Excel diagnostics gate).

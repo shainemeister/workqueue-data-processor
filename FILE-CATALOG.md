@@ -183,7 +183,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.2.0). |
+| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.3.0). |
 | [__main__.py](./kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--interactive-mapping`), `generate`, `validate-score`; diagnostics gate. |
 | [column_map.py](./kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
