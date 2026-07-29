@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.6.1"
+version: "1.6.2"
 status: current
 audience:
   - developers
@@ -28,7 +28,7 @@ Policy for keeping **workqueue-data-processor** professional, auditable, and saf
 
 **If you only need to score work or export Excel:** start with the root [README.md](./README.md) and the toolkit guides. Come back here when you edit code, docs, schema, or release behavior.
 
-**Document version:** 1.6.1  
+**Document version:** 1.6.2  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc) · [certification/README.md](./certification/README.md)
 
@@ -464,7 +464,7 @@ Durable record of **which kit version** this project adopted and **where upgrade
 
 | Field | Value |
 |-------|--------|
-| Adopted kit version | **1.2.0** |
+| Adopted kit version | **1.2.1** |
 | Adopted on | **2026-07-28** |
 | Kit source | https://github.com/shainemeister/repo-kit |
 
@@ -472,7 +472,7 @@ Durable record of **which kit version** this project adopted and **where upgrade
 
 ### Upgrading the kit (post-initiation)
 
-1. Open **https://github.com/shainemeister/repo-kit** and read `CHANGELOG.md` (and releases if present).  
+1. Read this project’s [Kit baseline](#kit-baseline) (**Adopted kit version**, **Kit source**). Open **Kit source** (canonical for this kit: **https://github.com/shainemeister/repo-kit**) and read `CHANGELOG.md` (and releases if present).  
 2. Compare this file’s **Adopted kit version** to the latest kit version under `## repo-kit`.  
 3. **Read only** the kit CHANGELOG entries since the current Adopted kit version; merge only what you need; **never** copy the full kit history into the project CHANGELOG.  
 4. Copy or merge wanted pieces (`RULES.md` policy sections, `MARKDOWN-STANDARD.md`, `templates/`, pylintrc patterns, `.gitignore`). **Preserve** this project’s authority-map paths, verification commands, architecture, data, and security tables.  
@@ -481,7 +481,7 @@ Durable record of **which kit version** this project adopted and **where upgrade
 7. Re-check authority map, verification table, and any new kit contracts.  
 8. Do **not** leave a permanent root `SETUP.md` after initiation.
 
-No automation is required—policy and the [contributor checklist](#contributor-checklist) enforce the practice. Upstream upgrade prompt: [repo-kit README — How to use (quick path)](https://github.com/shainemeister/repo-kit#how-to-use-quick-path).
+No automation is required—policy and the [contributor checklist](#contributor-checklist) enforce the practice. Upstream upgrade prompt: [repo-kit README — Upgrade repo-kit](https://github.com/shainemeister/repo-kit#upgrade-repo-kit).
 
 ### Consistency rules
 
@@ -653,6 +653,7 @@ docs: adopt repo-kit 1.1.1 baseline and add CHANGELOG
 docs: upgrade repo-kit baseline to 1.1.2 with AI disclosure rules
 docs: upgrade repo-kit baseline to 1.1.7 with security modularity
 docs: upgrade repo-kit baseline to 1.2.0 with inventory and certification
+docs: upgrade repo-kit baseline to 1.2.1 with kit-source upgrade path
 ```
 
 **Bad → good:**
@@ -842,3 +843,4 @@ Before you commit or share a change:
 | 1.5.1 | Kit reflection pass: inventory Status column (Declared vs Not declared); Gitleaks explicitly non-blocking; verification/checklist/anti-pattern alignment |
 | 1.6.0 | Certification **maintained**: full package under `certification/`; Secrets/Gitleaks **Declared** and required; [certification renewal enforcement](#certification-renewal-enforcement-required) (full Domain A+B every renewal after code changes; no partial recert); operational commands live in certification; verification/checklist/anti-patterns aligned |
 | 1.6.1 | Certification quality hardening: PSSA product-only scope (align with parse/BOM; `sample-test` excluded); dual-mode Gitleaks (workdir + git history); declarative pylint `RequirePylintScore`; cert schema `PackageVersions` / `DurationMs` / `Message`; root **MIT** `LICENSE` |
+| 1.6.2 | Aligned with repo-kit **1.2.1**: upgrade procedure starts from Kit baseline (Adopted kit version + Kit source); upstream prompt deep link → `#upgrade-repo-kit`; kit baseline **1.2.1** |

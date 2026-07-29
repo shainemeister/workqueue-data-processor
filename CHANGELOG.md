@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.6.3] - 2026-07-28
+
+#### Changed
+
+- Upgraded repo-kit baseline to **1.2.1** (upgrade procedure starts from Kit baseline Kit source; upstream AI prompt deep link `#upgrade-repo-kit`)
+
 ### [1.6.2] - 2026-07-28
 
 #### Fixed
