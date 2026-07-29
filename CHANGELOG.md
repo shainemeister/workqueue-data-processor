@@ -13,6 +13,50 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.7.3] - 2026-07-28
+
+#### Fixed
+
+- **excel-toolkit 1.7.2:** Process my data listed each `.xlsx` twice
+  - Cause: Windows `Get-ChildItem -Filter '*.xls'` also matches `.xlsx` (legacy Win32 wildcard)
+  - Menu discovery added both `*.xlsx` and `*.xls` filters; true `.xls` is now extension-checked
+
+### [1.7.2] - 2026-07-28
+
+#### Fixed
+
+- **kpi-analytics 2.2.0:** date cells accept Windows Excel serial day numbers (default on)
+  - Root cause of incomplete aging KPIs / empty `v1_raw_claim_age_*` on Excel→CSV files such as `import\wq_synthetic_data_1.csv` (`46103` style dates)
+  - Column **names** were already mapped correctly; values failed `parse_date` → blank claim age → 0% AR aging buckets
+  - Sample verification treats serials as `looks_date` (no false low-confidence guided mapping for correct headers)
+  - Config: `date_excel_serial` (default `true`); shared `date_to_excel_serial` / `excel_serial_to_date` in `metrics.py`
+  - Fixture sample: `kpi-analytics/fixtures/excel_serial_dates_input.csv`
+
+### [1.7.1] - 2026-07-28
+
+#### Fixed
+
+- **excel-toolkit 1.7.1:** Guided mapping no longer crashes the menu with `The property 'ExitCode' cannot be found`
+  - Interactive score used `& kpi-analytics.cmd`, so Python console output entered the PowerShell pipeline and polluted the return value
+  - Interactive path now uses `Start-Process` without stream redirects (TTY preserved; single result object)
+  - Callers normalize multi-object results via `Select-KpiScoreInvokeResult`
+
+### [1.7.0] - 2026-07-28
+
+#### Added
+
+- **excel-toolkit 1.7.0:** Process my data score path — mapping preflight and guided column mapping
+  - Dry-run score inspects missing / ambiguous / low-confidence roles before writing outputs
+  - Interactive console: launches kpi-analytics `--interactive-mapping` with a real TTY (no stdout redirect hang)
+  - Auto-applies sibling `<stem>_mapping.json` next to the input CSV when present
+  - Non-interactive hosts fail clearly with guidance to use a mapping profile or interactive CLI
+  - Schema-aligned synthetic / known headers still score without prompts
+
+#### Changed
+
+- `ExcelToolkitVersion` **1.7.0**; menu README / CLI-GUIDE / ENTERPRISE-SECURITY aligned
+- FILE-CATALOG: `Start-ExcelMenu.ps1` documents mapping preflight helpers
+
 ### [1.6.3] - 2026-07-28
 
 #### Changed

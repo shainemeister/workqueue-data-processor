@@ -3,6 +3,7 @@
   "description": "Default Priority Matrix weights, thresholds, and field map for kpi-analytics 2.0",
   "as_of_date": null,
   "date_formats": ["%m/%d/%Y", "%Y-%m-%d", "%m-%d-%Y", "%Y/%m/%d"],
+  "date_excel_serial": true,
   "fields": {
     "service_date": "service_date",
     "out_ins_amt": "out_ins_amt",

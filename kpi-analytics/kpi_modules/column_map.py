@@ -230,6 +230,7 @@ def verify_resolved_samples(
     rows: list[dict[str, str]] | None,
     *,
     date_formats: list[str] | None = None,
+    allow_excel_serial: bool = True,
     sample_limit: int = _DEFAULT_SAMPLE_LIMIT,
     row_scan: int = _DEFAULT_ROW_SCAN,
 ) -> dict[str, Any]:
@@ -297,7 +298,14 @@ def verify_resolved_samples(
                 role_confidence[role] = "unknown"
                 continue
             parsed_ok = sum(
-                1 for v in raw_values if parse_date(v, formats) is not None
+                1
+                for v in raw_values
+                if parse_date(
+                    v,
+                    formats,
+                    allow_excel_serial=allow_excel_serial,
+                )
+                is not None
             )
             ratio = parsed_ok / len(raw_values) if raw_values else 0.0
             if ratio >= _MIN_PARSE_RATIO:
@@ -851,10 +859,12 @@ def apply_mapping_to_config(
 
     formats_raw = out.get("date_formats") or []
     formats = [str(f) for f in formats_raw] if isinstance(formats_raw, list) else []
+    allow_serial = bool(out.get("date_excel_serial", True))
     verification = verify_resolved_samples(
         report["resolved"],
         sample_rows,
         date_formats=formats,
+        allow_excel_serial=allow_serial,
     )
     report["role_confidence"] = verification["role_confidence"]
     report["sample_values"] = verification["sample_values"]

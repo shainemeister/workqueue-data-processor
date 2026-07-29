@@ -133,7 +133,7 @@ Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-
 | [diagnostics/README.md](./excel-toolkit/diagnostics/README.md) | doc | Pass certificate + first-run gate; distinct from root `certification/` (json/txt gitignored). |
 | [excel-toolkit.cmd](./excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](./excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
-| [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
+| [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export, mapping preflight + guided column mapping via kpi-analytics TTY, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
 | [Export-CsvToExcel.ps1](./excel-toolkit/Export-CsvToExcel.ps1) | script | Thin menu/legacy wrapper around `Export-ExcelFromCsv` in the high-level module. |
 | [Export-WqDataToExcel.ps1](./excel-toolkit/Export-WqDataToExcel.ps1) | script | Compatibility forwarder to `Export-CsvToExcel.ps1` (legacy entry name). |
 | [Test-ExcelCom.ps1](./excel-toolkit/Test-ExcelCom.ps1) | script | Dry-run and full smoke tests for COM readiness and workbook operations. |
@@ -183,7 +183,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.1.0). |
+| [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.2.0). |
 | [__main__.py](./kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--interactive-mapping`), `generate`, `validate-score`; diagnostics gate. |
 | [column_map.py](./kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
@@ -191,7 +191,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 | [config.py](./kpi-analytics/kpi_modules/config.py) | module | Loads and validates JSON config; resolves healthy vs chaos weight sets (optional active-metric renorm). |
 | [config_default.json](./kpi-analytics/kpi_modules/config_default.json) | config | Default field maps, weights, thresholds, and KPI quantifier settings. |
 | [io_csv.py](./kpi-analytics/kpi_modules/io_csv.py) | module | Stdlib CSV read/write helpers shared by score and generate paths. |
-| [metrics.py](./kpi-analytics/kpi_modules/metrics.py) | module | Raw priority metrics (claim age, BWDO, denial count, dual-deadline, balances, appeal, WQ age). |
+| [metrics.py](./kpi-analytics/kpi_modules/metrics.py) | module | Raw priority metrics (claim age, BWDO, denial count, dual-deadline, balances, appeal, WQ age); date parse including Excel serials. |
 | [normalize.py](./kpi-analytics/kpi_modules/normalize.py) | module | Normalizes raw metrics to [0, 1] via minmax or percentile ranks. |
 | [privacy.py](./kpi-analytics/kpi_modules/privacy.py) | module | Score-output PHI masking for patient name / DOB (prefix+token; configurable omit). |
 | [score_v1.py](./kpi-analytics/kpi_modules/score_v1.py) | module | Orchestrates metrics → queue mode → weights → norms → contributions → final score. |
@@ -221,6 +221,7 @@ Small golden inputs used by `validate-score` and hand-check documentation.
 
 | Path | Type | Summary |
 |------|------|---------|
+| [excel_serial_dates_input.csv](./kpi-analytics/fixtures/excel_serial_dates_input.csv) | fixture | Sample rows with Excel serial `service_date` / `last_worked_date` (regression for date parse 2.2.0). |
 | [v1_handcalc_input.csv](./kpi-analytics/fixtures/v1_handcalc_input.csv) | fixture | Tiny claim set sized for hand-calculable priority scoring. |
 | [v1_handcalc_config.json](./kpi-analytics/fixtures/v1_handcalc_config.json) | fixture | Config binding fields/weights for the V1 handcalc case. |
 | [v1_handcalc_expected.json](./kpi-analytics/fixtures/v1_handcalc_expected.json) | fixture | Golden expected priority outputs for the handcalc case. |
@@ -309,6 +310,8 @@ rem Existing destinations require -Force to overwrite
 | 1.6.0 | `certification/` package (README, checks.json, Invoke-Certification.ps1); Secrets/Gitleaks declared; RULES renewal enforcement |
 | 1.6.1 | Root MIT LICENSE; certification hardening (product-only PSSA, dual Gitleaks, declarative pylint score, cert schema polish) |
 | 1.6.2 | Re-added root `PLAN.md` (post-V1 enhancement concepts, draft) |
+| 1.7.0 | excel-toolkit 1.7.0 menu mapping preflight + guided column mapping (Start-ExcelMenu.ps1) |
+| 1.7.2 | kpi-analytics 2.2.0 Excel serial date parse; fixture `excel_serial_dates_input.csv` |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |

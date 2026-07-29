@@ -9,9 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .io_csv import read_csv_rows, write_csv_rows
-
-# Excel serial day 0 on Windows Excel is 1899-12-30
-_EXCEL_EPOCH = date(1899, 12, 30)
+from .metrics import date_to_excel_serial, excel_serial_to_date
 
 # ---------------------------------------------------------------------------
 # Professional Billing–oriented catalogs (synthetic / non-PHI)
@@ -228,16 +226,6 @@ BILLED_BY_FAMILY = {
     "telehealth": (90, 130, 175, 220),
     "ancillary": (25, 45, 75, 120, 200, 400),
 }
-
-
-def date_to_excel_serial(d: date) -> int:
-    """Convert a calendar date to a Windows Excel serial day number."""
-    return (d - _EXCEL_EPOCH).days
-
-
-def excel_serial_to_date(serial: int) -> date:
-    """Convert a Windows Excel serial day number to a calendar date."""
-    return _EXCEL_EPOCH + timedelta(days=int(serial))
 
 
 def load_schema_fields(schema_path: str | Path) -> list[dict[str, Any]]:

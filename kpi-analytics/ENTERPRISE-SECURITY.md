@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Enterprise Security
 description: Security review notes and execution restrictions for KPI Analytics on controlled corporate PCs.
-version: "2.1.0"
+version: "2.2.0"
 status: current
 audience:
   - security
@@ -20,7 +20,7 @@ last_updated: "2026-07-28"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate desktops.
 
-**Toolkit version:** 2.1.0  
+**Toolkit version:** 2.2.0  
 **Toolkit folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\`  
 **Runtime:** Python **3.13** standard library only (no third-party packages)
@@ -229,3 +229,4 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | 1.9.0 | Column role mapping on score path (offline, local files only; no trust-boundary change) |
 | 2.0.0 | Metric contract 2.0 (claim_age_days + High metrics); no trust-boundary change |
 | 2.1.0 | Align toolkit version with package (guided mapping); diagnostics remain machine-readiness only — distinct from repo `certification/`; no trust-boundary change |
+| 2.2.0 | Excel serial date parse (no trust-boundary change) |

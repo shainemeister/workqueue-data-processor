@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.1.0"
+version: "2.2.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 2.1.0  
+**Toolkit version:** 2.2.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -118,6 +118,8 @@ kpi-analytics.cmd validate-score
 ## 3. Priority raw metrics
 
 Computed in `metrics.py` using config `fields` (metric contract **2.0**).
+
+**Date cells:** `service_date` and `last_worked_date` are parsed with config `date_formats` first, then (when `date_excel_serial` is true, **default**) as Windows Excel serial day numbers (e.g. `46103` → 2026-03-22). Serial support covers common Excel → CSV exports. Set `"date_excel_serial": false` to disable. Serials outside approximately 10000–80000 are ignored so short day-count fields are not misread as dates.
 
 | Metric key | Formula / source | Unit | Direction after normalize |
 |------------|------------------|------|---------------------------|
@@ -477,6 +479,8 @@ Checks include:
 | All priority scores ≈ 0.5 | Single-row or flat metrics under minmax |
 | Priority scores change overnight | Default `as_of_date` is today |
 | Same claim different priority in two files | Batch-relative normalization |
+| Aging % all **0** but Total AR non-zero | Date columns failed to parse (blank claim age). Common with Excel serials before 2.2.0; ensure serials or `m/d/yyyy` strings |
+| `LowConfidenceRoles` on date columns | Sample verification could not parse values as dates; check format / serials / wrong column |
 | Days in AR looks high/low | Check `adc` and `adc_source` (estimate vs true practice ADC) |
 | Sum of aging **deltas** ≠ aging % | Expected — deltas are resolution impacts, not static shares |
 | Summary/detail write fails | File open in Excel (permission denied) |
@@ -511,3 +515,4 @@ Checks include:
 | 1.9.0 | Column role resolution + optional mapping profile; availability-aware priority weights (skip metrics with missing roles, renorm); summary/CLI report active and skipped metrics (no change to default formulas when all roles present) |
 | 2.0.0 | **Breaking metric contract:** `ar_days`→`claim_age_days`, `ar_disparity`→`claim_age_disparity`; add BWDO, denial_count, days_since_last_worked, dual_deadline_urgency; new default weights; chaos stats use claim-age vocabulary; legacy config key aliases accepted on load |
 | 2.1.0 | Sample verification + richer mapping report; stop silent role-name field fallback; optional `--interactive-mapping` guided recovery (no formula change when all roles present) |
+| 2.2.0 | Parse Windows Excel serial day numbers in date roles (default `date_excel_serial`); fixes empty claim age / 0% aging KPIs on Excel→CSV extracts |

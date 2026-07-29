@@ -126,6 +126,12 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
     elif not isinstance(formats, list) or not formats:
         raise ValueError("date_formats must be a non-empty list of strings")
 
+    # Windows Excel serial day numbers in date cells (Excel → CSV); default on.
+    if "date_excel_serial" not in out:
+        out["date_excel_serial"] = True
+    else:
+        out["date_excel_serial"] = bool(out["date_excel_serial"])
+
     chaos = out.setdefault("chaos", {})
     if not isinstance(chaos, dict):
         raise ValueError("Config 'chaos' must be an object")
