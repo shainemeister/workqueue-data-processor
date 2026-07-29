@@ -534,6 +534,117 @@ function Get-KpiScoreLowConfidenceRoles {
     return @($ScoreJson.LowConfidenceRoles | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
 }
 
+function Test-KpiScoreRankIsFull {
+    <#
+    .SYNOPSIS
+        True when score JSON RankCompleteness is full (or field absent → assume full).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        $ScoreJson
+    )
+
+    if ($null -eq $ScoreJson) {
+        return $true
+    }
+    if ($ScoreJson.PSObject.Properties.Name -notcontains 'RankCompleteness') {
+        return $true
+    }
+    $rc = [string]$ScoreJson.RankCompleteness
+    if ([string]::IsNullOrWhiteSpace($rc)) {
+        return $true
+    }
+    return ($rc.Trim().ToLowerInvariant() -eq 'full')
+}
+
+function Show-KpiPartialRankBanner {
+    <#
+    .SYNOPSIS
+        Print a high-visibility partial-rank summary from score JSON.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        $ScoreJson
+    )
+
+    if ($null -eq $ScoreJson) {
+        return
+    }
+
+    $names = @($ScoreJson.PSObject.Properties.Name)
+    $rc = if ($names -contains 'RankCompleteness') { [string]$ScoreJson.RankCompleteness } else { 'partial' }
+    Write-Host ''
+    Write-Host '  *** PARTIAL PRIORITY RANK ***' -ForegroundColor Yellow
+    Write-Host ("  RankCompleteness: {0}" -f $rc) -ForegroundColor Yellow
+
+    if ($names -contains 'IncompleteReasons') {
+        $reasons = @($ScoreJson.IncompleteReasons)
+        if ($reasons.Count -gt 0) {
+            Write-Host ("  Reasons: {0}" -f ($reasons -join ', ')) -ForegroundColor Yellow
+        }
+    }
+    if ($names -contains 'MissingRoles') {
+        $m = @($ScoreJson.MissingRoles)
+        if ($m.Count -gt 0) {
+            Write-Host ("  Missing roles: {0}" -f ($m -join ', ')) -ForegroundColor Yellow
+        }
+    }
+    if ($names -contains 'SkippedMetrics' -and $null -ne $ScoreJson.SkippedMetrics) {
+        $sk = @($ScoreJson.SkippedMetrics.PSObject.Properties.Name)
+        if ($sk.Count -gt 0) {
+            Write-Host ("  Skipped metrics: {0}" -f ($sk -join ', ')) -ForegroundColor Yellow
+        }
+    }
+    if ($names -contains 'LowCoverageMetrics') {
+        $lc = @($ScoreJson.LowCoverageMetrics)
+        if ($lc.Count -gt 0) {
+            Write-Host ("  Low coverage metrics: {0}" -f ($lc -join ', ')) -ForegroundColor Yellow
+        }
+    }
+    Write-Host '  Scores may not be a full V1 ranking. Fix mapping/dates or accept partial results.' -ForegroundColor DarkYellow
+    Write-Host '  Tip: kpi-analytics score --strict full fails closed for automation.' -ForegroundColor DarkGray
+    Write-Host ''
+}
+
+function Confirm-KpiKeepPartialRankOutputs {
+    <#
+    .SYNOPSIS
+        Ask whether to keep partial scored CSVs. Default N.
+        Returns $true to keep / continue; $false to discard.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $ans = Read-Host '  Accept partial ranking and keep outputs? [y/N]'
+    return ($ans -match '^[Yy]')
+}
+
+function Remove-KpiScoredOutputPair {
+    <#
+    .SYNOPSIS
+        Delete scored detail + summary CSV paths if they exist (partial rank decline).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$ScoredCsv,
+
+        [Parameter(Mandatory = $false)]
+        [string]$SummaryCsv
+    )
+
+    foreach ($p in @($ScoredCsv, $SummaryCsv)) {
+        if (-not [string]::IsNullOrWhiteSpace($p) -and (Test-Path -LiteralPath $p)) {
+            Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue
+            Write-Host ("  Removed: {0}" -f $p) -ForegroundColor DarkGray
+        }
+    }
+}
+
 function Get-KpiSiblingMappingPath {
     <#
     .SYNOPSIS
@@ -1531,6 +1642,19 @@ function Invoke-KpiScoreExportMenu {
             }
             Write-Host ("  Score OK.{0}" -f $rowNote) -ForegroundColor Green
 
+            # H2: surface partial ranks; require confirm before keeping / Excel export.
+            $rankIsFull = Test-KpiScoreRankIsFull -ScoreJson $scoreJson
+            if (-not $rankIsFull) {
+                Show-KpiPartialRankBanner -ScoreJson $scoreJson
+                if (-not (Confirm-KpiKeepPartialRankOutputs)) {
+                    Write-Host '  Partial rank declined; removing scored CSVs for this file.' -ForegroundColor Yellow
+                    Remove-KpiScoredOutputPair -ScoredCsv $actualScoredCsv -SummaryCsv $actualSummaryCsv
+                    $failCount++
+                    continue
+                }
+                Write-Host '  Continuing with PARTIAL rank outputs.' -ForegroundColor Yellow
+            }
+
             if ($ScoreOnly) {
                 Write-Host ("  Scored CSV  : {0}" -f $actualScoredCsv) -ForegroundColor Green
                 Write-Host ("  Summary CSV : {0}" -f $actualSummaryCsv) -ForegroundColor Green
@@ -1542,6 +1666,9 @@ function Invoke-KpiScoreExportMenu {
             $plannedScoredXlsx  = [System.IO.Path]::ChangeExtension($actualScoredCsv, '.xlsx')
             $plannedSummaryXlsx = [System.IO.Path]::ChangeExtension($actualSummaryCsv, '.xlsx')
 
+            if (-not $rankIsFull) {
+                Write-Host '  Exporting PARTIAL-rank workbooks...' -ForegroundColor Yellow
+            }
             Write-Host '  Exporting scored workbook...' -ForegroundColor Cyan
             $ex1Params = @{
                 CsvPath    = $actualScoredCsv
