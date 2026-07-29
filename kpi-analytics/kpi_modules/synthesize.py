@@ -794,7 +794,8 @@ def generate_rows(
         raise ValueError("--rows exceeds safety cap (500000)")
     if start_index < 1:
         raise ValueError("start_index must be >= 1")
-    rng = random.Random(seed)
+    # Seeded PRNG for reproducible synthetic demo rows only — not cryptography.
+    rng = random.Random(seed)  # nosec B311
     today = as_of or date.today()
     end = start_index + row_count - 1
     return [
