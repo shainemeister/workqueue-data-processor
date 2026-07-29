@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.6.1"
+version: "1.6.2"
 status: current
 audience:
   - developers
@@ -15,6 +15,7 @@ related:
   - RULES.md
   - LICENSE
   - certification/README.md
+  - PLAN.md
 last_updated: "2026-07-28"
 ---
 
@@ -22,10 +23,10 @@ last_updated: "2026-07-28"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.6.1  
+**Document version:** 1.6.2  
 **Baseline layout:** repository root  
 
-**Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
+**Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md) · [PLAN.md](./PLAN.md)
 
 ---
 
@@ -43,6 +44,7 @@ Each row below states **what the file is for** in one sentence. Runtime contract
 | Markdown conventions | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) |
 | Maintenance policy | [RULES.md](./RULES.md) |
 | Project history | [CHANGELOG.md](./CHANGELOG.md) |
+| Living development plan | [PLAN.md](./PLAN.md) |
 
 Generated artifacts under `output\` and Python `__pycache__\` are intentionally **not** cataloged as source.
 
@@ -70,7 +72,7 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 
 ```text
 workqueue-data-processor/
-  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md
+  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md, PLAN.md
   wq_schema.json, wq_schema.csv, wq_data.csv
   WQ_Priority_Matrix_Concept.md
   Start-ExcelMenu.cmd
@@ -93,6 +95,7 @@ workqueue-data-processor/
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
 | [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline (**1.2.0**), CHANGELOG policy, language surface inventory (Python + PowerShell + **Secrets** declared), SAST required-when-declared, **certification renewal enforcement** (full Domain A+B after code changes; dual Gitleaks; product-only PSSA), formatting, architecture, data, git, and verification. |
+| [PLAN.md](./PLAN.md) | doc | Living development plan for post-V1 enhancement concepts (KPI config, multi-file aggregation, grouping, analysis sheets, saved profiles); draft status — details still to be worked out. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
@@ -169,7 +172,7 @@ Minimal probes for locked-down corporate PCs: can `.cmd`, `.ps1`, and `.psm1` ex
 | [ENTERPRISE-SECURITY.md](./kpi-analytics/ENTERPRISE-SECURITY.md) | doc | Offline stdlib-only trust model; no Office automation, network, or third-party deps. |
 | [SCORE-METHODOLOGY.md](./kpi-analytics/SCORE-METHODOLOGY.md) | doc | Implementation methodology: V1 priority columns, `kpi_q_*` impacts, and summary CSV. |
 | [RCM_KPI_Claim_Impact_Methodology.md](./kpi-analytics/RCM_KPI_Claim_Impact_Methodology.md) | doc | Dual-attribution theory for Days in AR and aging-percentage claim impacts. |
-| [kpi-analytics.cmd](./kpi-analytics/kpi-analytics.cmd) | launcher | Shim: prefer `py -3.13 -m kpi_modules`, else `python -m kpi_modules`. |
+| [kpi-analytics.cmd](./kpi-analytics/kpi_analytics.cmd) | launcher | Shim: prefer `py -3.13 -m kpi_modules`, else `python -m kpi_modules`. |
 | [.pylintrc](./kpi-analytics/.pylintrc) | config | **Dev tooling only** — PEP-8 style gate for `kpi_modules` (not a product runtime dependency). |
 
 ---
@@ -305,6 +308,7 @@ rem Existing destinations require -Force to overwrite
 | 1.5.3 | repo-kit baseline **1.2.0**: TEMPLATE-CERTIFICATION-README; RULES inventory/certification; `.gitignore` formal cert outputs; Gitleaks opt-in; kit reflection notes |
 | 1.6.0 | `certification/` package (README, checks.json, Invoke-Certification.ps1); Secrets/Gitleaks declared; RULES renewal enforcement |
 | 1.6.1 | Root MIT LICENSE; certification hardening (product-only PSSA, dual Gitleaks, declarative pylint score, cert schema polish) |
+| 1.6.2 | Re-added root `PLAN.md` (post-V1 enhancement concepts, draft) |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |
