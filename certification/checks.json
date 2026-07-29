@@ -1,0 +1,88 @@
+{
+  "SchemaVersion": "1.0",
+  "Description": "Declarative Domain A (Security) and Domain B (CodeValidation) checks for workqueue-data-processor certification. Operational source of truth for Invoke-Certification.ps1.",
+  "LanguageSurfaces": ["Python", "PowerShell", "Secrets"],
+  "Checks": [
+    {
+      "Id": "pylint-kpi-modules",
+      "Name": "pylint-kpi-modules",
+      "Domain": "CodeValidation",
+      "Surface": "Python",
+      "Required": true,
+      "Severity": "critical",
+      "PassCriteria": "Exit 0 and pylint score 10.00/10 under kpi-analytics/.pylintrc",
+      "WorkingDirectory": "kpi-analytics",
+      "Kind": "process",
+      "Executable": "py",
+      "Arguments": ["-3.13", "-m", "pylint", "kpi_modules"],
+      "SuccessExitCodes": [0]
+    },
+    {
+      "Id": "bandit-kpi-modules",
+      "Name": "bandit-kpi-modules",
+      "Domain": "Security",
+      "Surface": "Python",
+      "Required": true,
+      "Severity": "critical",
+      "PassCriteria": "Exit 0; no Bandit issues on kpi_modules",
+      "WorkingDirectory": "kpi-analytics",
+      "Kind": "process",
+      "Executable": "py",
+      "Arguments": ["-3.13", "-m", "bandit", "-r", "kpi_modules", "-q"],
+      "SuccessExitCodes": [0]
+    },
+    {
+      "Id": "ps-parse-bom-excel",
+      "Name": "ps-parse-bom-excel",
+      "Domain": "CodeValidation",
+      "Surface": "PowerShell",
+      "Required": true,
+      "Severity": "critical",
+      "PassCriteria": "Product excel-toolkit *.ps1/*.psm1 parse under PS 5.1 and are UTF-8 BOM or pure ASCII",
+      "WorkingDirectory": ".",
+      "Kind": "ps-parse-bom",
+      "Path": "excel-toolkit",
+      "Include": ["*.ps1", "*.psm1"],
+      "ExcludeDirectoryNames": ["sample-test"]
+    },
+    {
+      "Id": "pssa-excel-error",
+      "Name": "pssa-excel-error",
+      "Domain": "Security",
+      "Surface": "PowerShell",
+      "Required": true,
+      "Severity": "critical",
+      "PassCriteria": "Invoke-ScriptAnalyzer -Severity Error yields zero findings under excel-toolkit",
+      "WorkingDirectory": ".",
+      "Kind": "pssa",
+      "Path": "excel-toolkit",
+      "AnalyzerSeverity": "Error"
+    },
+    {
+      "Id": "gitleaks-repo",
+      "Name": "gitleaks-repo",
+      "Domain": "Security",
+      "Surface": "Secrets",
+      "Required": true,
+      "Severity": "critical",
+      "PassCriteria": "gitleaks detect exit 0 (no leaks)",
+      "WorkingDirectory": ".",
+      "Kind": "gitleaks",
+      "ReportFileName": "gitleaks.json"
+    },
+    {
+      "Id": "validate-score",
+      "Name": "validate-score",
+      "Domain": "CodeValidation",
+      "Surface": "Python",
+      "Required": true,
+      "Severity": "critical",
+      "PassCriteria": "kpi-analytics.cmd validate-score exit 0 (fixtures green)",
+      "WorkingDirectory": "kpi-analytics",
+      "Kind": "process",
+      "Executable": "kpi-analytics.cmd",
+      "Arguments": ["validate-score"],
+      "SuccessExitCodes": [0]
+    }
+  ]
+}
