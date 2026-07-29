@@ -893,6 +893,42 @@ function Invoke-ExcelToolkitReadinessChecks {
     }
     $checks.Add((New-ExcelToolkitDiagnosticsCheck -Name 'ModuleExports' -Passed $exportOk -Detail $exportDetail -Severity 'critical'))
 
+    # High-level ExcelToolkit.psm1 surface (operational API used by CLI/menu)
+    $expectedToolkitFunctions = @(
+        'Get-ExcelToolkitVersion',
+        'Resolve-ExcelToolkitUniquePath',
+        'Export-ExcelFromCsv',
+        'Import-CsvFromExcel',
+        'Get-ExcelToolkitDiagnosticsDir',
+        'Get-ExcelToolkitDiagnosticsReportPaths',
+        'Invoke-ExcelToolkitReadinessChecks',
+        'Invoke-ExcelToolkitDiagnostics',
+        'Write-ExcelToolkitDiagnosticsReports',
+        'Test-ExcelToolkitPassCertificate',
+        'Assert-ExcelToolkitDiagnosticsPass',
+        'Add-ExcelToolkitGateFields'
+    )
+    $toolkitExported = @()
+    try {
+        $toolkitExported = @(Get-Command -Module ExcelToolkit -ErrorAction Stop | ForEach-Object { $_.Name })
+    }
+    catch {
+        # Module may be loaded by path without a short name — fall back to function presence
+        $toolkitExported = @(
+            $expectedToolkitFunctions | Where-Object { Get-Command -Name $_ -ErrorAction SilentlyContinue }
+        )
+    }
+    $toolkitMissing = @($expectedToolkitFunctions | Where-Object { $toolkitExported -notcontains $_ })
+    if ($toolkitMissing.Count -eq 0) {
+        $toolkitDetail = ('{0} ExcelToolkit functions available' -f $expectedToolkitFunctions.Count)
+        $toolkitOk = $true
+    }
+    else {
+        $toolkitDetail = ('Missing: {0}' -f ($toolkitMissing -join ', '))
+        $toolkitOk = $false
+    }
+    $checks.Add((New-ExcelToolkitDiagnosticsCheck -Name 'ToolkitModuleExports' -Passed $toolkitOk -Detail $toolkitDetail -Severity 'critical'))
+
     # Diagnostics directory writable
     $diagDir = Get-ExcelToolkitDiagnosticsDir
     $diagWriteOk = $false
@@ -973,6 +1009,16 @@ function Write-ExcelToolkitDiagnosticsReports {
     $paths = Get-ExcelToolkitDiagnosticsReportPaths
     if (-not (Test-Path -LiteralPath $paths.Directory)) {
         New-Item -ItemType Directory -Path $paths.Directory -Force | Out-Null
+    }
+
+    # Stamp paths onto the result before serialize so on-disk JSON matches memory.
+    if ($Result -is [hashtable]) {
+        $Result['ReportJsonPath'] = $paths.JsonPath
+        $Result['ReportTextPath'] = $paths.TextPath
+    }
+    else {
+        $Result.ReportJsonPath = $paths.JsonPath
+        $Result.ReportTextPath = $paths.TextPath
     }
 
     # ConvertTo-Json for gate readers (Depth covers Checks array)

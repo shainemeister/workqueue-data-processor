@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.6.0"
+version: "1.6.1"
 status: current
 audience:
   - security
@@ -11,7 +11,9 @@ doc_type: security
 related:
   - README.md
   - CLI-GUIDE.md
-last_updated: "2026-07-25"
+  - diagnostics/README.md
+  - ../certification/README.md
+last_updated: "2026-07-28"
 ---
 
 # Excel Toolkit — Enterprise Security & Execution Notes
@@ -19,10 +21,11 @@ last_updated: "2026-07-25"
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
 **Toolkit version:** 1.6.0  
+**Document version:** 1.6.1  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
-**Related docs:** [README.md](./README.md) · [CLI-GUIDE.md](./CLI-GUIDE.md)
+**Related docs:** [README.md](./README.md) · [CLI-GUIDE.md](./CLI-GUIDE.md) · [diagnostics/README.md](./diagnostics/README.md) · [certification](../certification/README.md)
 
 ---
 
@@ -192,7 +195,7 @@ Then:
 2. Run `excel-toolkit\excel-toolkit.cmd diagnostics` (writes `diagnostics\last_diagnostics.*` pass/fail certificate), or `probe -Json` for a quick check, then  
 3. `export-csv` (dry-run then real) per [CLI-GUIDE.md](./CLI-GUIDE.md)
 
-**First-run gate:** `export-csv` / `import-excel` auto-run readiness diagnostics when no valid pass certificate exists for the current toolkit version. Delete the certificate files to force a re-run. Reports record environment/module/COM readiness only (no claim rows or PHI).
+**First-run gate:** `export-csv` / `import-excel` auto-run readiness diagnostics when no valid pass certificate exists for the current toolkit version. Delete the certificate files to force a re-run. Reports record environment/module/COM readiness only (no claim rows or PHI). Package diagnostics are **not** the repo-root `certification/` Domain A/B package (source-tree self-attestation for developers).
 
 ---
 
@@ -248,3 +251,4 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.3.0a | Product scripts saved UTF-8 **with BOM** / ASCII-safe punctuation so Windows PowerShell 5.1 `-File` parses reliably (BOM-less UTF-8 + Unicode arrows/dashes caused menu parse failures) |
 | 1.5.0 | Interactive menu simplified (pipeline / score only / export / Advanced); no trust-boundary change |
 | 1.6.0 | Guided Process my data menu; optional export open-password prompt (SecureString, never logged); no trust-boundary change |
+| 1.6.1 | Diagnostics: ToolkitModuleExports check + report path fields on disk; clarify vs repo `certification/`; no trust-boundary change |

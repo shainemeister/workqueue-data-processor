@@ -127,7 +127,7 @@ Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-
 | [ExcelCom.psm1](./excel-toolkit/ExcelCom.psm1) | module | Low-level Excel COM lifecycle, range I/O, CSV sheet import/export, optional workbook passwords, and safe Quit (no force-kill). |
 | [ExcelToolkit.psm1](./excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, unique paths, export/import, and enterprise diagnostics gate (`Assert-ExcelToolkitDiagnosticsPass`, readiness suite). |
 | [ExcelToolkit.ps1](./excel-toolkit/ExcelToolkit.ps1) | script | CLI entry: `version` / `probe` / `diagnostics` / `export-csv` / `import-excel` / `help` over `ExcelToolkit.psm1`. |
-| [diagnostics/README.md](./excel-toolkit/diagnostics/README.md) | doc | Explains pass certificate files and first-run gate (json/txt are gitignored). |
+| [diagnostics/README.md](./excel-toolkit/diagnostics/README.md) | doc | Pass certificate + first-run gate; distinct from root `certification/` (json/txt gitignored). |
 | [excel-toolkit.cmd](./excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](./excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
 | [Start-ExcelMenu.ps1](./excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
@@ -206,7 +206,7 @@ Enterprise dry-run certificate folder. Generated reports are gitignored.
 
 | Path | Type | Summary |
 |------|------|---------|
-| [README.md](./kpi-analytics/diagnostics/README.md) | doc | Explains certificate purpose, privacy, and re-run commands. |
+| [README.md](./kpi-analytics/diagnostics/README.md) | doc | Certificate purpose, privacy, re-run; distinct from root `certification/`. |
 | `last_diagnostics.json` | generated | Machine-readable pass certificate (gate reads this; not tracked). |
 | `last_diagnostics.txt` | generated | Human PASS/FAIL listing for IT (not tracked). |
 

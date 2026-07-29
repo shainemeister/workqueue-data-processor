@@ -13,6 +13,19 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.6.2] - 2026-07-28
+
+#### Fixed
+
+- Package diagnostics certificates now persist `ReportJsonPath` / `ReportTextPath` on disk (kpi-analytics and excel-toolkit)
+- KPI diagnostics stdlib import list includes `importlib` and `platform` used by diagnostics/probe
+
+#### Changed
+
+- Excel diagnostics readiness adds critical **ToolkitModuleExports** check (high-level ExcelToolkit.psm1 API surface)
+- Diagnostics folder READMEs clarify separation from root `certification/` (machine readiness vs source-tree Domain A/B)
+- kpi-analytics ENTERPRISE-SECURITY document version aligned to toolkit **2.1.0**
+
 ### [1.6.1] - 2026-07-28
 
 #### Added

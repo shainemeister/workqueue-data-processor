@@ -21,14 +21,16 @@ from .config import DEFAULT_CONFIG_PATH, load_config
 
 REPORT_VERSION = 1
 
-# Stdlib modules referenced by production kpi_modules code.
+# Stdlib modules referenced by production kpi_modules code (incl. diagnostics/probe).
 STDLIB_MODULES: tuple[str, ...] = (
     "argparse",
     "copy",
     "csv",
     "datetime",
+    "importlib",
     "json",
     "pathlib",
+    "platform",
     "random",
     "sys",
     "tempfile",
@@ -261,11 +263,19 @@ def _format_text_report(result: dict[str, Any]) -> str:
 
 
 def write_reports(result: dict[str, Any]) -> dict[str, str]:
-    """Write JSON + text reports; return resolved paths."""
+    """Write JSON + text reports; return resolved paths.
+
+    Mutates ``result`` to include ``ReportJsonPath`` / ``ReportTextPath``
+    before serializing so the on-disk certificate matches the in-memory object.
+    """
     ddir = diagnostics_dir()
     ddir.mkdir(parents=True, exist_ok=True)
     json_path = report_json_path()
     text_path = report_text_path()
+    json_resolved = str(json_path.resolve())
+    text_resolved = str(text_path.resolve())
+    result["ReportJsonPath"] = json_resolved
+    result["ReportTextPath"] = text_resolved
 
     # Stable JSON for gate readers (indent for IT readability)
     with json_path.open("w", encoding="utf-8", newline="\n") as fh:
@@ -274,8 +284,8 @@ def write_reports(result: dict[str, Any]) -> dict[str, str]:
 
     text_path.write_text(_format_text_report(result), encoding="utf-8", newline="\n")
     return {
-        "JsonPath": str(json_path.resolve()),
-        "TextPath": str(text_path.resolve()),
+        "JsonPath": json_resolved,
+        "TextPath": text_resolved,
     }
 
 
@@ -321,9 +331,7 @@ def run_diagnostics(*, write: bool = True) -> dict[str, Any]:
 
     if write:
         try:
-            paths = write_reports(result)
-            result["ReportJsonPath"] = paths["JsonPath"]
-            result["ReportTextPath"] = paths["TextPath"]
+            write_reports(result)
         except Exception as exc:
             result["Success"] = False
             result["OverallPass"] = False
