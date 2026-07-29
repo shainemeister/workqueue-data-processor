@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.6.0"
+version: "1.6.1"
 status: current
 audience:
   - developers
@@ -13,6 +13,7 @@ related:
   - CHANGELOG.md
   - MARKDOWN-STANDARD.md
   - RULES.md
+  - LICENSE
   - certification/README.md
 last_updated: "2026-07-28"
 ---
@@ -21,7 +22,7 @@ last_updated: "2026-07-28"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.6.0  
+**Document version:** 1.6.1  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md)
@@ -87,10 +88,11 @@ workqueue-data-processor/
 | Path | Type | Summary |
 |------|------|---------|
 | [README.md](./README.md) | doc | Repository overview: WQ two-file data model, toolkit map, and synthetic → score → Excel flow. |
+| [LICENSE](./LICENSE) | legal | MIT license for this repository. |
 | [CHANGELOG.md](./CHANGELOG.md) | doc | Project history (Keep a Changelog); required by repo-kit. Kit version lives in RULES kit baseline only. |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
-| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline (**1.2.0**), CHANGELOG policy, language surface inventory (Python + PowerShell + **Secrets** declared), SAST required-when-declared, **certification renewal enforcement** (full Domain A+B after code changes), formatting, architecture, data, git, and verification. |
+| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline (**1.2.0**), CHANGELOG policy, language surface inventory (Python + PowerShell + **Secrets** declared), SAST required-when-declared, **certification renewal enforcement** (full Domain A+B after code changes; dual Gitleaks; product-only PSSA), formatting, architecture, data, git, and verification. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
@@ -231,9 +233,9 @@ Formal **security + code-validation** self-attestation package (developer-only).
 
 | Path | Type | Summary |
 |------|------|---------|
-| [README.md](./certification/README.md) | doc | Operator guide: surfaces, tools, full-suite renewal, disclaimer |
-| [checks.json](./certification/checks.json) | config | Declarative required Domain A/B checks (pylint, Bandit, PSSA, Gitleaks, validate-score, PS parse/BOM) |
-| [Invoke-Certification.ps1](./certification/Invoke-Certification.ps1) | script | Full-suite harness; writes regenerable cert pair; exit 0 iff OverallPass |
+| [README.md](./certification/README.md) | doc | Operator guide: surfaces, dual-mode Gitleaks, product-only PSSA, schema fields, advisory password Warning note |
+| [checks.json](./certification/checks.json) | config | Declarative required Domain A/B checks (`RequirePylintScore`, dual Gitleaks modes, shared PSSA/parse excludes) |
+| [Invoke-Certification.ps1](./certification/Invoke-Certification.ps1) | script | Full-suite harness; `PackageVersions`/`DurationMs`/`Message`; exit 0 iff OverallPass |
 
 ---
 
@@ -302,6 +304,7 @@ rem Existing destinations require -Force to overwrite
 | 1.5.2 | repo-kit baseline **1.1.7** (RULES security modularity + SAST; TEMPLATE-SECURITY modularity notes; no path add/remove) |
 | 1.5.3 | repo-kit baseline **1.2.0**: TEMPLATE-CERTIFICATION-README; RULES inventory/certification; `.gitignore` formal cert outputs; Gitleaks opt-in; kit reflection notes |
 | 1.6.0 | `certification/` package (README, checks.json, Invoke-Certification.ps1); Secrets/Gitleaks declared; RULES renewal enforcement |
+| 1.6.1 | Root MIT LICENSE; certification hardening (product-only PSSA, dual Gitleaks, declarative pylint score, cert schema polish) |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |

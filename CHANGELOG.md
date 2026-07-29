@@ -13,6 +13,25 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.6.1] - 2026-07-28
+
+#### Added
+
+- Root **MIT** [LICENSE](./LICENSE)
+- Certification certificate fields: `PackageVersions`, per-check `DurationMs`, top-level `Message`
+
+#### Changed
+
+- **Certification quality hardening** (`certification/` harness + `checks.json`)
+  - PSScriptAnalyzer Domain A scans the **same product** PowerShell set as parse/BOM (`sample-test` excluded)
+  - **Gitleaks** requires both working-tree (`--no-git`) and **git history** scans
+  - Pylint **10.00/10** enforced via declarative `RequirePylintScore` (no hard-coded check Id)
+- RULES.md **1.6.1**, certification README **1.0.1**, FILE-CATALOG / root README pointers
+
+#### Security
+
+- Documented advisory PSScriptAnalyzer **Warning** `PSAvoidUsingPlainTextForPassword` on automation password bridges (not an Error gate; SecureString product hardening remains a follow-up)
+
 ### [1.6.0] - 2026-07-28
 
 #### Added

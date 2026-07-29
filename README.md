@@ -141,6 +141,7 @@ Policy and inventory (not required for day-to-day scoring or export):
 |----------|---------|
 | [RULES.md](./RULES.md) | Maintenance policy; **kit baseline** (adopted repo-kit version lives only there); certification renewal rules |
 | [CHANGELOG.md](./CHANGELOG.md) | Project history (Keep a Changelog); kit upgrades get a short note only—not kit release history |
+| [LICENSE](./LICENSE) | MIT license |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | Purpose of every intentional source file |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | How we structure documentation |
 | [certification/](./certification/) | Formal security + code-validation self-attestation (full harness after code changes; developer-only; not product diagnostics) |

@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Fundamental rules for documenting, changing, verifying, and versioning this repository.
-version: "1.6.0"
+version: "1.6.1"
 status: current
 audience:
   - developers
@@ -13,6 +13,7 @@ related:
   - CHANGELOG.md
   - FILE-CATALOG.md
   - MARKDOWN-STANDARD.md
+  - LICENSE
   - excel-toolkit/ENTERPRISE-SECURITY.md
   - kpi-analytics/ENTERPRISE-SECURITY.md
   - kpi-analytics/.pylintrc
@@ -27,7 +28,7 @@ Policy for keeping **workqueue-data-processor** professional, auditable, and saf
 
 **If you only need to score work or export Excel:** start with the root [README.md](./README.md) and the toolkit guides. Come back here when you edit code, docs, schema, or release behavior.
 
-**Document version:** 1.6.0  
+**Document version:** 1.6.1  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [FILE-CATALOG.md](./FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [kpi-analytics/.pylintrc](./kpi-analytics/.pylintrc) · [certification/README.md](./certification/README.md)
 
@@ -122,6 +123,7 @@ Keep the repository root **scannable**: entry points and policy first; purpose d
 | File / item | Role |
 |-------------|------|
 | `README.md` | Landing / use-cases (no frontmatter) |
+| `LICENSE` | MIT license |
 | `RULES.md` | Maintenance policy + authority map + kit baseline |
 | `MARKDOWN-STANDARD.md` | Writing and structure standard |
 | `CHANGELOG.md` | Project history (**required**) |
@@ -293,9 +295,9 @@ Declare **which product language and security surfaces this repository ships**. 
 
 | Surface | Status | Domain B — style / validation | Domain A — security / SAST | Typical pass | Notes |
 |---------|--------|-------------------------------|----------------------------|--------------|--------|
-| **Python** product code (`kpi_modules`) | **Declared** | **pylint** (exit 0, score **10.00/10**) | **Bandit** | Style + SAST clean | Commands: [certification/README.md](./certification/README.md) |
-| **PowerShell** (`excel-toolkit`) | **Declared** | PS 5.1 parse + UTF-8 **BOM** policy | **PSScriptAnalyzer** Error | Zero Error findings; scripts load | Commands: certification package |
-| **Secrets** (whole repo) | **Declared** | — | **Gitleaks** | No leaks | **Required** for completion and every certification renewal |
+| **Python** product code (`kpi_modules`) | **Declared** | **pylint** (exit 0, score **10.00/10** via `RequirePylintScore`) | **Bandit** | Style + SAST clean | Commands: [certification/README.md](./certification/README.md) |
+| **PowerShell** (`excel-toolkit` product scripts) | **Declared** | PS 5.1 parse + UTF-8 **BOM** policy | **PSScriptAnalyzer** Error | Zero Error findings; scripts load | Product `*.ps1`/`*.psm1` only; **`sample-test` excluded** from Domain A and B |
+| **Secrets** (whole repo) | **Declared** | — | **Gitleaks** (workdir **and** git history) | No leaks on **both** modes | **Required** for completion and every certification renewal |
 | **Python** dependencies | **Not declared** | — | pip-audit | — | Product is **stdlib-only** |
 | JS/TS, Go, Rust, Shell, Semgrep | **Not present** | — | — | — | Do not invent gates for surfaces this repo does not ship |
 
@@ -307,7 +309,7 @@ Declare **which product language and security surfaces this repository ships**. 
 2. Adding a language later updates inventory, certification `checks.json` / README, and authority map in the **same change set**.  
 3. **Python product** and **Python dependencies** are separate (Bandit vs pip-audit). This repo declares product Python only.  
 4. Prefer declared inventory over heuristic filesystem scans.  
-5. **Secrets / Gitleaks:** **Declared and required** — skipping Gitleaks fails completion and fails certification renewal.
+5. **Secrets / Gitleaks:** **Declared and required** — skipping Gitleaks fails completion and fails certification renewal. The harness requires **two** scans: working tree (`--no-git`) and git history (default).
 
 ### Security / SAST gates (required when declared)
 
@@ -321,7 +323,7 @@ Declare **which product language and security surfaces this repository ships**. 
 |---------|---------|--------------|---------------------|
 | **Python** product (`kpi_modules`) | **Required** (declared) | **Bandit** (PyCQA) | [certification/checks.json](./certification/checks.json) |
 | **PowerShell** (`excel-toolkit`) | **Required** (declared) | **PSScriptAnalyzer** (Microsoft) | certification package |
-| **Secrets** | **Required** (declared) | **Gitleaks** | certification package (full harness) |
+| **Secrets** | **Required** (declared) | **Gitleaks** (workdir + git history) | certification package (full harness) |
 
 **Product dependency:** **No.** Bandit, PSScriptAnalyzer, Gitleaks, and similar tools are **developer tooling** only. Do **not** add them as required installs for end users of the product.
 
@@ -378,14 +380,14 @@ OverallPass = AND of domains that apply for declared inventory surfaces
 
 | Domain | Covers (this repo) |
 |--------|---------------------|
-| **Security** | Bandit on `kpi_modules`; PSScriptAnalyzer Error on `excel-toolkit`; **Gitleaks** on the repo |
-| **Code validation** | pylint on `kpi_modules` (10.00/10); PS 5.1 parse/BOM; `validate-score` fixtures |
+| **Security** | Bandit on `kpi_modules`; PSScriptAnalyzer Error on **product** `excel-toolkit` scripts (`sample-test` excluded); **Gitleaks** workdir + git history |
+| **Code validation** | pylint on `kpi_modules` (**10.00/10** via `RequirePylintScore`); PS 5.1 parse/BOM on the same product set; `validate-score` fixtures |
 
 Commands: [certification/checks.json](./certification/checks.json).
 
 #### Certificate shape (illustrative)
 
-**Machine-readable** (`certification/last_certification.json`) should include: `CertificateType` (`SecurityAndCodeValidationCertification`), `OverallPass`, timestamps, `RepoRoot`, `GitCommit` / `GitBranch` / `GitDirty`, `LanguageSurfaces[]`, `ToolVersions`, `PassCriteria`, `Domains.Security` / `Domains.CodeValidation`, `Checks[]` (`Name`, `Domain`, `Passed`, `Severity`, `Detail`), `Disclaimer`.
+**Machine-readable** (`certification/last_certification.json`) should include: `CertificateType` (`SecurityAndCodeValidationCertification`), `OverallPass`, `Message`, timestamps, `RepoRoot`, `GitCommit` / `GitBranch` / `GitDirty`, `LanguageSurfaces[]`, `PackageVersions`, `ToolVersions`, `PassCriteria`, `Domains.Security` / `Domains.CodeValidation`, `Checks[]` (`Name`, `Domain`, `Passed`, `Severity`, `Detail`, `DurationMs`), `Disclaimer`.
 
 **Human-readable** (`last_certification.txt`): same facts in sections. **Privacy:** paths, versions, rule ids, counts only—never secrets, passwords, PHI, or claim rows.
 
@@ -839,3 +841,4 @@ Before you commit or share a change:
 | 1.5.0 | Aligned with repo-kit **1.2.0**: language surface inventory (Python + PowerShell **Declared**); SAST **required when declared** (Bandit, PSScriptAnalyzer); Secrets/Gitleaks **opt-in only**; security & code-validation certification schema (optional `certification/` deferred); completion rule + before-complete steps; kit baseline **1.2.0** |
 | 1.5.1 | Kit reflection pass: inventory Status column (Declared vs Not declared); Gitleaks explicitly non-blocking; verification/checklist/anti-pattern alignment |
 | 1.6.0 | Certification **maintained**: full package under `certification/`; Secrets/Gitleaks **Declared** and required; [certification renewal enforcement](#certification-renewal-enforcement-required) (full Domain A+B every renewal after code changes; no partial recert); operational commands live in certification; verification/checklist/anti-patterns aligned |
+| 1.6.1 | Certification quality hardening: PSSA product-only scope (align with parse/BOM; `sample-test` excluded); dual-mode Gitleaks (workdir + git history); declarative pylint `RequirePylintScore`; cert schema `PackageVersions` / `DurationMs` / `Message`; root **MIT** `LICENSE` |

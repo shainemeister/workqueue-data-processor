@@ -15,7 +15,8 @@
       "Kind": "process",
       "Executable": "py",
       "Arguments": ["-3.13", "-m", "pylint", "kpi_modules"],
-      "SuccessExitCodes": [0]
+      "SuccessExitCodes": [0],
+      "RequirePylintScore": "10.00"
     },
     {
       "Id": "bandit-kpi-modules",
@@ -38,7 +39,7 @@
       "Surface": "PowerShell",
       "Required": true,
       "Severity": "critical",
-      "PassCriteria": "Product excel-toolkit *.ps1/*.psm1 parse under PS 5.1 and are UTF-8 BOM or pure ASCII",
+      "PassCriteria": "Product excel-toolkit *.ps1/*.psm1 parse under PS 5.1 and are UTF-8 BOM or pure ASCII (sample-test excluded)",
       "WorkingDirectory": ".",
       "Kind": "ps-parse-bom",
       "Path": "excel-toolkit",
@@ -52,10 +53,12 @@
       "Surface": "PowerShell",
       "Required": true,
       "Severity": "critical",
-      "PassCriteria": "Invoke-ScriptAnalyzer -Severity Error yields zero findings under excel-toolkit",
+      "PassCriteria": "Invoke-ScriptAnalyzer -Severity Error on product excel-toolkit *.ps1/*.psm1 yields zero findings (sample-test excluded)",
       "WorkingDirectory": ".",
       "Kind": "pssa",
       "Path": "excel-toolkit",
+      "Include": ["*.ps1", "*.psm1"],
+      "ExcludeDirectoryNames": ["sample-test"],
       "AnalyzerSeverity": "Error"
     },
     {
@@ -65,10 +68,11 @@
       "Surface": "Secrets",
       "Required": true,
       "Severity": "critical",
-      "PassCriteria": "gitleaks detect exit 0 (no leaks)",
+      "PassCriteria": "gitleaks detect exit 0 for both working-tree (--no-git) and git-history modes (no leaks)",
       "WorkingDirectory": ".",
       "Kind": "gitleaks",
-      "ReportFileName": "gitleaks.json"
+      "Modes": ["workdir", "git"],
+      "ReportFileNamePrefix": "gitleaks"
     },
     {
       "Id": "validate-score",

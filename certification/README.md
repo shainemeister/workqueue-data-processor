@@ -1,7 +1,7 @@
 ---
 title: "Work Queue Data Processor — Security and code-validation certification"
-description: "Operator guide for the formal regenerable self-attestation certificate (Domain A security + Domain B code validation, including Gitleaks)."
-version: "1.0.0"
+description: "Operator guide for the formal regenerable self-attestation certificate (Domain A security + Domain B code validation, including dual-mode Gitleaks)."
+version: "1.0.1"
 status: current
 audience:
   - developers
@@ -20,7 +20,7 @@ last_updated: "2026-07-28"
 
 Operator guide for the **formal, regenerable** security and code-validation certificate for this repository. One package covers **Domain A (security / SAST + secrets)** and **Domain B (code validation)** in a single certificate pair.
 
-**Document version:** 1.0.0  
+**Document version:** 1.0.1  
 **Status:** current  
 
 **Related:** [RULES — Security and code-validation certification](../RULES.md#security-and-code-validation-certification) · [Language surface inventory](../RULES.md#language-surface-inventory) · [checks.json](./checks.json) · [Invoke-Certification.ps1](./Invoke-Certification.ps1)
@@ -52,8 +52,9 @@ This is **not** a third-party audit, SOC 2, or ISO seal.
 4. [Declared surfaces](#declared-surfaces)
 5. [How to run](#how-to-run)
 6. [Outputs](#outputs)
-7. [Disclaimer](#disclaimer)
-8. [Document history](#document-history)
+7. [Advisory notes](#advisory-notes)
+8. [Disclaimer](#disclaimer)
+9. [Document history](#document-history)
 
 ---
 
@@ -70,8 +71,8 @@ After any change set that touches **product code**, **gate definitions** (`check
 **Rules:**
 
 - **No partial renewal** — do not re-run only Bandit, only pylint, or only Gitleaks and rewrite the cert.  
-- **Code verification always included** — pylint, PowerShell parse/BOM, and `validate-score` run every renewal.  
-- **Security always included** — Bandit, PSScriptAnalyzer Error, and Gitleaks run every renewal.  
+- **Code verification always included** — pylint (declarative **10.00/10** via `RequirePylintScore`), PowerShell parse/BOM, and `validate-score` run every renewal.  
+- **Security always included** — Bandit, PSScriptAnalyzer Error (product scripts only), and **dual-mode Gitleaks** run every renewal.  
 - Missing required tools ⇒ failed check ⇒ `OverallPass = false` (never a silent skip).  
 - Narrow exception: pure docs edits that cannot affect gate results may skip renewal (see RULES).
 
@@ -100,12 +101,21 @@ Commands and pass criteria for this repository (also encoded in [checks.json](./
 
 | Surface | Domain B command | Domain A command | Pass criteria |
 |---------|------------------|------------------|---------------|
-| Python (`kpi_modules`) | From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules` | From `kpi-analytics\`: `py -3.13 -m bandit -r kpi_modules` | Exit 0; pylint **10.00/10**; Bandit clean |
-| PowerShell (`excel-toolkit`) | PS 5.1 parse + UTF-8 BOM (or pure ASCII) on product `*.ps1`/`*.psm1` (sample-test excluded) | `Invoke-ScriptAnalyzer -Path excel-toolkit -Severity Error -Recurse` | Zero Error findings; scripts load |
-| Secrets (whole repo) | — | `gitleaks detect` (via harness) | Exit 0; no leaks |
+| Python (`kpi_modules`) | From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules` | From `kpi-analytics\`: `py -3.13 -m bandit -r kpi_modules` | Exit 0; pylint **10.00/10** (`RequirePylintScore`); Bandit clean |
+| PowerShell (`excel-toolkit` product scripts) | PS 5.1 parse + UTF-8 BOM (or pure ASCII) on product `*.ps1`/`*.psm1` (**`sample-test` excluded**) | PSScriptAnalyzer **Error** on the **same** product file set (**`sample-test` excluded**) | Zero Error findings; scripts load |
+| Secrets (whole repo) | — | **Gitleaks dual mode:** working tree (`--no-git`) **and** git history | Exit 0 on **both** modes; no leaks |
 | Python contract | `kpi-analytics.cmd validate-score` | — | Exit 0; fixtures green |
 
 **Required surfaces:** Python, PowerShell, Secrets. All required checks run on **every** certification renewal.
+
+**Gitleaks modes (both required):**
+
+| Mode | Flag | Purpose |
+|------|------|---------|
+| `workdir` | `--no-git` | Catch secrets in the current working tree (including uncommitted files) |
+| `git` | default git scan | Catch secrets still present in repository history |
+
+Reports: `certification/logs/gitleaks-workdir.json` and `certification/logs/gitleaks-git.json` (gitignored; counts/rule ids only in the certificate—never secret values).
 
 ---
 
@@ -132,9 +142,22 @@ The harness always executes the full matrix in `checks.json`. There is no `-Doma
 | [Invoke-Certification.ps1](./Invoke-Certification.ps1) | Full-suite harness | Yes |
 | `last_certification.json` | Machine-readable certificate | **No** (gitignored) |
 | `last_certification.txt` | Human-readable certificate | **No** (gitignored) |
-| `logs/` | Optional tool reports (e.g. gitleaks JSON) | **No** (gitignored) |
+| `logs/` | Optional tool reports (e.g. dual gitleaks JSON) | **No** (gitignored) |
 
-JSON fields include: `CertificateType`, `OverallPass`, timestamps, `RepoRoot`, `GitCommit` / `GitBranch` / `GitDirty`, `LanguageSurfaces`, `ToolVersions`, `PassCriteria`, `Domains.Security`, `Domains.CodeValidation`, `Checks[]`, `Disclaimer`.
+JSON fields include: `CertificateType`, `OverallPass`, `Message`, timestamps, `RepoRoot`, `GitCommit` / `GitBranch` / `GitDirty`, `LanguageSurfaces`, `PackageVersions`, `ToolVersions`, `PassCriteria`, `Domains.Security`, `Domains.CodeValidation`, `Checks[]` (including `DurationMs`), `Disclaimer`.
+
+---
+
+## Advisory notes
+
+### PSScriptAnalyzer Warning (not a certification gate)
+
+PSScriptAnalyzer may report **Warning**-severity `PSAvoidUsingPlainTextForPassword` on automation bridges such as CLI `-Password` (string) and related COM helpers. Per [RULES](../RULES.md#security--sast-gates-required-when-declared), **Warning** findings stay **advisory** unless the project promotes them to critical.
+
+- Certification Domain A for PowerShell requires **zero Error** findings only.  
+- Interactive menu paths already prefer **SecureString** for workbook open passwords where practical.  
+- String `-Password` remains available for Task Scheduler / non-interactive automation (password is not logged or written to JSON payloads as a secret value).  
+- Further SecureString hardening is a **follow-up** product change (CLI contract awareness)—not part of the certification Error gate.
 
 ---
 
@@ -152,4 +175,5 @@ Self-attestation of automated checks only. Not a third-party audit. Not runtime 
 
 | Version | Notes |
 |---------|--------|
+| 1.0.1 | PSSA product-only scope (align with parse/BOM); dual-mode Gitleaks; declarative pylint score; cert schema polish (`PackageVersions`, `DurationMs`, `Message`); password Warning advisory note |
 | 1.0.0 | Initial certification package: full-suite harness, checks.json, Secrets/Gitleaks required, renewal enforcement pointer to RULES |
