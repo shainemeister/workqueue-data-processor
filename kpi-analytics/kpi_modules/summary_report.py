@@ -544,6 +544,35 @@ def build_summary_rows(
                 )
             )
 
+        rank_c = summary.get("rank_completeness")
+        if rank_c:
+            rows.append(
+                _row(
+                    "Priority batch",
+                    "rank_completeness",
+                    rank_c,
+                    explanation=(
+                        "full = all scoring roles present, no skipped metrics, "
+                        "and raw-value coverage above threshold. "
+                        "partial_* = incomplete mapping and/or sparse raws. "
+                        "CLI --strict roles|full can fail closed on partial."
+                    ),
+                )
+            )
+        inc_reasons = summary.get("incomplete_reasons") or []
+        if inc_reasons:
+            rows.append(
+                _row(
+                    "Priority batch",
+                    "incomplete_reasons",
+                    ", ".join(str(r) for r in inc_reasons),
+                    explanation=(
+                        "Machine codes for why the rank is not full "
+                        "(missing_roles, skipped_metrics, low_coverage, …)."
+                    ),
+                )
+            )
+
     for mk, wv in weights.items():
         rows.append(
             _row(

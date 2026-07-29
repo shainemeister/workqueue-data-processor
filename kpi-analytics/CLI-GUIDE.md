@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.3.0"
+version: "2.4.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-25"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.3.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.4.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -253,6 +253,7 @@ Scores a data CSV:
 ```text
 python -m kpi_modules score [--csv <path>] [--output <path>]
     [--config <path>] [--mapping <path>] [--interactive-mapping]
+    [--strict roles|full]
     [--summary <path>] [--no-summary]
     [--privacy | --no-privacy]
     [--dry-run] [--json] [--quiet]
@@ -267,6 +268,7 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--config` | No | package default | Weights / KPI config |
 | `--mapping` | No | none | JSON profile mapping semantic roles to CSV column names (see below) |
 | `--interactive-mapping` | No | off | When missing / ambiguous / low-confidence roles exist, guide assignment on a TTY; fail clearly if no TTY. Clean files are not prompted. |
+| `--strict` | No | off | Fail closed without writing files: `roles` = missing/ambiguous roles or skipped metrics; `full` = also low raw-value coverage. Default allows partial ranks (`Success` true with `RankCompleteness` advisory). |
 | `--privacy` | No | (config) | Force PHI field masking on scored output |
 | `--no-privacy` | No | (config) | Disable PHI field masking on scored output |
 | `--dry-run` | No | off | No file writes |
@@ -290,6 +292,8 @@ After headers are chosen, **sample verification** peeks non-empty cells and flag
 **Date values (2.2.0+):** `service_date` / `last_worked_date` accept the usual `date_formats` strings **and**, by default, Windows **Excel serial** day numbers (e.g. `46103`). This matches many Excel → CSV exports. Disable with config `"date_excel_serial": false` if needed.
 
 **Metric value coverage (2.3.0+):** score JSON includes `MetricValueCoverage` (share of rows with non-null raw per active metric) and `LowCoverageMetrics` (below 50% by default). A role can be active while coverage is low if cells do not parse.
+
+**Rank completeness (2.4.0+):** every score reports `RankCompleteness` (`full` | `partial_roles` | `partial_coverage` | `partial_roles_and_coverage`) and `IncompleteReasons` (stable codes such as `missing_roles`, `skipped_metrics`, `low_coverage`). Use `--strict roles` or `--strict full` to fail without writing files when incomplete.
 
 Unresolved roles are **not** silently filled with the role name. If a metric’s required role is missing, that metric is **skipped** and its weight is redistributed over the remaining active metrics. If **no** metrics can run, `score` fails with exit **1**.
 

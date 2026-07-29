@@ -236,6 +236,17 @@ def build_parser() -> argparse.ArgumentParser:
             "Clean files are not prompted."
         ),
     )
+    p_score.add_argument(
+        "--strict",
+        dest="strict_mode",
+        choices=("roles", "full"),
+        default=None,
+        help=(
+            "Fail without writing files when the priority rank is incomplete: "
+            "roles = missing/ambiguous roles or skipped metrics; "
+            "full = also low raw-value coverage. Default: allow partial ranks."
+        ),
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -506,6 +517,7 @@ def main(argv: list[str] | None = None) -> int:
                     interactive_mapping=bool(
                         getattr(args, "interactive_mapping", False)
                     ),
+                    strict=getattr(args, "strict_mode", None),
                 )
             except (FileNotFoundError, ValueError, OSError) as exc:
                 _emit(

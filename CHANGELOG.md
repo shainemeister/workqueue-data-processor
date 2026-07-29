@@ -13,6 +13,17 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.8.0] - 2026-07-28
+
+#### Added
+
+- **kpi-analytics 2.4.0:** rank completeness + optional fail-closed scoring
+  - JSON always includes `RankCompleteness` and `IncompleteReasons`
+  - CLI `score --strict roles|full` fails without writing files when incomplete
+  - `roles` = missing/ambiguous roles or skipped metrics; `full` also requires raw-value coverage
+  - Module `kpi_modules/completeness.py`; summary rows for rank completeness
+- **excel-toolkit 1.8.0:** after score, partial ranks show a banner and require confirm to keep outputs / export Excel (decline deletes just-written CSVs)
+
 ### [1.7.4] - 2026-07-28
 
 #### Added

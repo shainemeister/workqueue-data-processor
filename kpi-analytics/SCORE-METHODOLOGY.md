@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.3.0"
+version: "2.4.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 2.3.0  
+**Toolkit version:** 2.4.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
@@ -480,6 +480,7 @@ Checks include:
 | Priority scores change overnight | Default `as_of_date` is today |
 | Same claim different priority in two files | Batch-relative normalization |
 | Aging % all **0** but Total AR non-zero | Date columns failed to parse (blank claim age). Common with Excel serials before 2.2.0; ensure serials or `m/d/yyyy` strings |
+| `RankCompleteness` is `partial_*` | Missing roles, skipped metrics, and/or low raw-value coverage; inspect `IncompleteReasons` and use `--strict full` for fail-closed automation |
 | `LowConfidenceRoles` on date columns | Sample verification could not parse values as dates; check format / serials / wrong column |
 | Days in AR looks high/low | Check `adc` and `adc_source` (estimate vs true practice ADC) |
 | Sum of aging **deltas** ≠ aging % | Expected — deltas are resolution impacts, not static shares |
@@ -517,3 +518,4 @@ Checks include:
 | 2.1.0 | Sample verification + richer mapping report; stop silent role-name field fallback; optional `--interactive-mapping` guided recovery (no formula change when all roles present) |
 | 2.2.0 | Parse Windows Excel serial day numbers in date roles (default `date_excel_serial`); fixes empty claim age / 0% aging KPIs on Excel→CSV extracts |
 | 2.3.0 | Metric value coverage (`MetricValueCoverage` / `LowCoverageMetrics`) — role resolved vs raw values present |
+| 2.4.0 | Rank completeness + `--strict roles\|full` fail-closed optional |

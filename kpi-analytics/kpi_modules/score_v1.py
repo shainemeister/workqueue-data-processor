@@ -17,6 +17,11 @@ from .column_map import (
     offer_save_mapping_profile,
     problems_summary,
 )
+from .completeness import (
+    evaluate_rank_completeness,
+    format_strict_failure_message,
+    strict_mode_allows,
+)
 from .config import METRIC_KEYS, effective_weights, load_config
 from .io_csv import read_csv_rows, write_csv_rows
 from .kpi_quantifiers import apply_quantifiers_to_rows
@@ -243,6 +248,7 @@ def score_csv(
     privacy_enabled: bool | None = None,
     mapping_path: str | Path | None = None,
     interactive_mapping: bool = False,
+    strict: str | None = None,
 ) -> dict[str, Any]:
     """
     Score a data CSV and write an enriched CSV.
@@ -258,6 +264,9 @@ def score_csv(
 
     interactive_mapping: when True and mapping problems exist, run guided
     resolution on a TTY; on non-TTY fail clearly instead of hanging.
+
+    strict: None (default), \"roles\", or \"full\". When set, fail without writing
+    files if rank completeness does not meet that tier (see completeness module).
 
     Returns a result dict suitable for CLI JSON output.
     """
@@ -356,6 +365,18 @@ def score_csv(
         mapping_report=mapping_report,
     )
 
+    completeness = evaluate_rank_completeness(
+        active_metrics=summary.get("active_metrics"),
+        skipped_metrics=summary.get("skipped_metrics"),
+        missing_roles=summary.get("missing_roles"),
+        ambiguous_roles=summary.get("ambiguous_roles"),
+        low_coverage_metrics=summary.get("low_coverage_metrics"),
+    )
+    summary["rank_completeness"] = completeness["rank_completeness"]
+    summary["incomplete_reasons"] = list(
+        completeness["incomplete_reasons"]
+    )
+
     out_resolved = Path(output_path).resolve()
     sum_path = (
         Path(summary_path).resolve()
@@ -363,8 +384,24 @@ def score_csv(
         else default_summary_path(out_resolved)
     )
 
+    strict_mode = None
+    if strict is not None and str(strict).strip():
+        strict_mode = str(strict).strip().lower()
+
+    strict_ok = strict_mode_allows(strict_mode, completeness)
+    success = True
+    message = (
+        "Dry-run only; no file written." if dry_run else "Score complete."
+    )
+
+    if not strict_ok:
+        success = False
+        message = format_strict_failure_message(
+            strict_mode or "full", completeness
+        )
+
     result: dict[str, Any] = {
-        "Success": True,
+        "Success": success,
         "Command": "score",
         "InputPath": str(input_resolved),
         "OutputPath": str(out_resolved),
@@ -389,6 +426,12 @@ def score_csv(
         "MetricValueCoverage": summary.get("metric_value_coverage") or {},
         "LowCoverageMetrics": summary.get("low_coverage_metrics") or [],
         "LowCoverageThreshold": summary.get("low_coverage_threshold"),
+        "RankCompleteness": completeness["rank_completeness"],
+        "IncompleteReasons": list(completeness["incomplete_reasons"]),
+        "StrictMode": strict_mode,
+        "StrictPassed": (
+            None if strict_mode is None else bool(strict_ok)
+        ),
         "FieldRoles": summary.get("field_roles") or {},
         "MissingRoles": summary.get("missing_roles") or [],
         "AmbiguousRoles": summary.get("ambiguous_roles") or {},
@@ -412,12 +455,11 @@ def score_csv(
             if privacy_enabled is None
             else bool(privacy_enabled)
         ),
-        "Message": (
-            "Dry-run only; no file written." if dry_run else "Score complete."
-        ),
+        "Message": message,
     }
 
-    if not dry_run:
+    # Fail-before-write when strict mode rejects partial ranks.
+    if not dry_run and success:
         write_csv_rows(output_path, out_fields, out_rows)
         if write_summary:
             write_summary_csv(
@@ -430,5 +472,10 @@ def score_csv(
             result["Message"] = "Score complete (detail + summary)."
         else:
             result["Message"] = "Score complete."
+    elif dry_run and success:
+        result["Message"] = "Dry-run only; no file written."
+    elif not success:
+        result["OutputPath"] = None
+        result["SummaryPath"] = None
 
     return result
