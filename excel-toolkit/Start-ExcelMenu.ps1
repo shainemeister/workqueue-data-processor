@@ -12,6 +12,11 @@
     multi-select, then full pipeline / score only / export), and Advanced tools
     (schema-header export, import, folders, schema, diagnostics, environment).
 
+    Scoring uses sibling kpi-analytics with a mapping preflight: schema-aligned
+    headers score silently; incomplete/ambiguous headers open guided column
+    mapping on an interactive console (or fail clearly when non-interactive).
+    A sibling <stem>_mapping.json next to the CSV is auto-applied when present.
+
     Column layout always comes from your data CSV. An optional schema (JSON or
     CSV) supplies display labels only. Nothing domain-specific is hard-coded.
     Existing output files are not overwritten: a free path with a numerical
@@ -444,10 +449,227 @@ function Invoke-ProcessMyData {
     }
 }
 
+function Test-ExcelMenuHostInteractive {
+    <#
+    .SYNOPSIS
+        True when the menu host can run Python guided mapping (console TTY).
+    #>
+    [CmdletBinding()]
+    param()
+
+    if (-not [Environment]::UserInteractive) {
+        return $false
+    }
+    try {
+        # Redirected stdin (automation) cannot complete Python input() prompts.
+        if ([Console]::IsInputRedirected) {
+            return $false
+        }
+    }
+    catch {
+        # Some hosts lack Console; treat as non-interactive for safety.
+        return $false
+    }
+    return $true
+}
+
+function Test-KpiScoreMappingProblems {
+    <#
+    .SYNOPSIS
+        True when score JSON reports missing / ambiguous / low-confidence roles.
+        Mirrors kpi_modules.column_map.mapping_has_problems.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        $ScoreJson
+    )
+
+    if ($null -eq $ScoreJson) {
+        return $false
+    }
+
+    $names = @($ScoreJson.PSObject.Properties.Name)
+
+    if ($names -contains 'MissingRoles') {
+        $missing = @($ScoreJson.MissingRoles)
+        if ($missing.Count -gt 0) {
+            return $true
+        }
+    }
+
+    if ($names -contains 'AmbiguousRoles' -and $null -ne $ScoreJson.AmbiguousRoles) {
+        $ambProps = @($ScoreJson.AmbiguousRoles.PSObject.Properties)
+        if ($ambProps.Count -gt 0) {
+            return $true
+        }
+    }
+
+    if ($names -contains 'LowConfidenceRoles') {
+        $low = @($ScoreJson.LowConfidenceRoles)
+        if ($low.Count -gt 0) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Get-KpiSiblingMappingPath {
+    <#
+    .SYNOPSIS
+        Return path to <stem>_mapping.json next to a CSV when the file exists.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CsvPath
+    )
+
+    $dir = [System.IO.Path]::GetDirectoryName($CsvPath)
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($CsvPath)
+    if ([string]::IsNullOrWhiteSpace($dir) -or [string]::IsNullOrWhiteSpace($stem)) {
+        return $null
+    }
+    $candidate = Join-Path $dir ('{0}_mapping.json' -f $stem)
+    if (Test-Path -LiteralPath $candidate) {
+        return $candidate
+    }
+    return $null
+}
+
+function ConvertFrom-KpiScoreJsonText {
+    <#
+    .SYNOPSIS
+        Parse score JSON from stdout (last JSON object line preferred).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return $null
+    }
+
+    $trimmed = $Text.Trim()
+    $lines = @($trimmed -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    for ($i = $lines.Count - 1; $i -ge 0; $i--) {
+        $line = $lines[$i].Trim()
+        if ($line.StartsWith('{')) {
+            try {
+                return ($line | ConvertFrom-Json -ErrorAction Stop)
+            }
+            catch { }
+        }
+    }
+    try {
+        return ($trimmed | ConvertFrom-Json -ErrorAction Stop)
+    }
+    catch {
+        return $null
+    }
+}
+
+function ConvertTo-KpiScoreCmdArgumentLine {
+    <#
+    .SYNOPSIS
+        Build a cmd.exe /c argument string for kpi-analytics.cmd score (quoted paths).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Collections.IEnumerable]$ScoreArgs
+    )
+
+    $quoted = foreach ($a in $ScoreArgs) {
+        if ($null -eq $a) { '""'; continue }
+        $s = [string]$a
+        if ($s -match '[\s"]') {
+            '"' + ($s.Replace('"', '""')) + '"'
+        }
+        else {
+            $s
+        }
+    }
+    $inner = ($quoted -join ' ')
+    return ('/c ""{0}" {1}"' -f $kpiAnalyticsCmd, $inner)
+}
+
+function Select-KpiScoreInvokeResult {
+    <#
+    .SYNOPSIS
+        Normalize score invoke output to a single object that has ExitCode.
+        Guards against accidental multi-object pipeline pollution.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false)]
+        [AllowNull()]
+        $Raw
+    )
+
+    if ($null -eq $Raw) {
+        return $null
+    }
+
+    $items = @($Raw)
+    for ($i = $items.Count - 1; $i -ge 0; $i--) {
+        $item = $items[$i]
+        if ($null -eq $item) { continue }
+        try {
+            if ($item.PSObject.Properties.Name -contains 'ExitCode') {
+                return $item
+            }
+        }
+        catch { }
+    }
+
+    # Fallback: last object even if shape is unexpected (caller will fail clearly).
+    return $items[$items.Count - 1]
+}
+
+function New-KpiScoreInvokeResult {
+    <#
+    .SYNOPSIS
+        Build the standard score-invoke result object (single pipeline object).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$ExitCode,
+
+        [Parameter(Mandatory = $false)]
+        [string]$StdOut = '',
+
+        [Parameter(Mandatory = $false)]
+        [string]$StdErr = '',
+
+        [Parameter(Mandatory = $false)]
+        $Json = $null
+    )
+
+    return [pscustomobject]@{
+        ExitCode = $ExitCode
+        StdOut   = $StdOut
+        StdErr   = $StdErr
+        Json     = $Json
+    }
+}
+
 function Invoke-KpiAnalyticsScore {
     <#
     .SYNOPSIS
         Call sibling kpi-analytics.cmd score with absolute paths; return exit + JSON.
+
+    .DESCRIPTION
+        Default path redirects stdout/stderr and requests --json (automation-safe).
+        -InteractiveMapping runs without stream redirects so Python can use a TTY for
+        guided column mapping (no --json). Uses Start-Process (not &) so Python stdout
+        does not pollute the PowerShell pipeline / return value.
+        Caller should prefer Invoke-KpiAnalyticsScoreWithMapping for menu flows.
     #>
     param(
         [Parameter(Mandatory = $true)]
@@ -457,23 +679,103 @@ function Invoke-KpiAnalyticsScore {
         [string]$OutputPath,
 
         [Parameter(Mandatory = $true)]
-        [string]$SummaryPath
+        [string]$SummaryPath,
+
+        [Parameter(Mandatory = $false)]
+        [string]$MappingPath,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$DryRun,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$InteractiveMapping
     )
 
     if (-not (Test-Path -LiteralPath $kpiAnalyticsCmd)) {
         throw ("kpi-analytics launcher not found: {0}" -f $kpiAnalyticsCmd)
     }
 
-    $tmpOut = [System.IO.Path]::GetTempFileName()
-    $tmpErr = [System.IO.Path]::GetTempFileName()
+    $scoreArgs = [System.Collections.Generic.List[string]]::new()
+    $scoreArgs.Add('score')
+    $scoreArgs.Add('--csv')
+    $scoreArgs.Add($CsvPath)
+    $scoreArgs.Add('--output')
+    $scoreArgs.Add($OutputPath)
+    $scoreArgs.Add('--summary')
+    $scoreArgs.Add($SummaryPath)
+    if (-not [string]::IsNullOrWhiteSpace($MappingPath)) {
+        $scoreArgs.Add('--mapping')
+        $scoreArgs.Add($MappingPath)
+    }
+    if ($DryRun) {
+        $scoreArgs.Add('--dry-run')
+    }
+    if ($InteractiveMapping) {
+        $scoreArgs.Add('--interactive-mapping')
+    }
+
     $exitCode = 1
     $stdout = ''
     $stderr = ''
 
+    if ($InteractiveMapping) {
+        # Inherit this console so sys.stdin/stdout.isatty() can succeed in Python.
+        # Do not use --json or RedirectStandard* — prompts stay on the console.
+        # Use Start-Process (not &) so console text is NOT written to the PS pipeline
+        # (which would make $result.ExitCode fail on a string[]).
+        try {
+            $argLine = ConvertTo-KpiScoreCmdArgumentLine -ScoreArgs $scoreArgs
+            $proc = Start-Process -FilePath 'cmd.exe' `
+                -ArgumentList $argLine `
+                -WorkingDirectory $kpiAnalyticsDir `
+                -Wait -PassThru -NoNewWindow
+            if ($null -ne $proc) {
+                $exitCode = [int]$proc.ExitCode
+            }
+        }
+        catch {
+            $stderr = $_.Exception.Message
+            $exitCode = 1
+        }
+
+        $synthOk = ($exitCode -eq 0)
+        # Prefer filesystem proof when exit code is available.
+        if ($synthOk -and -not (Test-Path -LiteralPath $OutputPath)) {
+            $synthOk = $false
+            $exitCode = 1
+        }
+        $synthMsg = if ($synthOk) {
+            'Score complete (interactive mapping).'
+        }
+        else {
+            if (-not [string]::IsNullOrWhiteSpace($stderr)) {
+                $stderr
+            }
+            else {
+                'Score failed during interactive mapping.'
+            }
+        }
+        $jsonObj = [pscustomobject]@{
+            Success              = $synthOk
+            Command              = 'score'
+            InputPath            = $CsvPath
+            OutputPath           = $OutputPath
+            SummaryPath          = $SummaryPath
+            InteractiveMapping   = $true
+            GuidedMappingApplied = $synthOk
+            Message              = $synthMsg
+        }
+
+        return (New-KpiScoreInvokeResult -ExitCode $exitCode -StdOut $stdout -StdErr $stderr -Json $jsonObj)
+    }
+
+    # Non-interactive / automation path: capture JSON via redirected stdout.
+    $scoreArgs.Add('--json')
+    $tmpOut = [System.IO.Path]::GetTempFileName()
+    $tmpErr = [System.IO.Path]::GetTempFileName()
+
     try {
-        # kpi-analytics.cmd must run with cwd = kpi-analytics\ (module import)
-        $argLine = '/c ""{0}" score --csv "{1}" --output "{2}" --summary "{3}" --json"' -f `
-            $kpiAnalyticsCmd, $CsvPath, $OutputPath, $SummaryPath
+        $argLine = ConvertTo-KpiScoreCmdArgumentLine -ScoreArgs $scoreArgs
 
         $proc = Start-Process -FilePath 'cmd.exe' `
             -ArgumentList $argLine `
@@ -494,35 +796,147 @@ function Invoke-KpiAnalyticsScore {
         Remove-Item -LiteralPath $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue
     }
 
-    $jsonObj = $null
-    $trimmed = $stdout.Trim()
-    if (-not [string]::IsNullOrWhiteSpace($trimmed)) {
-        # Prefer last JSON object line if diagnostics noise appears on stdout
-        $lines = @($trimmed -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-        for ($i = $lines.Count - 1; $i -ge 0; $i--) {
-            $line = $lines[$i].Trim()
-            if ($line.StartsWith('{')) {
-                try {
-                    $jsonObj = $line | ConvertFrom-Json -ErrorAction Stop
-                    break
-                }
-                catch { }
+    $jsonObj = ConvertFrom-KpiScoreJsonText -Text $stdout
+
+    return (New-KpiScoreInvokeResult -ExitCode $exitCode -StdOut $stdout -StdErr $stderr -Json $jsonObj)
+}
+
+function Invoke-KpiAnalyticsScoreWithMapping {
+    <#
+    .SYNOPSIS
+        Score with mapping preflight: auto-load sibling profile; guided mapping on TTY when needed.
+    .DESCRIPTION
+        1) Optional sibling <stem>_mapping.json next to the CSV.
+        2) Dry-run score (JSON, redirected) to inspect mapping health.
+        3) If problems and host is interactive → full score with --interactive-mapping (console TTY).
+        4) If problems and host is non-interactive → fail with clear guidance (no hang).
+        5) If clean → full score with redirects + JSON (unchanged automation-friendly path).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CsvPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$OutputPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SummaryPath
+    )
+
+    $mappingPath = Get-KpiSiblingMappingPath -CsvPath $CsvPath
+    if (-not [string]::IsNullOrWhiteSpace($mappingPath)) {
+        Write-Host ("  Using mapping profile: {0}" -f $mappingPath) -ForegroundColor DarkGray
+    }
+
+    Write-Host '  Mapping preflight (dry-run)...' -ForegroundColor DarkGray
+    $preParams = @{
+        CsvPath     = $CsvPath
+        OutputPath  = $OutputPath
+        SummaryPath = $SummaryPath
+        DryRun      = $true
+    }
+    if (-not [string]::IsNullOrWhiteSpace($mappingPath)) {
+        $preParams['MappingPath'] = $mappingPath
+    }
+    $preflight = Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @preParams)
+
+    if ($null -eq $preflight -or $null -eq $preflight.PSObject.Properties['ExitCode']) {
+        $msg = 'Score preflight returned an unexpected result (no ExitCode).'
+        return (New-KpiScoreInvokeResult -ExitCode 1 -StdErr $msg -Json ([pscustomobject]@{
+                    Success = $false
+                    Message = $msg
+                }))
+    }
+
+    $preOk = ($preflight.ExitCode -eq 0)
+    $preJson = $preflight.Json
+    if ($null -ne $preJson -and $preJson.PSObject.Properties.Name -contains 'Success') {
+        $preOk = $preOk -and [bool]$preJson.Success
+    }
+
+    if (-not $preOk) {
+        # Hard failure (diagnostics, zero metrics, IO). Surface as-is.
+        return $preflight
+    }
+
+    $hasProblems = Test-KpiScoreMappingProblems -ScoreJson $preJson
+    if (-not $hasProblems) {
+        $runParams = @{
+            CsvPath     = $CsvPath
+            OutputPath  = $OutputPath
+            SummaryPath = $SummaryPath
+        }
+        if (-not [string]::IsNullOrWhiteSpace($mappingPath)) {
+            $runParams['MappingPath'] = $mappingPath
+        }
+        return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @runParams))
+    }
+
+    # Summarize problems for the operator.
+    $bits = New-Object System.Collections.Generic.List[string]
+    if ($null -ne $preJson) {
+        if ($preJson.PSObject.Properties.Name -contains 'MissingRoles') {
+            $m = @($preJson.MissingRoles)
+            if ($m.Count -gt 0) {
+                $bits.Add(('missing roles: {0}' -f ($m -join ', ')))
             }
         }
-        if ($null -eq $jsonObj) {
-            try {
-                $jsonObj = $trimmed | ConvertFrom-Json -ErrorAction Stop
+        if ($preJson.PSObject.Properties.Name -contains 'AmbiguousRoles' -and $null -ne $preJson.AmbiguousRoles) {
+            $ak = @(
+                $preJson.AmbiguousRoles.PSObject.Properties |
+                    ForEach-Object { [string]$_.Name } |
+                    Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+            )
+            if ($ak.Count -gt 0) {
+                $bits.Add(('ambiguous: {0}' -f ($ak -join ', ')))
             }
-            catch { }
+        }
+        if ($preJson.PSObject.Properties.Name -contains 'LowConfidenceRoles') {
+            $lc = @($preJson.LowConfidenceRoles)
+            if ($lc.Count -gt 0) {
+                $bits.Add(('low confidence: {0}' -f ($lc -join ', ')))
+            }
+        }
+    }
+    $problemText = if ($bits.Count -gt 0) { ($bits -join '; ') } else { 'column mapping needs review' }
+
+    if (-not (Test-ExcelMenuHostInteractive)) {
+        $msg = (
+            "Column mapping is incomplete ({0}). " +
+            "Re-run from an interactive console (Process my data), or pass a mapping profile " +
+            "via kpi-analytics score --mapping path.json / --interactive-mapping."
+        ) -f $problemText
+        Write-Host ("  FAIL: {0}" -f $msg) -ForegroundColor Red
+        return [pscustomobject]@{
+            ExitCode = 1
+            StdOut   = ''
+            StdErr   = $msg
+            Json     = [pscustomobject]@{
+                Success            = $false
+                Command            = 'score'
+                InputPath          = $CsvPath
+                OutputPath         = $OutputPath
+                SummaryPath        = $SummaryPath
+                InteractiveMapping = $false
+                Message            = $msg
+            }
         }
     }
 
-    return [pscustomobject]@{
-        ExitCode = $exitCode
-        StdOut   = $stdout
-        StdErr   = $stderr
-        Json     = $jsonObj
+    Write-Host ("  Mapping needs attention ({0})." -f $problemText) -ForegroundColor Yellow
+    Write-Host '  Starting guided column mapping (follow prompts; s=skip role, q=abort)...' -ForegroundColor Cyan
+
+    $guideParams = @{
+        CsvPath            = $CsvPath
+        OutputPath         = $OutputPath
+        SummaryPath        = $SummaryPath
+        InteractiveMapping = $true
     }
+    if (-not [string]::IsNullOrWhiteSpace($mappingPath)) {
+        $guideParams['MappingPath'] = $mappingPath
+    }
+    return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @guideParams))
 }
 
 function Get-ImportProcessableFiles {
@@ -549,7 +963,12 @@ function Get-ImportProcessableFiles {
     }
     if ($FilterKind -eq 'All' -or $FilterKind -eq 'Excel') {
         $files += @(Get-ChildItem -LiteralPath $importDir -Filter '*.xlsx' -File -ErrorAction SilentlyContinue)
-        $files += @(Get-ChildItem -LiteralPath $importDir -Filter '*.xls' -File -ErrorAction SilentlyContinue)
+        # Windows Win32 -Filter '*.xls' also matches '*.xlsx' (legacy short-pattern quirk).
+        # Keep true .xls only so each workbook appears once in the menu list.
+        $files += @(
+            Get-ChildItem -LiteralPath $importDir -Filter '*.xls' -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.Extension -ieq '.xls' }
+        )
     }
 
     foreach ($f in @($files | Sort-Object Name)) {
@@ -1037,10 +1456,18 @@ function Invoke-KpiScoreExportMenu {
             }
 
             Write-Host '  Scoring (kpi-analytics)...' -ForegroundColor Cyan
-            $scoreResult = Invoke-KpiAnalyticsScore `
-                -CsvPath $csvPath `
-                -OutputPath $scoredCsvInfo.Path `
-                -SummaryPath $summaryCsvInfo.Path
+            $scoreResult = Select-KpiScoreInvokeResult -Raw (
+                Invoke-KpiAnalyticsScoreWithMapping `
+                    -CsvPath $csvPath `
+                    -OutputPath $scoredCsvInfo.Path `
+                    -SummaryPath $summaryCsvInfo.Path
+            )
+
+            if ($null -eq $scoreResult -or $null -eq $scoreResult.PSObject.Properties['ExitCode']) {
+                Write-Host '  FAIL score: unexpected result from kpi-analytics invoke (no ExitCode).' -ForegroundColor Red
+                $failCount++
+                continue
+            }
 
             $scoreOk = ($scoreResult.ExitCode -eq 0)
             $scoreJson = $scoreResult.Json

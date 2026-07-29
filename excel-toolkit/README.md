@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.6.0"
+version: "1.7.2"
 status: current
 audience:
   - users
@@ -11,14 +11,14 @@ related:
   - README.md
   - CLI-GUIDE.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-25"
+last_updated: "2026-07-28"
 ---
 
 # Excel Toolkit (`excel-toolkit`)
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), guided **Process my data** menu (via sibling `kpi-analytics` for scoring), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.6.0  
+**Toolkit version:** 1.7.2  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
@@ -115,12 +115,17 @@ Composes the two toolkits at the **workflow** layer only (no shared process, no 
 1. Pick CSV and/or Excel file(s) from `import\` (ranges: `1`, `1,2`, `1-3`, `1,3-5`) or type a path.  
 2. Import any Excel files to CSV under `import\` (unique paths; open-password if needed).  
 3. For each CSV, resolve free paths for scored/summary CSV under `output\` (`<stem>_scored.csv`, `<stem>_scored_summary.csv`, with `_N` if needed).  
-4. Call `kpi-analytics\kpi-analytics.cmd score … --json`.  
+4. Score via `kpi-analytics` with **mapping preflight**:
+   - Auto-apply sibling `<stem>_mapping.json` next to the CSV when present.
+   - Dry-run score to inspect column roles (missing / ambiguous / low-confidence).
+   - **Clean headers** → full score with JSON (automation-friendly).
+   - **Mapping problems** on an interactive console → guided column mapping (`--interactive-mapping` on a TTY); optional save of a mapping profile next to the input.
+   - **Mapping problems** when non-interactive → fail with a clear message (no hang); use CLI `score --mapping` / `--interactive-mapping` instead.
 5. Optionally set a workbook open password, then export both CSVs to `.xlsx` (unique paths if those workbooks already exist).
 
 **Score only** stops after scoring (CSV only; no Excel diagnostics gate).
 
-**Needs:** Python **3.13** (for `kpi-analytics`) **and** desktop Excel (for COM on pipeline/export). First score may run KPI diagnostics once (gate).
+**Needs:** Python **3.13** (for `kpi-analytics`) **and** desktop Excel (for COM on pipeline/export). First score may run KPI diagnostics once (gate). Prefer schema `field_name` headers or a saved mapping profile so guided prompts stay rare.
 
 The `.cmd` launcher starts PowerShell with a **process-only** execution policy setting for that window. It does **not** permanently change organization policy.
 
