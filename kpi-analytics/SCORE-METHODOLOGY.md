@@ -30,7 +30,7 @@ How `kpi-analytics` turns Work Queue rows into:
 **Default config:** `kpi_modules\config_default.json`  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
 
-**Related docs:** [README.md](./README.md) · [CLI-GUIDE.md](./CLI-GUIDE.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · root `WQ_Priority_Matrix_Concept.md`
+**Related docs:** [README.md](./README.md) · [CLI-GUIDE.md](./CLI-GUIDE.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [docs/WQ_Priority_Matrix_Concept.md](../docs/WQ_Priority_Matrix_Concept.md)
 
 ---
 

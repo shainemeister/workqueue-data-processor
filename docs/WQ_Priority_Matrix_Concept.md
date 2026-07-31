@@ -8,9 +8,9 @@ audience:
   - analysts
 doc_type: concept
 related:
-  - kpi-analytics/SCORE-METHODOLOGY.md
-  - kpi-analytics/README.md
-  - wq_schema.json
+  - ../kpi-analytics/SCORE-METHODOLOGY.md
+  - ../kpi-analytics/README.md
+  - ../wq_schema/wq_schema.json
 last_updated: "2026-07-22"
 ---
 
@@ -21,7 +21,7 @@ This document describes a progressive, multi-version approach to prioritization 
 **Document version:** 1.0.0  
 **Current implementation target:** Version 1 (implemented in `kpi-analytics`)  
 
-**Related:** [kpi-analytics/SCORE-METHODOLOGY.md](./kpi-analytics/SCORE-METHODOLOGY.md) · [kpi-analytics/README.md](./kpi-analytics/README.md)
+**Related:** [kpi-analytics/SCORE-METHODOLOGY.md](../kpi-analytics/SCORE-METHODOLOGY.md) · [kpi-analytics/README.md](../kpi-analytics/README.md)
 
 ---
 

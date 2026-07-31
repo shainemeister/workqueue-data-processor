@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.8.5] - 2026-07-30
+
+#### Changed
+
+- **Root cleanup:** moved maintainer/design docs into `docs/` (`PLAN.md`, `FILE-CATALOG.md`, `WQ_Priority_Matrix_Concept.md`); root keeps entry shim and required project files only
+
 ### [1.8.4] - 2026-07-30
 
 #### Changed

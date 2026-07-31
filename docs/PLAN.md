@@ -8,15 +8,15 @@ audience:
   - analysts
 doc_type: other
 related:
-  - README.md
-  - RULES.md
-  - CHANGELOG.md
+  - ../README.md
+  - ../kit/RULES.md
+  - ../CHANGELOG.md
   - WQ_Priority_Matrix_Concept.md
-  - kpi-analytics/SCORE-METHODOLOGY.md
-  - kpi-analytics/CLI-GUIDE.md
-  - excel-toolkit/CLI-GUIDE.md
-  - excel-toolkit/README.md
-  - wq_schema.json
+  - ../kpi-analytics/SCORE-METHODOLOGY.md
+  - ../kpi-analytics/CLI-GUIDE.md
+  - ../excel-toolkit/CLI-GUIDE.md
+  - ../excel-toolkit/README.md
+  - ../wq_schema/wq_schema.json
 last_updated: "2026-07-30"
 ---
 
@@ -26,7 +26,7 @@ Living plan for product improvements after the V1 priority matrix, dynamic mappi
 
 **Document version:** 0.2.0  
 **Status:** Cluster 1 **design-frozen** (ready for implementation); Clusters 2–3 still developing  
-**Related:** [README.md](./README.md) · [RULES.md](./RULES.md) · [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) · [kpi-analytics/SCORE-METHODOLOGY.md](./kpi-analytics/SCORE-METHODOLOGY.md)
+**Related:** [README.md](../README.md) · [kit/RULES.md](../kit/RULES.md) · [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) · [kpi-analytics/SCORE-METHODOLOGY.md](../kpi-analytics/SCORE-METHODOLOGY.md)
 
 ---
 
@@ -90,7 +90,7 @@ These apply to every concept in this plan.
 | Explainability | Intermediate audit columns and dual RCM attribution must remain; never collapse into a single opaque number. |
 | Stdlib / offline | kpi-analytics remains Python 3.13 standard library only. No pip packages, no network clients in product paths. |
 | Additive first | Prefer new optional flags, columns, sheets, or profiles over silent renames or breaking contract changes. |
-| Schema ownership | Field definitions live in `wq_schema.json` / `.csv`. Renames or new required roles are coordinated with fixtures + docs. |
+| Schema ownership | Field definitions live in `wq_schema/wq_schema.json` / `wq_schema/wq_schema.csv`. Renames or new required roles are coordinated with fixtures + docs. |
 | Output safety | Never clobber existing destinations by default; continue unique-suffix policy. |
 | Privacy | Existing PHI masking on score output stays configurable; new features must not re-introduce raw patient identifiers into tracked samples. |
 | Certification | Any product code or gate change requires full `certification/Invoke-Certification.ps1` (Domain A + Domain B) before completion. |
@@ -366,7 +366,7 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 
 ## Compliance, versioning, and change control
 
-All work under this plan must follow `RULES.md`:
+All work under this plan must follow `kit/RULES.md` and `kit/rules/`:
 
 - Conventional Commits (`type(scope): …`) with scopes `kpi-analytics`, `excel-toolkit`, or omitted for root-wide files.
 - AI-assisted commits include the required footer block (`Assisted-by` / `Compliance: RULES.md` / `Instructed-by`).

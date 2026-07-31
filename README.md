@@ -56,7 +56,7 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | Sample data | `wq_data.csv` | Example WQ rows (headers match schema `field_name`) |
 | Demo inputs | `import\` | Tracked synthetic (or other non-PHI) inputs you choose to keep |
 | Run outputs | `output\` | Scored CSVs and Excel files (regenerable; not versioned) |
-| Design (optional) | `WQ_Priority_Matrix_Concept.md` | Priority matrix roadmap (V1–V3); **V1 is implemented** |
+| Design (optional) | `docs\WQ_Priority_Matrix_Concept.md` | Priority matrix roadmap (V1–V3); **V1 is implemented** |
 
 ---
 
@@ -142,9 +142,9 @@ Policy and inventory (not required for day-to-day scoring or export):
 | [kit/RULES.md](./kit/RULES.md) | Maintenance policy hub; **kit baseline** (adopted repo-kit version lives only there); domain modules under `kit/rules/` |
 | [kit/UPGRADE.md](./kit/UPGRADE.md) | Durable repo-kit upgrade / 1.x→2.x migration guide |
 | [CHANGELOG.md](./CHANGELOG.md) | Project history (Keep a Changelog); kit upgrades get a short note only—not kit release history |
-| [PLAN.md](./PLAN.md) | Post-V1 product roadmap; **Cluster 1** (config presets / profiles) design-frozen for implementation |
+| [docs/PLAN.md](./docs/PLAN.md) | Post-V1 product roadmap; **Cluster 1** (config presets / profiles) design-frozen for implementation |
 | [LICENSE](./LICENSE) | MIT license |
-| [FILE-CATALOG.md](./FILE-CATALOG.md) | Purpose of every intentional source file |
+| [docs/FILE-CATALOG.md](./docs/FILE-CATALOG.md) | Purpose of every intentional source file |
 | [kit/MARKDOWN-STANDARD.md](./kit/MARKDOWN-STANDARD.md) | How we structure documentation |
 | [certification/](./certification/) | Formal security + code-validation self-attestation (full harness after code changes; developer-only; not product diagnostics) |
 | [kit/templates/](./kit/templates/) | Skeletons for toolkit README, CLI, methodology, security, certification README |

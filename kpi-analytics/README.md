@@ -134,7 +134,7 @@ Explainable work ranking for denial / follow-up queues:
 - Batch normalization and weights (with optional chaos multipliers)
 - `v1_priority_score` in **[0, 1]** plus full audit columns (`v1_raw_*`, `v1_norm_*`, `v1_weight_*`, `v1_contrib_*`)
 
-Concept design: repository root `WQ_Priority_Matrix_Concept.md` (V1 implemented here).
+Concept design: [docs/WQ_Priority_Matrix_Concept.md](../docs/WQ_Priority_Matrix_Concept.md) (V1 implemented here).
 
 ### B. RCM claim impact (`kpi_q_*`) — independent of priority
 
