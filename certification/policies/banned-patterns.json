@@ -1,0 +1,58 @@
+{
+  "SchemaVersion": "1.0",
+  "Description": "Critical banned automation patterns for product trees (certification policy-scan).",
+  "DefaultExtensions": [".ps1", ".psm1", ".py", ".cmd"],
+  "IgnoreCommentLines": true,
+  "Rules": [
+    {
+      "Id": "no-stop-process-excel",
+      "Severity": "critical",
+      "Regex": "Stop-Process\\b",
+      "Paths": ["excel-toolkit"],
+      "ExcludeDirectoryNames": ["sample-test"],
+      "Extensions": [".ps1", ".psm1"],
+      "Note": "Never force-kill Excel"
+    },
+    {
+      "Id": "no-invoke-expression",
+      "Severity": "critical",
+      "Regex": "\\bInvoke-Expression\\b",
+      "Paths": ["excel-toolkit"],
+      "ExcludeDirectoryNames": ["sample-test"],
+      "Extensions": [".ps1", ".psm1"]
+    },
+    {
+      "Id": "no-unblock-file",
+      "Severity": "critical",
+      "Regex": "\\bUnblock-File\\b",
+      "Paths": ["excel-toolkit"],
+      "ExcludeDirectoryNames": ["sample-test"],
+      "Extensions": [".ps1", ".psm1"]
+    },
+    {
+      "Id": "no-download-run",
+      "Severity": "critical",
+      "Regex": "\\bInvoke-WebRequest\\b|\\bInvoke-RestMethod\\b|\\bNet\\.WebClient\\b|DownloadString\\s*\\(",
+      "Paths": ["excel-toolkit", "kpi-analytics"],
+      "ExcludeDirectoryNames": ["sample-test", "fixtures", "diagnostics", "__pycache__"],
+      "Extensions": [".ps1", ".psm1", ".py", ".cmd"]
+    },
+    {
+      "Id": "no-pip-in-product",
+      "Severity": "critical",
+      "Regex": "\\bpip\\s+install\\b|\\bpip3\\s+install\\b",
+      "Paths": ["kpi-analytics/kpi_modules", "kpi-analytics/kpi-analytics.cmd"],
+      "ExcludeDirectoryNames": ["__pycache__"],
+      "Extensions": [".py", ".cmd"],
+      "Note": "Product remains stdlib-only"
+    },
+    {
+      "Id": "no-eval-exec-python",
+      "Severity": "critical",
+      "Regex": "(?<![\\w.])eval\\s*\\(|(?<![\\w.])exec\\s*\\(",
+      "Paths": ["kpi-analytics/kpi_modules"],
+      "ExcludeDirectoryNames": ["__pycache__"],
+      "Extensions": [".py"]
+    }
+  ]
+}

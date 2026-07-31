@@ -1,7 +1,7 @@
 ---
 title: Security Baseline
 description: Trust baseline, security doc modularity, language surface inventory, SAST gates, and certification schema.
-version: "1.0.1"
+version: "1.0.3"
 status: current
 audience:
   - developers
@@ -24,7 +24,7 @@ last_updated: "2026-07-30"
 
 Hard rules for product code and launchers, inventory-driven SAST, and formal certification for this repository.
 
-**Document version:** 1.0.1  
+**Document version:** 1.0.3  
 
 **Related:** [RULES.md](../RULES.md) · [contracts.md](./contracts.md) · [authoring-and-style.md](./authoring-and-style.md) · [verification-and-ops.md](./verification-and-ops.md) · [certification/README.md](../../certification/README.md) · [TEMPLATE-SECURITY](../templates/TEMPLATE-SECURITY.md) · [TEMPLATE-CERTIFICATION-README](../templates/TEMPLATE-CERTIFICATION-README.md)
 
@@ -201,14 +201,14 @@ OverallPass = AND of domains that apply for declared inventory surfaces
 
 | Domain | Covers (this repo) |
 |--------|---------------------|
-| **Security** | Bandit on `kpi_modules`; PSScriptAnalyzer Error on **product** `excel-toolkit` scripts (`sample-test` excluded); **Gitleaks** workdir + git history |
-| **Code validation** | pylint on `kpi_modules` (**10.00/10** via `RequirePylintScore`); PS 5.1 parse/BOM on the same product set; `validate-score` fixtures |
+| **Security** | Bandit on `kpi_modules` (JSON evidence under `certification/logs/`); PSScriptAnalyzer Error on **product** `excel-toolkit` scripts (`sample-test` excluded) **and** `certification\*.ps1`; **Gitleaks** workdir + git history; **dynamic invariants** (privacy score mask, profile denylist, diagnostics key hygiene, `AutomationSecurity = 3`, password JSON contract); **policy-scan** banned automation patterns |
+| **Code validation** | Manifest schema-validate + process executable allowlist; pylint on `kpi_modules` (**10.00/10** via `RequirePylintScore`); PS 5.1 parse/BOM on product set **and** certification harness; `validate-score` fixtures; **Ship mode:** clean git tree |
 
-Commands: [certification/checks.json](../../certification/checks.json).
+Commands: [certification/checks.json](../../certification/checks.json). Modes: `Standard` (default) · `Ship` (`-Mode Ship` adds `ship-clean-git`).
 
 ### Certificate shape (illustrative)
 
-**Machine-readable** (`certification/last_certification.json`) should include: `CertificateType` (`SecurityAndCodeValidationCertification`), `OverallPass`, `Message`, timestamps, `RepoRoot`, `GitCommit` / `GitBranch` / `GitDirty`, `LanguageSurfaces[]`, `PackageVersions`, `ToolVersions`, `PassCriteria`, `Domains.Security` / `Domains.CodeValidation`, `Checks[]` (`Name`, `Domain`, `Passed`, `Severity`, `Detail`, `DurationMs`), `Disclaimer`.
+**Machine-readable** (`certification/last_certification.json`) should include: `CertificateType` (`SecurityAndCodeValidationCertification`), `SchemaVersion` (1.1+), `Mode`, `OverallPass`, `Message`, timestamps, `RepoRoot`, `GitCommit` / `GitBranch` / `GitDirty`, `LanguageSurfaces[]`, `PackageVersions`, `ToolVersions`, `Policy` (allowlist / clean-git), `Coverage` (static/dynamic/schema/engine counts), `PassCriteria`, `Domains.Security` / `Domains.CodeValidation`, `Checks[]` (`Name`, `Domain`, `Category`, `Passed`, `Severity`, `Detail`, `DurationMs`), `Disclaimer`.
 
 **Human-readable** (`last_certification.txt`): same facts in sections. **Privacy:** paths, versions, rule ids, counts only—never secrets, passwords, PHI, or claim rows.
 
@@ -222,9 +222,10 @@ When this repository maintains `certification/` (it does):
    - **Domain A (security):** Bandit, PSScriptAnalyzer Error, **Gitleaks**, and any other required Security checks.  
 3. **No partial renewal.** Re-running a subset of tools (only pylint, only Bandit, only Gitleaks, or only one domain) and writing a new cert pair is a **policy violation**. Both domains must be freshly executed in the **same** renewal run.  
 4. **Completion rule.** Work that made certification stale is **not complete** until the harness finishes with `OverallPass = true` (or the change is reverted). Missing required tools **fail** the run; they do not exempt renewal.  
-5. **Harness path.** Preferred renewal command from repo root: `.\certification\Invoke-Certification.ps1`. Manual hand-edits of a prior cert without re-running tools are **invalid**.  
+5. **Harness path.** Preferred renewal command from repo root: `.\certification\Invoke-Certification.ps1` (day-to-day **Standard** mode). For release packets with a clean tree: `.\certification\Invoke-Certification.ps1 -Mode Ship`. Manual hand-edits of a prior cert without re-running tools are **invalid**.  
 6. **Narrow docs-only exception.** Pure documentation edits that cannot affect gate results may skip renewal; if unsure, renew.  
-7. **Outputs.** Leave `last_certification.*` **untracked**. Never stage or commit them.
+7. **Outputs.** Leave `last_certification.*` **untracked**. Never stage or commit them.  
+8. **Engine integrity.** Manifest structural validation and process executable allowlist are part of the suite; do not bypass them to run unlisted tools from `checks.json`.
 
 ### Certification rule
 
@@ -240,5 +241,7 @@ Operator guide: [certification/README.md](../../certification/README.md). Skelet
 
 | Version | Notes |
 |---------|--------|
+| 1.0.3 | Certification Phase 2: required dynamic Security invariants + policy-scan in full harness |
+| 1.0.2 | Certification engine hardening: schema-validate, allowlist, harness self-check, Ship mode, certificate SchemaVersion 1.1 fields |
 | 1.0.1 | Project fill: inventory (Python/PowerShell/Secrets), enterprise table, certification renewal enforcement |
 | 1.0.0 | Extracted from RULES 1.4.1 for kit 2.0 |

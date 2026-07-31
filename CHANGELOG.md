@@ -13,6 +13,45 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.12.0] - 2026-07-30
+
+#### Added
+
+- **Certification Phase 2 — required dynamic Security checks** (full suite; 16 Standard checks):
+  - `invariant-privacy-score` — score with privacy on masks patient / blanks DOB
+  - `invariant-profile-denylist` — profiles reject claim-dump keys
+  - `invariant-diagnostics-keys` — diagnostics certificate has no PHI/claim shapes
+  - `invariant-automation-security` — `AutomationSecurity = 3` present in ExcelCom
+  - `invariant-password-json-contract` — JSON exposes `PasswordUsed` boolean only
+  - `policy-banned-patterns` — banned automation patterns over product trees
+  - Harness kinds: `python-assert`, `powershell-assert`, `policy-scan`
+  - `certification/scripts/`, `policies/banned-patterns.json`, `fixtures/privacy_score_input.csv`
+
+#### Fixed
+
+- **kpi-analytics diagnostics:** stop importing `kpi_modules.__main__` during package import smoke (it re-entered the CLI via `SystemExit`); verify `__main__.py` presence instead
+
+#### Changed
+
+- Operator guide, `kit/rules/security.md`, FILE-CATALOG for dynamic/policy certification checks
+
+### [1.11.0] - 2026-07-30
+
+#### Added
+
+- **Certification engine hardening (SchemaVersion 1.1):**
+  - `schema-validate` check (manifest structure, known Kinds, process executable allowlist)
+  - Harness self-check: parse/BOM + PSScriptAnalyzer Error on `certification\*.ps1`
+  - Bandit JSON evidence under `certification/logs/bandit.json`
+  - `-Mode Ship` with `ShipOnly` clean-git gate (`ship-clean-git`)
+  - Certificate fields: `Mode`, `Policy`, `Coverage`, per-check `Category`
+  - Documented manifest schema at `certification/schema/checks.schema.json`
+
+#### Changed
+
+- `certification/checks.json` and `Invoke-Certification.ps1` enforce process allowlist; rooted arbitrary process executables rejected
+- Operator guide and `kit/rules/security.md` updated for modes and engine integrity
+
 ### [1.10.0] - 2026-07-30
 
 #### Fixed

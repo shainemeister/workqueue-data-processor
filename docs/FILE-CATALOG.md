@@ -293,9 +293,13 @@ Formal **security + code-validation** self-attestation package (developer-only).
 
 | Path | Type | Summary |
 |------|------|---------|
-| [README.md](../certification/README.md) | doc | Operator guide: surfaces, dual-mode Gitleaks, product-only PSSA, schema fields, advisory password Warning note |
-| [checks.json](../certification/checks.json) | config | Declarative required Domain A/B checks (pylint 10.00, Bandit, PSSA Error, dual Gitleaks, validate-score handcalc + **validate-score-rcm**) |
-| [Invoke-Certification.ps1](../certification/Invoke-Certification.ps1) | script | Full-suite harness; root via `kit\RULES.md`; `PackageVersions`/`DurationMs`/`Message`; exit 0 iff OverallPass |
+| [README.md](../certification/README.md) | doc | Operator guide: surfaces, dual-mode Gitleaks, dynamic invariants, policy-scan, Ship mode, engine allowlist |
+| [checks.json](../certification/checks.json) | config | Declarative Domain A/B checks (static SAST + **6 required dynamic/policy Security checks** + validate-score + ShipOnly clean-git) |
+| [schema/checks.schema.json](../certification/schema/checks.schema.json) | config | Documented JSON Schema for the checks manifest (runtime validation is in the harness) |
+| [policies/banned-patterns.json](../certification/policies/banned-patterns.json) | config | Policy-scan rule pack (Stop-Process, IEX, Unblock-File, download, pip, eval/exec) |
+| [scripts/](../certification/scripts/) | script | Dynamic invariant helpers (`invariant_*.py`, `_common.py`) |
+| [fixtures/privacy_score_input.csv](../certification/fixtures/privacy_score_input.csv) | fixture | Synthetic privacy score fixture (no real PHI) |
+| [Invoke-Certification.ps1](../certification/Invoke-Certification.ps1) | script | Full-suite harness; kinds include `python-assert` / `policy-scan`; `-Mode Standard\|Ship`; exit 0 iff OverallPass |
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Work Queue Data Processor — Security and code-validation certification"
 description: "Operator guide for the formal regenerable self-attestation certificate (Domain A security + Domain B code validation, including dual-mode Gitleaks)."
-version: "1.0.2"
+version: "1.2.0"
 status: current
 audience:
   - developers
@@ -14,17 +14,19 @@ related:
   - ../CHANGELOG.md
   - checks.json
   - Invoke-Certification.ps1
+  - schema/checks.schema.json
+  - policies/banned-patterns.json
 last_updated: "2026-07-30"
 ---
 
 # Work Queue Data Processor — Certification
 
-Operator guide for the **formal, regenerable** security and code-validation certificate for this repository. One package covers **Domain A (security / SAST + secrets)** and **Domain B (code validation)** in a single certificate pair.
+Operator guide for the **formal, regenerable** security and code-validation certificate for this repository. One package covers **Domain A (security / SAST + secrets + dynamic invariants)** and **Domain B (code validation)** in a single certificate pair.
 
-**Document version:** 1.0.2  
+**Document version:** 1.2.0  
 **Status:** current  
 
-**Related:** [Security and code-validation certification](../kit/rules/security.md#security-and-code-validation-certification) · [Language surface inventory](../kit/rules/security.md#language-surface-inventory) · [checks.json](./checks.json) · [Invoke-Certification.ps1](./Invoke-Certification.ps1)
+**Related:** [Security and code-validation certification](../kit/rules/security.md#security-and-code-validation-certification) · [Language surface inventory](../kit/rules/security.md#language-surface-inventory) · [checks.json](./checks.json) · [Invoke-Certification.ps1](./Invoke-Certification.ps1) · [schema/checks.schema.json](./schema/checks.schema.json)
 
 ---
 
@@ -36,8 +38,10 @@ Operator guide for the **formal, regenerable** security and code-validation cert
 | **Where** | This folder only: `certification/` |
 | **Who runs it** | Developers / release reviewers — **not** end-user product launchers |
 | **Product impact** | Must **not** gate product CLI or end-user install |
-| **Harness** | [Invoke-Certification.ps1](./Invoke-Certification.ps1) — always runs the **full** suite |
+| **Harness** | [Invoke-Certification.ps1](./Invoke-Certification.ps1) — always runs the **full** suite for the selected mode |
 | **Gate definitions** | [checks.json](./checks.json) — operational source of truth for commands |
+| **Modes** | `Standard` (default, day-to-day renewal) · `Ship` (adds clean-git gate) |
+| **Engine policy** | Executable allowlist for `Kind=process`; structural schema validation; harness self-check (parse/BOM + PSSA) |
 
 This is **not** a third-party audit, SOC 2, or ISO seal.
 
@@ -52,10 +56,12 @@ This is **not** a third-party audit, SOC 2, or ISO seal.
 3. [Developer tools](#developer-tools)
 4. [Declared surfaces](#declared-surfaces)
 5. [How to run](#how-to-run)
-6. [Outputs](#outputs)
-7. [Advisory notes](#advisory-notes)
-8. [Disclaimer](#disclaimer)
-9. [Document history](#document-history)
+6. [Modes](#modes)
+7. [Engine hardening](#engine-hardening)
+8. [Outputs](#outputs)
+9. [Advisory notes](#advisory-notes)
+10. [Disclaimer](#disclaimer)
+11. [Document history](#document-history)
 
 ---
 
@@ -102,13 +108,22 @@ Commands and pass criteria for this repository (also encoded in [checks.json](./
 
 | Surface | Domain B command | Domain A command | Pass criteria |
 |---------|------------------|------------------|---------------|
-| Python (`kpi_modules`) | From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules` | From `kpi-analytics\`: `py -3.13 -m bandit -r kpi_modules` | Exit 0; pylint **10.00/10** (`RequirePylintScore`); Bandit clean |
+| Meta (manifest) | Structural `checks.json` validation (`schema-validate`) | — | Required fields, known Kinds, process executables on allowlist |
+| Python (`kpi_modules`) | From `kpi-analytics\`: `py -3.13 -m pylint kpi_modules` | Bandit on `kpi_modules` with JSON evidence under `logs/bandit.json` | Exit 0; pylint **10.00/10** (`RequirePylintScore`); Bandit clean |
 | PowerShell (`excel-toolkit` product scripts) | PS 5.1 parse + UTF-8 BOM (or pure ASCII) on product `*.ps1`/`*.psm1` (**`sample-test` excluded**) | PSScriptAnalyzer **Error** on the **same** product file set (**`sample-test` excluded**) | Zero Error findings; scripts load |
+| PowerShell (`certification` harness) | PS 5.1 parse + UTF-8 BOM on `certification\*.ps1` | PSScriptAnalyzer **Error** on the same set | Zero Error findings; harness loads |
 | Secrets (whole repo) | — | **Gitleaks dual mode:** working tree (`--no-git`) **and** git history | Exit 0 on **both** modes; no leaks |
 | Python contract | `kpi-analytics.cmd validate-score` (handcalc defaults) | — | Exit 0; handcalc fixtures green |
 | Python contract (RCM) | `kpi-analytics.cmd validate-score` with `fixtures/rcm_impact_*` | — | Exit 0; RCM dual-attribution golden green |
+| Meta (Ship mode only) | Clean git working tree (`git-clean`) | — | No porcelain when `-Mode Ship` |
+| **Dynamic — privacy** | — | `python-assert` `invariant_privacy_score.py` | Privacy on: DOB blank; patient mask pattern; no raw fixture PHI in output |
+| **Dynamic — profiles** | — | `invariant_profile_denylist.py` | Rejects `rows`/`claims`/`data`/`records` in profile envelopes |
+| **Dynamic — diagnostics** | — | `invariant_diagnostics_keys.py` | Diagnostics key tree has no PHI/claim dump shapes |
+| **Dynamic — Excel macros** | — | `invariant_automation_security.py` | `ExcelCom.psm1` sets `AutomationSecurity = 3` (non-comment) |
+| **Dynamic — password JSON** | — | `invariant_password_json_contract.py` | CLI/module JSON exposes `PasswordUsed` boolean only |
+| **Policy** | — | `policy-scan` + [policies/banned-patterns.json](./policies/banned-patterns.json) | Zero critical banned patterns in product trees |
 
-**Required surfaces:** Python, PowerShell, Secrets. All required checks run on **every** certification renewal.
+**Required surfaces:** Python, PowerShell, Secrets. All required checks for the selected **mode** run on **every** certification renewal (full suite; no partial recert). Standard mode currently runs **16** required checks (static + dynamic + policy).
 
 **Gitleaks modes (both required):**
 
@@ -127,11 +142,55 @@ From the **repository root** (Windows PowerShell 5.1):
 
 ```powershell
 .\certification\Invoke-Certification.ps1
+# Release / ship renewal (also requires clean git tree):
+.\certification\Invoke-Certification.ps1 -Mode Ship
+# CI-style: run suite without rewriting cert files
+.\certification\Invoke-Certification.ps1 -SkipWrite
 ```
 
 Exit code **0** means `OverallPass` is true; **1** means one or more required checks failed.
 
-The harness always executes the full matrix in `checks.json`. There is no `-Domain` or partial-skip mode for production renewals.
+The harness always executes the full matrix applicable to the mode. There is no `-Domain` or partial-skip mode for production renewals.
+
+---
+
+## Modes
+
+| Mode | When to use | Extra gates |
+|------|-------------|-------------|
+| **Standard** (default) | Day-to-day renewal after product/gate changes | All required non-`ShipOnly` checks |
+| **Ship** | Pre-release / completion when claiming a clean ship packet | Standard suite **plus** `ship-clean-git` (`GitDirty` must be false) |
+
+`ShipOnly` checks are **skipped** in Standard (not failed). They are **required** in Ship.
+
+---
+
+## Engine hardening
+
+| Control | Behavior |
+|---------|----------|
+| **Schema validation** | `Kind=schema-validate` checks required fields, domains, severities, known Kinds, and process allowlist membership |
+| **Executable allowlist** | `Policy.ExecutableAllowlist` in `checks.json` (default: `py`, `python`, `kpi-analytics.cmd`, `gitleaks`). Rooted arbitrary paths for `Kind=process` are rejected |
+| **Harness self-check** | `certification\*.ps1` included in parse/BOM + PSSA Error |
+| **Evidence logs** | Bandit JSON → `logs/bandit.json`; Gitleaks → `logs/gitleaks-*.json`; policy-scan → `logs/policy-scan.json` (gitignored; counts/rule ids only in certificate) |
+| **Illustrative schema** | [schema/checks.schema.json](./schema/checks.schema.json) documents the shape; runtime validation is in the harness (no external JSON Schema dependency) |
+| **Dynamic asserts** | `Kind=python-assert` / `powershell-assert` run scripts under `certification/scripts/` only (path confined) |
+| **Policy scan** | `Kind=policy-scan` loads [policies/banned-patterns.json](./policies/banned-patterns.json); comment lines ignored |
+
+### Dynamic / policy checks (required Security)
+
+| Id | Script / policy | Proves |
+|----|-----------------|--------|
+| `invariant-privacy-score` | [scripts/invariant_privacy_score.py](./scripts/invariant_privacy_score.py) + [fixtures/privacy_score_input.csv](./fixtures/privacy_score_input.csv) | Score-path PHI masking |
+| `invariant-profile-denylist` | [scripts/invariant_profile_denylist.py](./scripts/invariant_profile_denylist.py) | Profiles cannot embed claim dumps |
+| `invariant-diagnostics-keys` | [scripts/invariant_diagnostics_keys.py](./scripts/invariant_diagnostics_keys.py) | Diagnostics cert shape is environment-only |
+| `invariant-automation-security` | [scripts/invariant_automation_security.py](./scripts/invariant_automation_security.py) | Macro force-disable still present |
+| `invariant-password-json-contract` | [scripts/invariant_password_json_contract.py](./scripts/invariant_password_json_contract.py) | No password values in JSON payloads |
+| `policy-banned-patterns` | [policies/banned-patterns.json](./policies/banned-patterns.json) | No Stop-Process/IEX/Unblock-File/download/pip/eval patterns in product code |
+
+**Not yet gated (roadmap):** KPI menu `cmd /c` quoting (after product spawn hardening); Excel live password canary (needs Excel); PSSA Warning as critical (after secure CLI password path).
+
+Privacy invariants are **operational masking proofs**, not HIPAA Safe Harbor claims.
 
 ---
 
@@ -142,11 +201,15 @@ The harness always executes the full matrix in `checks.json`. There is no `-Doma
 | [README.md](./README.md) | This operator guide | Yes |
 | [checks.json](./checks.json) | Declarative check list | Yes |
 | [Invoke-Certification.ps1](./Invoke-Certification.ps1) | Full-suite harness | Yes |
+| [schema/checks.schema.json](./schema/checks.schema.json) | Documented JSON Schema for the manifest | Yes |
+| [policies/banned-patterns.json](./policies/banned-patterns.json) | Policy-scan rule pack | Yes |
+| [scripts/](./scripts/) | Dynamic invariant helpers (`python-assert`) | Yes |
+| [fixtures/](./fixtures/) | Synthetic cert fixtures (no real PHI) | Yes |
 | `last_certification.json` | Machine-readable certificate | **No** (gitignored) |
 | `last_certification.txt` | Human-readable certificate | **No** (gitignored) |
-| `logs/` | Optional tool reports (e.g. dual gitleaks JSON) | **No** (gitignored) |
+| `logs/` | Tool reports (bandit, dual gitleaks JSON, …) | **No** (gitignored) |
 
-JSON fields include: `CertificateType`, `OverallPass`, `Message`, timestamps, `RepoRoot`, `GitCommit` / `GitBranch` / `GitDirty`, `LanguageSurfaces`, `PackageVersions`, `ToolVersions`, `PassCriteria`, `Domains.Security`, `Domains.CodeValidation`, `Checks[]` (including `DurationMs`), `Disclaimer`.
+JSON fields include: `CertificateType`, `SchemaVersion` (**1.1**), `Mode`, `OverallPass`, `Message`, timestamps, `RepoRoot`, `GitCommit` / `GitBranch` / `GitDirty`, `LanguageSurfaces`, `PackageVersions`, `ToolVersions`, `Policy`, `Coverage`, `PassCriteria`, `Domains.Security`, `Domains.CodeValidation`, `Checks[]` (including `Category`, `DurationMs`), `Disclaimer`.
 
 ---
 
@@ -177,6 +240,8 @@ Self-attestation of automated checks only. Not a third-party audit. Not runtime 
 
 | Version | Notes |
 |---------|--------|
+| 1.2.0 | Phase 2 dynamic Security invariants + policy-scan required in full suite (privacy, profile denylist, diagnostics keys, AutomationSecurity, password JSON, banned patterns); 16 Standard checks |
+| 1.1.0 | Engine hardening: SchemaVersion 1.1, schema-validate, process allowlist, harness self-check (parse/BOM + PSSA), Bandit evidence log, `-Mode Ship` clean-git, Coverage/Policy/Category fields |
 | 1.0.2 | Links updated for repo-kit 2.x (`kit/rules/security.md`); harness root detection uses `kit/RULES.md` |
 | 1.0.1 | PSSA product-only scope (align with parse/BOM); dual-mode Gitleaks; declarative pylint score; cert schema polish (`PackageVersions`, `DurationMs`, `Message`); password Warning advisory note |
 | 1.0.0 | Initial certification package: full-suite harness, checks.json, Secrets/Gitleaks required, renewal enforcement pointer to RULES |

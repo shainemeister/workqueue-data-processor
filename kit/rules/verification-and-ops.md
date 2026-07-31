@@ -53,7 +53,7 @@ Do **not** mark work complete if any **declared** Domain B (style) or Domain A (
 
 | Change type | Minimum verification |
 |-------------|----------------------|
-| **Product code, gate config, or inventory** | **Full certification package:** `.\certification\Invoke-Certification.ps1` (Domain B **and** Domain A, including pylint + Bandit + PSSA + Gitleaks + validate-score). Confirm `OverallPass`; do not stage outputs. See [renewal enforcement](./security.md#certification-renewal-enforcement-required) |
+| **Product code, gate config, or inventory** | **Full certification package:** `.\certification\Invoke-Certification.ps1` (Domain B **and** Domain A, including pylint + Bandit + PSSA + Gitleaks + validate-score + **dynamic Security invariants** + **policy-scan**). Confirm `OverallPass`; do not stage outputs. See [renewal enforcement](./security.md#certification-renewal-enforcement-required) |
 | KPI scoring, columns, config | Covered by harness `validate-score`; may also run `kpi-analytics.cmd validate-score` alone while iterating |
 | KPI environment / packaging | `kpi-analytics.cmd probe` |
 | KPI enterprise first-run / gate | `kpi-analytics.cmd diagnostics` (certificate under `diagnostics\`) — **not** a substitute for certification |

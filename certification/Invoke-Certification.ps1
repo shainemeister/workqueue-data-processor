@@ -5,13 +5,15 @@
 
 .DESCRIPTION
     Runs every required check in certification/checks.json (Domain A security and
-    Domain B code validation, including pylint and dual-mode Gitleaks), writes
-    last_certification.json and last_certification.txt, and exits 0 only when
-    OverallPass is true.
+    Domain B code validation, including pylint, dual-mode Gitleaks, schema
+    validation, and harness self-checks), writes last_certification.json and
+    last_certification.txt, and exits 0 only when OverallPass is true.
+
+    -Mode Ship additionally enforces ShipOnly checks (e.g. clean git tree).
 
     Not a product launcher. Do not call from kpi-analytics, excel-toolkit, or
     package diagnostics gates. Partial runs are not supported: the full suite
-    always executes.
+    always executes for the selected mode.
 
 .NOTES
     PowerShell 5.1 compatible. Save as UTF-8 with BOM.
@@ -19,11 +21,33 @@
 [CmdletBinding()]
 param(
     [string]$RepoRoot = '',
+    [ValidateSet('Standard', 'Ship')]
+    [string]$Mode = 'Standard',
     [switch]$SkipWrite
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'
+
+$script:DefaultKnownKinds = @(
+    'process',
+    'ps-parse-bom',
+    'pssa',
+    'gitleaks',
+    'schema-validate',
+    'git-clean',
+    'policy-scan',
+    'python-assert',
+    'powershell-assert'
+)
+
+$script:DefaultExecutableAllowlist = @(
+    'py',
+    'python',
+    'kpi-analytics.cmd',
+    'gitleaks',
+    'gitleaks.exe'
+)
 
 function Test-RepoRootMarker {
     param([string]$Path)
@@ -93,7 +117,7 @@ function Get-ToolVersion {
 function Get-PackageVersions {
     param([string]$Root)
     $versions = [ordered]@{
-        kpi_modules        = 'unknown'
+        kpi_modules         = 'unknown'
         ExcelToolkitVersion = 'unknown'
     }
 
@@ -200,6 +224,507 @@ function Get-ProductScriptFiles {
     return @{ Ok = $true; Base = $base; Files = @($files); Error = $null }
 }
 
+function Get-ManifestPolicy {
+    param([object]$Manifest)
+    $allow = @($script:DefaultExecutableAllowlist)
+    $kinds = @($script:DefaultKnownKinds)
+    if ($Manifest.PSObject.Properties.Name -contains 'Policy' -and $Manifest.Policy) {
+        $pol = $Manifest.Policy
+        if ($pol.PSObject.Properties.Name -contains 'ExecutableAllowlist' -and $pol.ExecutableAllowlist) {
+            $allow = @($pol.ExecutableAllowlist | ForEach-Object { [string]$_ })
+        }
+        if ($pol.PSObject.Properties.Name -contains 'KnownKinds' -and $pol.KnownKinds) {
+            $kinds = @($pol.KnownKinds | ForEach-Object { [string]$_ })
+            # Always accept kinds the engine implements even if Policy list is short
+            foreach ($k in $script:DefaultKnownKinds) {
+                if ($kinds -notcontains $k) { $kinds += $k }
+            }
+        }
+    }
+    return @{
+        ExecutableAllowlist = $allow
+        KnownKinds          = $kinds
+    }
+}
+
+function Test-ChecksManifestStructure {
+    param(
+        [object]$Manifest,
+        [hashtable]$Policy
+    )
+    $errors = New-Object System.Collections.Generic.List[string]
+
+    if (-not $Manifest.SchemaVersion) {
+        $errors.Add('SchemaVersion is missing')
+    }
+    if (-not $Manifest.LanguageSurfaces -or @($Manifest.LanguageSurfaces).Count -eq 0) {
+        $errors.Add('LanguageSurfaces is empty')
+    }
+    if (-not $Manifest.Checks -or @($Manifest.Checks).Count -eq 0) {
+        $errors.Add('Checks is empty')
+    }
+
+    $allowedDomains = @('Security', 'CodeValidation')
+    $ids = @{}
+    foreach ($c in @($Manifest.Checks)) {
+        $id = [string]$c.Id
+        $name = [string]$c.Name
+        $domain = [string]$c.Domain
+        $kind = [string]$c.Kind
+        $sev = [string]$c.Severity
+
+        if ([string]::IsNullOrWhiteSpace($id)) { $errors.Add('Check missing Id'); continue }
+        if ($ids.ContainsKey($id)) { $errors.Add("Duplicate check Id: $id") }
+        else { $ids[$id] = $true }
+
+        if ([string]::IsNullOrWhiteSpace($name)) { $errors.Add("Check $id missing Name") }
+        if ($allowedDomains -notcontains $domain) {
+            $errors.Add("Check $id Domain must be Security or CodeValidation (got '$domain')")
+        }
+        if ($Policy.KnownKinds -notcontains $kind) {
+            $errors.Add("Check $id unknown Kind '$kind'")
+        }
+        if ($sev -ne 'critical' -and $sev -ne 'advisory') {
+            $errors.Add("Check $id Severity must be critical or advisory (got '$sev')")
+        }
+        if (-not ($c.PSObject.Properties.Name -contains 'Required')) {
+            $errors.Add("Check $id missing Required")
+        }
+        if ([string]::IsNullOrWhiteSpace([string]$c.PassCriteria)) {
+            $errors.Add("Check $id missing PassCriteria")
+        }
+
+        if ($kind -eq 'process') {
+            $exe = [string]$c.Executable
+            if ([string]::IsNullOrWhiteSpace($exe)) {
+                $errors.Add("Check $id process Kind requires Executable")
+            }
+            else {
+                $baseName = [System.IO.Path]::GetFileName($exe)
+                $allowHit = $false
+                foreach ($a in @($Policy.ExecutableAllowlist)) {
+                    if ($baseName -ieq $a) { $allowHit = $true; break }
+                }
+                if (-not $allowHit) {
+                    $errors.Add("Check $id Executable '$baseName' not on ExecutableAllowlist")
+                }
+            }
+        }
+
+        if ($kind -eq 'ps-parse-bom' -or $kind -eq 'pssa') {
+            if ([string]::IsNullOrWhiteSpace([string]$c.Path)) {
+                $errors.Add("Check $id $kind requires Path")
+            }
+        }
+
+        if ($kind -eq 'python-assert' -or $kind -eq 'powershell-assert') {
+            if ([string]::IsNullOrWhiteSpace([string]$c.Script)) {
+                $errors.Add("Check $id $kind requires Script")
+            }
+        }
+
+        if ($kind -eq 'policy-scan') {
+            $hasFile = ($c.PSObject.Properties.Name -contains 'PatternsFile' -and $c.PatternsFile)
+            $hasInline = ($c.PSObject.Properties.Name -contains 'Patterns' -and $c.Patterns)
+            if (-not $hasFile -and -not $hasInline) {
+                $errors.Add("Check $id policy-scan requires PatternsFile or Patterns")
+            }
+        }
+    }
+
+    return @{
+        Ok     = ($errors.Count -eq 0)
+        Errors = @($errors)
+    }
+}
+
+function Invoke-SchemaValidateCheck {
+    param(
+        [object]$Manifest,
+        [hashtable]$Policy
+    )
+    $result = Test-ChecksManifestStructure -Manifest $Manifest -Policy $Policy
+    if ($result.Ok) {
+        $checkCount = @($Manifest.Checks).Count
+        $allowCount = @($Policy.ExecutableAllowlist).Count
+        return @{
+            Passed   = $true
+            Detail   = "schema ok; checks=$checkCount; allowlist=$allowCount; schemaVersion=$([string]$Manifest.SchemaVersion)"
+            ExitCode = 0
+        }
+    }
+    $msg = ($result.Errors | Select-Object -First 5) -join '; '
+    if ($result.Errors.Count -gt 5) {
+        $msg += (" ... (+{0} more)" -f ($result.Errors.Count - 5))
+    }
+    return @{
+        Passed   = $false
+        Detail   = "schema fail: $msg"
+        ExitCode = 1
+    }
+}
+
+function Invoke-GitCleanCheck {
+    param([bool]$GitDirty)
+    if ($GitDirty) {
+        return @{
+            Passed   = $false
+            Detail   = 'git working tree is dirty (Ship mode requires clean tree)'
+            ExitCode = 1
+        }
+    }
+    return @{
+        Passed   = $true
+        Detail   = 'git working tree clean'
+        ExitCode = 0
+    }
+}
+
+function Resolve-CertificationScriptPath {
+    param(
+        [string]$Root,
+        [string]$ScriptRel
+    )
+    if ([string]::IsNullOrWhiteSpace($ScriptRel)) {
+        return @{ Ok = $false; Path = $null; Error = 'Script path empty' }
+    }
+    $normalized = $ScriptRel.Replace('/', '\').TrimStart('\')
+    if ($normalized -match '\.\.') {
+        return @{ Ok = $false; Path = $null; Error = 'Script path must not contain ..' }
+    }
+    if ($normalized -notlike 'certification\*' -and $normalized -notlike 'certification/*') {
+        return @{ Ok = $false; Path = $null; Error = 'Script must be under certification/' }
+    }
+    $full = Join-Path $Root $normalized
+    if (-not (Test-Path -LiteralPath $full)) {
+        return @{ Ok = $false; Path = $null; Error = "Script not found: $ScriptRel" }
+    }
+    try {
+        $resolved = (Resolve-Path -LiteralPath $full).Path
+        $rootFull = (Resolve-Path -LiteralPath $Root).Path.TrimEnd('\')
+        if (-not $resolved.StartsWith($rootFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return @{ Ok = $false; Path = $null; Error = 'Script resolves outside repository' }
+        }
+        return @{ Ok = $true; Path = $resolved; Error = $null }
+    } catch {
+        return @{ Ok = $false; Path = $null; Error = "Script resolve failed: $ScriptRel" }
+    }
+}
+
+function Get-AssertDetailFromOutput {
+    param([string]$Output)
+    $lines = @($Output -split "`r?`n" | Where-Object { $_.Trim() })
+    # Prefer last non-empty line; drop lines that look like dates (PHI defense-in-depth)
+    $safe = @()
+    foreach ($line in $lines) {
+        if ($line -match '\b\d{1,2}/\d{1,2}/\d{4}\b') { continue }
+        $safe += $line
+    }
+    if ($safe.Count -eq 0) {
+        $summary = ($lines | Select-Object -Last 2) -join ' | '
+    }
+    else {
+        $summary = ($safe | Select-Object -Last 2) -join ' | '
+    }
+    if ($summary.Length -gt 240) {
+        $summary = $summary.Substring(0, 237) + '...'
+    }
+    return $summary
+}
+
+function Invoke-PythonAssertCheck {
+    param(
+        [string]$Root,
+        [object]$Check
+    )
+    $scriptRel = [string]$Check.Script
+    $resolved = Resolve-CertificationScriptPath -Root $Root -ScriptRel $scriptRel
+    if (-not $resolved.Ok) {
+        return @{ Passed = $false; Detail = $resolved.Error; ExitCode = 1 }
+    }
+
+    $py = Get-Command py -ErrorAction SilentlyContinue
+    if (-not $py) {
+        return @{ Passed = $false; Detail = 'py launcher not found on PATH'; ExitCode = 1 }
+    }
+
+    $argList = @('-3.13', $resolved.Path)
+    if ($Check.PSObject.Properties.Name -contains 'Arguments' -and $Check.Arguments) {
+        $argList += @($Check.Arguments | ForEach-Object { [string]$_ })
+    }
+
+    $successCodes = @(0)
+    if ($Check.PSObject.Properties.Name -contains 'SuccessExitCodes' -and $Check.SuccessExitCodes) {
+        $successCodes = @($Check.SuccessExitCodes | ForEach-Object { [int]$_ })
+    }
+
+    Push-Location $Root
+    try {
+        $output = & py @argList 2>&1 | Out-String
+        $code = $LASTEXITCODE
+        if ($null -eq $code) { $code = 0 }
+    } finally {
+        Pop-Location
+    }
+
+    $passed = $successCodes -contains [int]$code
+    $summary = Get-AssertDetailFromOutput -Output $output
+    $detail = "exit $code"
+    if ($summary) { $detail = "$detail; $summary" }
+    return @{
+        Passed   = [bool]$passed
+        Detail   = $detail
+        ExitCode = [int]$code
+    }
+}
+
+function Invoke-PowerShellAssertCheck {
+    param(
+        [string]$Root,
+        [object]$Check
+    )
+    $scriptRel = [string]$Check.Script
+    $resolved = Resolve-CertificationScriptPath -Root $Root -ScriptRel $scriptRel
+    if (-not $resolved.Ok) {
+        return @{ Passed = $false; Detail = $resolved.Error; ExitCode = 1 }
+    }
+
+    $argList = @(
+        '-NoLogo',
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-File', $resolved.Path
+    )
+    if ($Check.PSObject.Properties.Name -contains 'Arguments' -and $Check.Arguments) {
+        $argList += @($Check.Arguments | ForEach-Object { [string]$_ })
+    }
+
+    $successCodes = @(0)
+    if ($Check.PSObject.Properties.Name -contains 'SuccessExitCodes' -and $Check.SuccessExitCodes) {
+        $successCodes = @($Check.SuccessExitCodes | ForEach-Object { [int]$_ })
+    }
+
+    Push-Location $Root
+    try {
+        $output = & powershell.exe @argList 2>&1 | Out-String
+        $code = $LASTEXITCODE
+        if ($null -eq $code) { $code = 0 }
+    } finally {
+        Pop-Location
+    }
+
+    $passed = $successCodes -contains [int]$code
+    $summary = Get-AssertDetailFromOutput -Output $output
+    $detail = "exit $code"
+    if ($summary) { $detail = "$detail; $summary" }
+    return @{
+        Passed   = [bool]$passed
+        Detail   = $detail
+        ExitCode = [int]$code
+    }
+}
+
+function Test-PolicyLineIsComment {
+    param(
+        [string]$Line,
+        [string]$Extension,
+        [ref]$InBlockComment
+    )
+    $t = $Line.Trim()
+    if ([string]::IsNullOrWhiteSpace($t)) { return $true }
+    $ext = $Extension.ToLowerInvariant()
+    if ($ext -eq '.py') {
+        return $t.StartsWith('#')
+    }
+    if ($ext -eq '.ps1' -or $ext -eq '.psm1') {
+        # Track <# ... #> block comments (module headers, etc.)
+        if ($null -ne $InBlockComment) {
+            if ($InBlockComment.Value) {
+                if ($t -match '#>') {
+                    $InBlockComment.Value = $false
+                }
+                return $true
+            }
+            if ($t -match '<#') {
+                if ($t -notmatch '#>') {
+                    $InBlockComment.Value = $true
+                }
+                return $true
+            }
+        }
+        return $t.StartsWith('#')
+    }
+    if ($ext -eq '.cmd') {
+        return ($t.StartsWith('REM ', [System.StringComparison]::OrdinalIgnoreCase) -or $t.StartsWith('::'))
+    }
+    return $false
+}
+
+function Invoke-PolicyScanCheck {
+    param(
+        [string]$Root,
+        [string]$LogsDir,
+        [object]$Check
+    )
+    $rules = @()
+    $ignoreComments = $true
+    $defaultExt = @('.ps1', '.psm1', '.py', '.cmd')
+
+    if ($Check.PSObject.Properties.Name -contains 'PatternsFile' -and $Check.PatternsFile) {
+        $rel = [string]$Check.PatternsFile
+        $norm = $rel.Replace('/', '\')
+        $full = Join-Path $Root $norm
+        if (-not (Test-Path -LiteralPath $full)) {
+            return @{ Passed = $false; Detail = "PatternsFile not found: $rel"; ExitCode = 1 }
+        }
+        try {
+            $doc = Get-Content -LiteralPath $full -Raw -Encoding UTF8 | ConvertFrom-Json
+        } catch {
+            return @{ Passed = $false; Detail = "PatternsFile JSON parse failed: $rel"; ExitCode = 1 }
+        }
+        if ($doc.PSObject.Properties.Name -contains 'IgnoreCommentLines') {
+            $ignoreComments = [bool]$doc.IgnoreCommentLines
+        }
+        if ($doc.PSObject.Properties.Name -contains 'DefaultExtensions' -and $doc.DefaultExtensions) {
+            $defaultExt = @($doc.DefaultExtensions | ForEach-Object { [string]$_ })
+        }
+        if ($doc.Rules) {
+            $rules = @($doc.Rules)
+        }
+    }
+    elseif ($Check.PSObject.Properties.Name -contains 'Patterns' -and $Check.Patterns) {
+        $rules = @($Check.Patterns)
+    }
+
+    if ($rules.Count -eq 0) {
+        return @{ Passed = $false; Detail = 'policy-scan has no rules'; ExitCode = 1 }
+    }
+
+    # Do not name this $matches — conflicts with automatic $Matches under StrictMode.
+    $hitList = New-Object System.Collections.Generic.List[object]
+    $filesScanned = 0
+
+    foreach ($rule in $rules) {
+        $ruleId = [string]$rule.Id
+        if (-not $ruleId) { $ruleId = 'unnamed' }
+        $severity = 'critical'
+        if ($rule.PSObject.Properties.Name -contains 'Severity' -and $rule.Severity) {
+            $severity = [string]$rule.Severity
+        }
+        $regexText = [string]$rule.Regex
+        if ([string]::IsNullOrWhiteSpace($regexText)) { continue }
+
+        try {
+            $rx = New-Object System.Text.RegularExpressions.Regex(
+                $regexText,
+                [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+            )
+        } catch {
+            return @{ Passed = $false; Detail = "Invalid regex for rule $ruleId"; ExitCode = 1 }
+        }
+
+        $paths = @('.')
+        if ($rule.PSObject.Properties.Name -contains 'Paths' -and $rule.Paths) {
+            $paths = @($rule.Paths | ForEach-Object { [string]$_ })
+        }
+        $excludeDirs = @()
+        if ($rule.PSObject.Properties.Name -contains 'ExcludeDirectoryNames' -and $rule.ExcludeDirectoryNames) {
+            $excludeDirs = @($rule.ExcludeDirectoryNames | ForEach-Object { [string]$_ })
+        }
+        $exts = $defaultExt
+        if ($rule.PSObject.Properties.Name -contains 'Extensions' -and $rule.Extensions) {
+            $exts = @($rule.Extensions | ForEach-Object { [string]$_ })
+        }
+
+        foreach ($pRel in $paths) {
+            $base = if ($pRel -eq '.' -or $pRel -eq '') { $Root } else { Join-Path $Root ($pRel.Replace('/', '\')) }
+            if (-not (Test-Path -LiteralPath $base)) { continue }
+
+            $isFile = -not (Get-Item -LiteralPath $base).PSIsContainer
+            $fileList = @()
+            if ($isFile) {
+                $fileList = @(Get-Item -LiteralPath $base)
+            }
+            else {
+                $fileList = @(Get-ChildItem -LiteralPath $base -Recurse -File -ErrorAction SilentlyContinue)
+            }
+
+            foreach ($f in $fileList) {
+                $ext = $f.Extension
+                $extOk = $false
+                foreach ($e in $exts) {
+                    if ($ext -ieq $e) { $extOk = $true; break }
+                }
+                if (-not $extOk) { continue }
+
+                if ($excludeDirs.Count -gt 0) {
+                    $skip = $false
+                    foreach ($ex in $excludeDirs) {
+                        if ($f.FullName -match [regex]::Escape([IO.Path]::DirectorySeparatorChar + $ex + [IO.Path]::DirectorySeparatorChar) -or
+                            $f.FullName -match [regex]::Escape('/' + $ex + '/')) {
+                            $skip = $true
+                            break
+                        }
+                    }
+                    if ($skip) { continue }
+                }
+
+                $filesScanned++
+                $lines = @()
+                try {
+                    $lines = Get-Content -LiteralPath $f.FullName -ErrorAction Stop
+                } catch { continue }
+
+                $relPath = $f.FullName.Substring($Root.Length).TrimStart('\', '/')
+                $inBlock = $false
+                for ($i = 0; $i -lt $lines.Count; $i++) {
+                    $line = $lines[$i]
+                    if ($ignoreComments -and (Test-PolicyLineIsComment -Line $line -Extension $ext -InBlockComment ([ref]$inBlock))) {
+                        continue
+                    }
+                    if ($rx.IsMatch($line)) {
+                        $hitList.Add([ordered]@{
+                            Rule     = $ruleId
+                            Severity = $severity
+                            Path     = $relPath
+                            Line     = ($i + 1)
+                        })
+                    }
+                }
+            }
+        }
+    }
+
+    if (-not (Test-Path -LiteralPath $LogsDir)) {
+        New-Item -ItemType Directory -Path $LogsDir -Force | Out-Null
+    }
+    $reportPath = Join-Path $LogsDir 'policy-scan.json'
+    $reportObj = [ordered]@{
+        MatchCount   = $hitList.Count
+        FilesTouched = $filesScanned
+        Matches      = @($hitList | Select-Object -First 50)
+    }
+    try {
+        $reportObj | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $reportPath -Encoding UTF8
+    } catch { }
+
+    $critical = @($hitList | Where-Object { $_.Severity -eq 'critical' })
+    if ($critical.Count -gt 0) {
+        $sample = ($critical | Select-Object -First 5 | ForEach-Object { "$($_.Rule)@$($_.Path):$($_.Line)" }) -join '; '
+        return @{
+            Passed   = $false
+            Detail   = "policy-scan fail; critical=$($critical.Count); $sample"
+            ExitCode = 1
+        }
+    }
+
+    return @{
+        Passed   = $true
+        Detail   = "policy-scan ok; rules=$($rules.Count); files=$filesScanned; matches=0"
+        ExitCode = 0
+    }
+}
+
 function Invoke-PsParseBomCheck {
     param(
         [string]$Root,
@@ -277,11 +802,13 @@ function Invoke-PssaCheck {
         $results += @(Invoke-ScriptAnalyzer -Path $f.FullName -Severity $sev -ErrorAction SilentlyContinue)
     }
     $count = $results.Count
+    $scopeNote = [string]$Check.Path
     $detail = if ($count -eq 0) {
-        "0 Error findings on $($files.Count) product scripts (PSScriptAnalyzer $($mod.Version); sample-test excluded)"
-    } else {
+        "0 $sev findings on $($files.Count) scripts under $scopeNote (PSScriptAnalyzer $($mod.Version))"
+    }
+    else {
         $rules = ($results | Select-Object -ExpandProperty RuleName -Unique | Select-Object -First 8) -join ','
-        "$count Error finding(s) on $($files.Count) product scripts; rules=$rules"
+        "$count $sev finding(s) on $($files.Count) scripts under $scopeNote; rules=$rules"
     }
     return @{
         Passed   = ($count -eq 0)
@@ -366,9 +893,11 @@ function Invoke-GitleaksCheck {
         if ($modeKey -eq 'workdir' -or $modeKey -eq 'no-git' -or $modeKey -eq 'tree') {
             $args += '--no-git'
             $modeLabel = 'workdir'
-        } elseif ($modeKey -eq 'git' -or $modeKey -eq 'history') {
+        }
+        elseif ($modeKey -eq 'git' -or $modeKey -eq 'history') {
             $modeLabel = 'git'
-        } else {
+        }
+        else {
             $allPassed = $false
             $modeParts += ("unknown_mode=$mode")
             $worstCode = 1
@@ -384,14 +913,16 @@ function Invoke-GitleaksCheck {
             $allPassed = $false
             if ([int]$code -gt $worstCode) { $worstCode = [int]$code }
             $modeParts += ("${modeLabel}=fail(exit=$code;findings=$findings)")
-        } else {
+        }
+        else {
             $modeParts += ("${modeLabel}=pass")
         }
     }
 
     $detail = if ($allPassed) {
         "$(($modeParts) -join '; '); no leaks (gitleaks $verLine)"
-    } else {
+    }
+    else {
         "$(($modeParts) -join '; '); see certification/logs/${prefix}-*.json (no secret values in cert)"
     }
 
@@ -421,10 +952,24 @@ function Test-PylintScoreMeetsRequirement {
     }
 }
 
+function Test-ExecutableAllowlisted {
+    param(
+        [string]$ExecutableName,
+        [string[]]$Allowlist
+    )
+    $baseName = [System.IO.Path]::GetFileName($ExecutableName)
+    foreach ($a in $Allowlist) {
+        if ($baseName -ieq $a) { return $true }
+    }
+    return $false
+}
+
 function Invoke-ProcessCheck {
     param(
         [string]$Root,
-        [object]$Check
+        [object]$Check,
+        [string[]]$ExecutableAllowlist,
+        [string]$LogsDir
     )
     $wdRel = [string]$Check.WorkingDirectory
     if (-not $wdRel) { $wdRel = '.' }
@@ -434,14 +979,31 @@ function Invoke-ProcessCheck {
     }
 
     $exeName = [string]$Check.Executable
+    if (-not (Test-ExecutableAllowlisted -ExecutableName $exeName -Allowlist $ExecutableAllowlist)) {
+        $base = [System.IO.Path]::GetFileName($exeName)
+        return @{
+            Passed   = $false
+            Detail   = "Executable '$base' not on ExecutableAllowlist"
+            ExitCode = 1
+        }
+    }
+
     $exePath = $null
     if ([System.IO.Path]::IsPathRooted($exeName)) {
-        $exePath = $exeName
-    } else {
+        # Process checks must not launch arbitrary rooted paths. Prefer relative
+        # names under WorkingDirectory or PATH lookup of allowlisted basenames.
+        return @{
+            Passed   = $false
+            Detail   = 'Rooted Executable paths are not permitted for Kind=process (use allowlisted basename)'
+            ExitCode = 1
+        }
+    }
+    else {
         $local = Join-Path $wd $exeName
         if (Test-Path -LiteralPath $local) {
             $exePath = $local
-        } else {
+        }
+        else {
             $cmd = Get-Command $exeName -ErrorAction SilentlyContinue
             if ($cmd) { $exePath = $cmd.Source }
         }
@@ -458,6 +1020,11 @@ function Invoke-ProcessCheck {
     $successCodes = @(0)
     if ($Check.PSObject.Properties.Name -contains 'SuccessExitCodes' -and $Check.SuccessExitCodes) {
         $successCodes = @($Check.SuccessExitCodes | ForEach-Object { [int]$_ })
+    }
+
+    # Ensure logs dir exists when bandit (or others) write evidence under certification/logs
+    if ($LogsDir -and -not (Test-Path -LiteralPath $LogsDir)) {
+        New-Item -ItemType Directory -Path $LogsDir -Force | Out-Null
     }
 
     Push-Location $wd
@@ -488,9 +1055,22 @@ function Invoke-ProcessCheck {
                 $passed = $false
                 $detail += " (require $requireScore/10)"
             }
-        } else {
+        }
+        else {
             $passed = $false
             $detail = "exit $code; pylint score not found in output (require $requireScore/10)"
+        }
+    }
+
+    if ($Check.PSObject.Properties.Name -contains 'ReportRelativePath' -and $Check.ReportRelativePath) {
+        $relReport = [string]$Check.ReportRelativePath
+        $reportFull = Join-Path $Root $relReport
+        if (Test-Path -LiteralPath $reportFull) {
+            $detail += "; evidence=$relReport"
+        }
+        elseif ($passed) {
+            # Report path expected but missing — soft note only for bandit empty outputs
+            $detail += "; evidence_missing=$relReport"
         }
     }
 
@@ -509,11 +1089,16 @@ function New-CheckResult {
         [int]$ExitCode,
         [int]$DurationMs
     )
+    $category = 'static'
+    if ($Check.PSObject.Properties.Name -contains 'Category' -and $Check.Category) {
+        $category = [string]$Check.Category
+    }
     return [ordered]@{
         Name       = [string]$Check.Name
         Id         = [string]$Check.Id
         Domain     = [string]$Check.Domain
         Surface    = [string]$Check.Surface
+        Category   = $category
         Passed     = $Passed
         Severity   = [string]$Check.Severity
         Required   = [bool]$Check.Required
@@ -521,6 +1106,21 @@ function New-CheckResult {
         ExitCode   = $ExitCode
         DurationMs = $DurationMs
     }
+}
+
+function Test-CheckAppliesToMode {
+    param(
+        [object]$Check,
+        [string]$Mode
+    )
+    $shipOnly = $false
+    if ($Check.PSObject.Properties.Name -contains 'ShipOnly' -and $Check.ShipOnly) {
+        $shipOnly = [bool]$Check.ShipOnly
+    }
+    if ($shipOnly -and $Mode -ne 'Ship') {
+        return $false
+    }
+    return $true
 }
 
 # --- main ---
@@ -531,9 +1131,15 @@ $logsDir = Join-Path $certDir 'logs'
 $jsonOut = Join-Path $certDir 'last_certification.json'
 $txtOut = Join-Path $certDir 'last_certification.txt'
 
+if (-not $Mode) { $Mode = 'Standard' }
+
 if (-not (Test-Path -LiteralPath $checksPath)) {
     Write-Error "Missing checks.json at $checksPath"
     exit 2
+}
+
+if (-not (Test-Path -LiteralPath $logsDir)) {
+    New-Item -ItemType Directory -Path $logsDir -Force | Out-Null
 }
 
 $manifest = Get-Content -LiteralPath $checksPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -546,31 +1152,37 @@ if (-not $manifest.Checks -or @($manifest.Checks).Count -eq 0) {
     exit 2
 }
 
+$policy = Get-ManifestPolicy -Manifest $manifest
 $started = (Get-Date).ToUniversalTime().ToString('o')
 $git = Get-GitMeta -Root $repoRoot
 $packageVersions = Get-PackageVersions -Root $repoRoot
 
 $toolVersions = [ordered]@{
-    python            = (Get-ToolVersion 'python' { py -3.13 --version })
-    pylint            = (Get-ToolVersion 'pylint' { py -3.13 -m pylint --version })
-    bandit            = (Get-ToolVersion 'bandit' { py -3.13 -m bandit --version })
-    PSScriptAnalyzer  = (Get-ToolVersion 'PSScriptAnalyzer' {
+    python           = (Get-ToolVersion 'python' { py -3.13 --version })
+    pylint           = (Get-ToolVersion 'pylint' { py -3.13 -m pylint --version })
+    bandit           = (Get-ToolVersion 'bandit' { py -3.13 -m bandit --version })
+    PSScriptAnalyzer = (Get-ToolVersion 'PSScriptAnalyzer' {
             $m = Get-Module -ListAvailable PSScriptAnalyzer | Select-Object -First 1
             if ($m) { "PSScriptAnalyzer $($m.Version)" } else { 'missing' }
         })
-    gitleaks          = 'unknown'
-    powershell        = $PSVersionTable.PSVersion.ToString()
+    gitleaks         = 'unknown'
+    powershell       = $PSVersionTable.PSVersion.ToString()
 }
 
 $checkResults = @()
 foreach ($check in @($manifest.Checks)) {
+    if (-not (Test-CheckAppliesToMode -Check $check -Mode $Mode)) {
+        Write-Host ("[cert] Skip {0} (ShipOnly; Mode={1})" -f $check.Id, $Mode)
+        continue
+    }
+
     Write-Host ("[cert] Running {0} ({1}/{2})..." -f $check.Id, $check.Domain, $check.Surface)
     $kind = [string]$check.Kind
     $result = $null
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     switch ($kind) {
         'process' {
-            $result = Invoke-ProcessCheck -Root $repoRoot -Check $check
+            $result = Invoke-ProcessCheck -Root $repoRoot -Check $check -ExecutableAllowlist @($policy.ExecutableAllowlist) -LogsDir $logsDir
         }
         'ps-parse-bom' {
             $result = Invoke-PsParseBomCheck -Root $repoRoot -Check $check
@@ -581,6 +1193,21 @@ foreach ($check in @($manifest.Checks)) {
         'gitleaks' {
             $result = Invoke-GitleaksCheck -Root $repoRoot -LogsDir $logsDir -Check $check
             if ($result.ContainsKey('Version')) { $toolVersions.gitleaks = $result.Version }
+        }
+        'schema-validate' {
+            $result = Invoke-SchemaValidateCheck -Manifest $manifest -Policy $policy
+        }
+        'git-clean' {
+            $result = Invoke-GitCleanCheck -GitDirty ([bool]$git.GitDirty)
+        }
+        'python-assert' {
+            $result = Invoke-PythonAssertCheck -Root $repoRoot -Check $check
+        }
+        'powershell-assert' {
+            $result = Invoke-PowerShellAssertCheck -Root $repoRoot -Check $check
+        }
+        'policy-scan' {
+            $result = Invoke-PolicyScanCheck -Root $repoRoot -LogsDir $logsDir -Check $check
         }
         default {
             $result = @{ Passed = $false; Detail = "Unknown Kind: $kind"; ExitCode = 1 }
@@ -604,10 +1231,11 @@ $requiredTotal = @($checkResults | Where-Object { $_.Required }).Count
 $requiredPassed = @($checkResults | Where-Object { $_.Required -and $_.Passed }).Count
 $allFailedNames = @($checkResults | Where-Object { $_.Required -and -not $_.Passed } | ForEach-Object { $_.Name })
 if ($overall) {
-    $message = "OverallPass=true; $requiredPassed/$requiredTotal required checks passed"
-} else {
+    $message = "OverallPass=true; $requiredPassed/$requiredTotal required checks passed (Mode=$Mode)"
+}
+else {
     $failList = if ($allFailedNames.Count) { ($allFailedNames -join ', ') } else { '(none listed)' }
-    $message = "OverallPass=false; $requiredPassed/$requiredTotal required checks passed; failed: $failList"
+    $message = "OverallPass=false; $requiredPassed/$requiredTotal required checks passed (Mode=$Mode); failed: $failList"
 }
 
 $finished = (Get-Date).ToUniversalTime().ToString('o')
@@ -615,28 +1243,48 @@ $surfaces = @($manifest.LanguageSurfaces)
 
 $passCriteria = [ordered]@{}
 foreach ($c in @($manifest.Checks)) {
+    if (-not (Test-CheckAppliesToMode -Check $c -Mode $Mode)) { continue }
     $passCriteria[[string]$c.Id] = [string]$c.PassCriteria
 }
+
+$staticCount = @($checkResults | Where-Object { $_.Category -eq 'static' }).Count
+$dynamicCount = @($checkResults | Where-Object { $_.Category -eq 'dynamic' }).Count
+$schemaCount = @($checkResults | Where-Object { $_.Category -eq 'schema' }).Count
+$engineCount = @($checkResults | Where-Object { $_.Category -eq 'engine' }).Count
+$policyCount = @($checkResults | Where-Object { $_.Category -eq 'policy' }).Count
 
 $disclaimer = 'Self-attestation of automated checks only. Not a third-party audit. Not package diagnostics. No claim rows, passwords, or secret values in this certificate.'
 
 $certificate = [ordered]@{
-    CertificateType   = 'SecurityAndCodeValidationCertification'
-    SchemaVersion     = '1.0'
-    OverallPass       = $overall
-    Message           = $message
-    GeneratedAt       = $finished
-    StartedAt         = $started
-    FinishedAt        = $finished
-    RepoRoot          = $repoRoot
-    GitCommit         = $git.GitCommit
-    GitBranch         = $git.GitBranch
-    GitDirty          = [bool]$git.GitDirty
-    LanguageSurfaces  = $surfaces
-    PackageVersions   = $packageVersions
-    ToolVersions      = $toolVersions
-    PassCriteria      = $passCriteria
-    Domains           = [ordered]@{
+    CertificateType  = 'SecurityAndCodeValidationCertification'
+    SchemaVersion    = '1.1'
+    Mode             = $Mode
+    OverallPass      = $overall
+    Message          = $message
+    GeneratedAt      = $finished
+    StartedAt        = $started
+    FinishedAt       = $finished
+    RepoRoot         = $repoRoot
+    GitCommit        = $git.GitCommit
+    GitBranch        = $git.GitBranch
+    GitDirty         = [bool]$git.GitDirty
+    LanguageSurfaces = $surfaces
+    PackageVersions  = $packageVersions
+    ToolVersions     = $toolVersions
+    Policy           = [ordered]@{
+        ExecutableAllowlist = @($policy.ExecutableAllowlist)
+        RequireCleanGit     = ($Mode -eq 'Ship')
+    }
+    Coverage         = [ordered]@{
+        ChecksRun      = @($checkResults).Count
+        StaticChecks   = $staticCount
+        DynamicChecks  = $dynamicCount
+        SchemaChecks   = $schemaCount
+        EngineChecks   = $engineCount
+        PolicyChecks   = $policyCount
+    }
+    PassCriteria     = $passCriteria
+    Domains          = [ordered]@{
         Security = [ordered]@{
             OverallPass    = $secPass
             CriticalFailed = @($secFailed)
@@ -646,8 +1294,8 @@ $certificate = [ordered]@{
             CriticalFailed = @($codeFailed)
         }
     }
-    Checks            = @($checkResults)
-    Disclaimer        = $disclaimer
+    Checks           = @($checkResults)
+    Disclaimer       = $disclaimer
 }
 
 if (-not $SkipWrite) {
@@ -662,6 +1310,7 @@ if (-not $SkipWrite) {
     [void]$sb.AppendLine('==========================================')
     [void]$sb.AppendLine("CertificateType: $($certificate.CertificateType)")
     [void]$sb.AppendLine("SchemaVersion:   $($certificate.SchemaVersion)")
+    [void]$sb.AppendLine("Mode:            $($certificate.Mode)")
     [void]$sb.AppendLine("OverallPass:     $($certificate.OverallPass)")
     [void]$sb.AppendLine("Message:         $($certificate.Message)")
     [void]$sb.AppendLine("GeneratedAt:     $($certificate.GeneratedAt)")
@@ -670,6 +1319,10 @@ if (-not $SkipWrite) {
     [void]$sb.AppendLine("GitBranch:       $($certificate.GitBranch)")
     [void]$sb.AppendLine("GitDirty:        $($certificate.GitDirty)")
     [void]$sb.AppendLine("LanguageSurfaces: $($surfaces -join ', ')")
+    [void]$sb.AppendLine('')
+    [void]$sb.AppendLine('Coverage')
+    [void]$sb.AppendLine('--------')
+    [void]$sb.AppendLine("ChecksRun: $($certificate.Coverage.ChecksRun) (static=$staticCount dynamic=$dynamicCount schema=$schemaCount engine=$engineCount policy=$policyCount)")
     [void]$sb.AppendLine('')
     [void]$sb.AppendLine('PackageVersions')
     [void]$sb.AppendLine('---------------')
@@ -694,7 +1347,7 @@ if (-not $SkipWrite) {
     [void]$sb.AppendLine('------')
     foreach ($c in $checkResults) {
         $mark = if ($c.Passed) { 'PASS' } else { 'FAIL' }
-        [void]$sb.AppendLine("[$mark] $($c.Name) | Domain=$($c.Domain) Surface=$($c.Surface) Severity=$($c.Severity) DurationMs=$($c.DurationMs)")
+        [void]$sb.AppendLine("[$mark] $($c.Name) | Domain=$($c.Domain) Surface=$($c.Surface) Category=$($c.Category) Severity=$($c.Severity) DurationMs=$($c.DurationMs)")
         [void]$sb.AppendLine("       $($c.Detail)")
     }
     [void]$sb.AppendLine('')
@@ -702,7 +1355,7 @@ if (-not $SkipWrite) {
     [void]$sb.AppendLine('----------')
     [void]$sb.AppendLine($disclaimer)
     [void]$sb.AppendLine('')
-    [void]$sb.AppendLine('IT one-liner: Automated security static analysis and code validation for declared language surfaces produced a ' + $(if ($overall) { 'PASS' } else { 'FAIL' }) + " certificate for commit $($certificate.GitCommit) at $($certificate.GeneratedAt). Self-attestation only; not a third-party audit.")
+    [void]$sb.AppendLine('IT one-liner: Automated security static analysis and code validation for declared language surfaces produced a ' + $(if ($overall) { 'PASS' } else { 'FAIL' }) + " certificate for commit $($certificate.GitCommit) at $($certificate.GeneratedAt) (Mode=$Mode). Self-attestation only; not a third-party audit.")
 
     [System.IO.File]::WriteAllText($txtOut, $sb.ToString(), [System.Text.UTF8Encoding]::new($false))
     Write-Host ""

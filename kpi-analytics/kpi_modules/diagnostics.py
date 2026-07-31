@@ -58,7 +58,8 @@ PACKAGE_MODULES: tuple[str, ...] = (
     "kpi_modules.summary_report",
     "kpi_modules.synthesize",
     "kpi_modules.validate_score",
-    "kpi_modules.__main__",
+    # Do not import kpi_modules.__main__ here: it executes the CLI entry
+    # (SystemExit) and is not a library module.
 )
 
 GATED_COMMANDS = frozenset({"score", "generate", "validate-score"})
@@ -190,6 +191,16 @@ def _run_checks() -> list[dict[str, Any]]:
             checks.append(_check(f"PackageImport.{label}", True, detail))
         except Exception as exc:
             checks.append(_check(f"PackageImport.{label}", False, str(exc)))
+
+    # Entry module is import-side-effectful; verify file presence only.
+    main_py = Path(__file__).resolve().parent / "__main__.py"
+    checks.append(
+        _check(
+            "PackageImport.__main__",
+            main_py.is_file(),
+            str(main_py) if main_py.is_file() else "missing __main__.py",
+        )
+    )
 
     # --- Default config (required by operational paths) ---
     try:

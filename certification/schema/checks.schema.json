@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://local/workqueue-data-processor/certification/checks.schema.json",
+  "title": "Certification checks manifest",
+  "description": "Declarative Domain A/B check list for Invoke-Certification.ps1. Structural rules are also enforced in the harness (allowlist, known Kinds) without requiring a JSON Schema runtime.",
+  "type": "object",
+  "required": ["SchemaVersion", "LanguageSurfaces", "Checks"],
+  "additionalProperties": true,
+  "properties": {
+    "SchemaVersion": {
+      "type": "string",
+      "description": "Manifest schema version (e.g. 1.0, 1.1)."
+    },
+    "Description": { "type": "string" },
+    "LanguageSurfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "Policy": {
+      "type": "object",
+      "properties": {
+        "ExecutableAllowlist": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Basenames allowed for Kind=process (e.g. py, kpi-analytics.cmd)."
+        },
+        "KnownKinds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "Checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["Id", "Name", "Domain", "Required", "Severity", "Kind", "PassCriteria"],
+        "properties": {
+          "Id": { "type": "string" },
+          "Name": { "type": "string" },
+          "Domain": { "type": "string", "enum": ["Security", "CodeValidation"] },
+          "Surface": { "type": "string" },
+          "Category": {
+            "type": "string",
+            "enum": ["static", "dynamic", "policy", "schema", "engine"]
+          },
+          "Required": { "type": "boolean" },
+          "Severity": { "type": "string", "enum": ["critical", "advisory"] },
+          "PassCriteria": { "type": "string" },
+          "WorkingDirectory": { "type": "string" },
+          "Kind": {
+            "type": "string",
+            "enum": [
+              "process",
+              "ps-parse-bom",
+              "pssa",
+              "gitleaks",
+              "schema-validate",
+              "policy-scan",
+              "python-assert",
+              "powershell-assert",
+              "git-clean"
+            ]
+          },
+          "Script": {
+            "type": "string",
+            "description": "Repo-relative path under certification/ for python-assert or powershell-assert"
+          },
+          "PatternsFile": {
+            "type": "string",
+            "description": "Repo-relative path to banned-patterns JSON for policy-scan"
+          },
+          "Patterns": {
+            "type": "array",
+            "description": "Inline policy-scan rules (alternative to PatternsFile)"
+          },
+          "Executable": { "type": "string" },
+          "Arguments": {
+            "type": "array",
+            "items": { "type": ["string", "number", "boolean"] }
+          },
+          "SuccessExitCodes": {
+            "type": "array",
+            "items": { "type": "integer" }
+          },
+          "RequirePylintScore": { "type": "string" },
+          "Path": { "type": "string" },
+          "Include": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "ExcludeDirectoryNames": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "AnalyzerSeverity": { "type": "string" },
+          "Modes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "ReportFileNamePrefix": { "type": "string" },
+          "ReportRelativePath": {
+            "type": "string",
+            "description": "Optional evidence path under certification/logs or repo-relative."
+          },
+          "ShipOnly": {
+            "type": "boolean",
+            "description": "When true, check runs only in -Mode Ship."
+          }
+        }
+      }
+    }
+  }
+}
