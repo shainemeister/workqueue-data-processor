@@ -273,6 +273,14 @@ def build_parser() -> argparse.ArgumentParser:
             "full = also low raw-value coverage. Default: allow partial ranks."
         ),
     )
+    p_score.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Overwrite the exact --output path if it exists "
+            "(default: write to a free path with a numerical suffix)"
+        ),
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -332,6 +340,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Build summary only; do not write output",
+    )
+    p_gen.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Overwrite the exact --output path if it exists "
+            "(default without --append: free path with numerical suffix; "
+            "--append always targets the exact path)"
+        ),
     )
     _add_gate_flags(p_gen)
     p_gen.add_argument("--json", action="store_true")
@@ -662,6 +679,7 @@ def main(argv: list[str] | None = None) -> int:
                         getattr(args, "interactive_mapping", False)
                     ),
                     strict=getattr(args, "strict_mode", None),
+                    force=bool(getattr(args, "force", False)),
                 )
             except (FileNotFoundError, ValueError, OSError) as exc:
                 _emit(
@@ -777,6 +795,7 @@ def main(argv: list[str] | None = None) -> int:
                 dry_run=bool(getattr(args, "dry_run", False)),
                 start_index=int(getattr(args, "start_index", 1)),
                 append=bool(getattr(args, "append", False)),
+                force=bool(getattr(args, "force", False)),
             )
             result["Version"] = __version__
             if gate:

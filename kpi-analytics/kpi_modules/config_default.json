@@ -86,7 +86,7 @@
     "aged_day_breaks": [30, 60, 90, 120],
     "adc": null,
     "adc_lookback_days": 90,
-    "adc_mode": "config",
+    "adc_mode": "auto",
     "credit_policy": "exclude_from_T",
     "emit_static_share": true,
     "emit_exact_delta": true,

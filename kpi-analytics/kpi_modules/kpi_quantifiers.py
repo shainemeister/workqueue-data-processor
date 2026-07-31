@@ -97,8 +97,12 @@ def apply_quantifiers_to_rows(
     dual = bool(kq.get("dual_sign_columns", True))
     emit_static = bool(kq.get("emit_static_share", True))
     emit_delta = bool(kq.get("emit_exact_delta", True))
-    credit_policy = str(kq.get("credit_policy", "exclude_from_T")).lower()
+    # validate_config normalizes to "exclude_from_T" or "include"
+    credit_exclude = str(kq.get("credit_policy", "exclude_from_T")) != "include"
     breaks = aged_breaks(cfg)
+
+    # Balance metric key (raw metrics from compute_raw_metrics); default out_ins_amt
+    amount_key = str(kq.get("amount_field") or "out_ins_amt").strip() or "out_ins_amt"
 
     # --- collect balances and ages ---
     n = len(out_rows)
@@ -107,9 +111,12 @@ def apply_quantifiers_to_rows(
     billed_list: list[float] = []
 
     for raw in raw_list:
-        oi = raw.get("out_ins_amt")
+        oi = raw.get(amount_key)
+        if oi is None and amount_key != "out_ins_amt":
+            # Fall back only when key missing from raw map (unknown amount_field)
+            oi = raw.get("out_ins_amt")
         x = float(oi) if oi is not None else 0.0
-        if credit_policy == "exclude_from_T" and x < 0:
+        if credit_exclude and x < 0:
             x_incl = 0.0  # excluded from portfolio T
         else:
             x_incl = x
@@ -132,22 +139,30 @@ def apply_quantifiers_to_rows(
             if ar is not None and ar >= thr:
                 N[thr] += x_list[i]
 
-    # ADC
+    # ADC — mode: auto (config if set else estimate), config, estimate
+    adc_mode = str(kq.get("adc_mode") or "auto").lower()
     adc_cfg = kq.get("adc")
-    adc_source = "config"
-    if adc_cfg is not None and float(adc_cfg) > 0:
-        adc = float(adc_cfg)
-    else:
-        # Fallback: estimate from batch billed / 90-day lookback
-        total_billed = sum(billed_list)
-        lookback = float(kq.get("adc_lookback_days", 90) or 90)
+    total_billed = sum(billed_list)
+    lookback = float(kq.get("adc_lookback_days", 90) or 90)
+
+    def _estimate_adc() -> tuple[float, str]:
         if total_billed > 0 and lookback > 0:
-            adc = total_billed / lookback
-            adc_source = "estimate_billed_90"
+            return total_billed / lookback, "estimate_billed_90"
+        return 0.0, "unavailable"
+
+    if adc_mode == "estimate":
+        adc, adc_source = _estimate_adc()
+    elif adc_mode == "config":
+        if adc_cfg is not None and float(adc_cfg) > 0:
+            adc, adc_source = float(adc_cfg), "config"
         else:
-            # last resort: avoid div0; Days in AR quantifiers become 0
-            adc = 0.0
-            adc_source = "unavailable"
+            adc, adc_source = 0.0, "unavailable"
+    else:
+        # auto (default): prefer config ADC when positive, else batch estimate
+        if adc_cfg is not None and float(adc_cfg) > 0:
+            adc, adc_source = float(adc_cfg), "config"
+        else:
+            adc, adc_source = _estimate_adc()
 
     days_in_ar = (T_safe / adc) if adc > 0 else 0.0
 

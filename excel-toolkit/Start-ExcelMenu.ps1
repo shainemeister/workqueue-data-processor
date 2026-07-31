@@ -548,7 +548,10 @@ function Get-KpiScoreLowConfidenceRoles {
 function Test-KpiScoreRankIsFull {
     <#
     .SYNOPSIS
-        True when score JSON RankCompleteness is full (or field absent → assume full).
+        True when score JSON RankCompleteness is full.
+        Missing RankCompleteness after guided/interactive mapping is treated as
+        NOT full (fail-safe) so the partial-rank banner still applies.
+        Other paths with missing field still assume full (legacy automation JSON).
     #>
     [CmdletBinding()]
     param(
@@ -560,11 +563,22 @@ function Test-KpiScoreRankIsFull {
     if ($null -eq $ScoreJson) {
         return $true
     }
-    if ($ScoreJson.PSObject.Properties.Name -notcontains 'RankCompleteness') {
+    $names = @($ScoreJson.PSObject.Properties.Name)
+    $guided = $false
+    if ($names -contains 'GuidedMappingApplied') {
+        try { $guided = [bool]$ScoreJson.GuidedMappingApplied } catch { $guided = $false }
+    }
+    if (-not $guided -and ($names -contains 'InteractiveMapping')) {
+        try { $guided = [bool]$ScoreJson.InteractiveMapping } catch { $guided = $false }
+    }
+    if ($names -notcontains 'RankCompleteness') {
+        # Fail-safe: guided path without completeness must not skip the banner.
+        if ($guided) { return $false }
         return $true
     }
     $rc = [string]$ScoreJson.RankCompleteness
     if ([string]::IsNullOrWhiteSpace($rc)) {
+        if ($guided) { return $false }
         return $true
     }
     return ($rc.Trim().ToLowerInvariant() -eq 'full')
@@ -904,6 +918,62 @@ function Invoke-KpiAnalyticsScore {
             InteractiveMapping   = $true
             GuidedMappingApplied = $synthOk
             Message              = $synthMsg
+        }
+
+        # Enrich with real RankCompleteness via dry-run --json when a mapping file is
+        # available so the partial-rank banner matches guided role choices. Without a
+        # mapping file, leave RankCompleteness absent; Test-KpiScoreRankIsFull treats
+        # guided+missing as partial (fail-safe).
+        if ($synthOk) {
+            $enrichMap = $MappingPath
+            if ([string]::IsNullOrWhiteSpace($enrichMap)) {
+                $csvItem = Get-Item -LiteralPath $CsvPath -ErrorAction SilentlyContinue
+                if ($null -ne $csvItem) {
+                    $candidateMap = Join-Path $csvItem.DirectoryName ($csvItem.BaseName + '_mapping.json')
+                    if (Test-Path -LiteralPath $candidateMap) {
+                        $enrichMap = $candidateMap
+                    }
+                }
+            }
+            if (-not [string]::IsNullOrWhiteSpace($enrichMap) -and (Test-Path -LiteralPath $enrichMap)) {
+                try {
+                    $enrichParams = @{
+                        CsvPath            = $CsvPath
+                        OutputPath         = $OutputPath
+                        SummaryPath        = $SummaryPath
+                        MappingPath        = $enrichMap
+                        DryRun             = $true
+                        InteractiveMapping = $false
+                    }
+                    $enrichRaw = Invoke-KpiAnalyticsScore @enrichParams
+                    $enrich = Select-KpiScoreInvokeResult -Raw $enrichRaw
+                    if ($null -ne $enrich -and $null -ne $enrich.Json) {
+                        $ej = $enrich.Json
+                        $eNames = @($ej.PSObject.Properties.Name)
+                        foreach ($prop in @(
+                                'RankCompleteness', 'IncompleteReasons', 'ActiveMetrics',
+                                'SkippedMetrics', 'LowCoverageMetrics', 'RowCount',
+                                'ScoreMin', 'ScoreMax', 'ScoreMean'
+                            )) {
+                            if ($eNames -contains $prop) {
+                                $jsonObj | Add-Member -NotePropertyName $prop -NotePropertyValue $ej.$prop -Force
+                            }
+                        }
+                        $jsonObj | Add-Member -NotePropertyName 'GuidedMappingApplied' -NotePropertyValue $true -Force
+                        $jsonObj | Add-Member -NotePropertyName 'InteractiveMapping' -NotePropertyValue $true -Force
+                        $jsonObj | Add-Member -NotePropertyName 'OutputPath' -NotePropertyValue $OutputPath -Force
+                        $jsonObj | Add-Member -NotePropertyName 'SummaryPath' -NotePropertyValue $SummaryPath -Force
+                        if ($eNames -contains 'RankCompleteness') {
+                            $jsonObj | Add-Member -NotePropertyName 'Message' -NotePropertyValue (
+                                'Score complete (interactive mapping; rank metadata refreshed).'
+                            ) -Force
+                        }
+                    }
+                }
+                catch {
+                    Write-Verbose ("Rank completeness enrich after guided map failed: {0}" -f $_.Exception.Message)
+                }
+            }
         }
 
         return (New-KpiScoreInvokeResult -ExitCode $exitCode -StdOut $stdout -StdErr $stderr -Json $jsonObj)

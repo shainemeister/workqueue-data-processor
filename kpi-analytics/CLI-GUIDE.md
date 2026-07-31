@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.6.0"
+version: "2.7.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-07-30"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.6.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.7.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -260,14 +260,14 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
     [--strict roles|full]
     [--summary <path>] [--no-summary]
     [--privacy | --no-privacy]
-    [--dry-run] [--json] [--quiet]
+    [--force] [--dry-run] [--json] [--quiet]
 ```
 
 | Option | Required | Default | Description |
 |--------|----------|---------|-------------|
 | `--csv` | No | `\<repo>\import\wq_synthetic_data.csv` | Input data CSV (tracked synthetic demo when present) |
 | `--output` | No | `\<repo>\output\wq_scored.csv` | Claim-level scored CSV |
-| `--summary` | No | `<output_stem>_summary.csv` | Vertical summary CSV |
+| `--summary` | No | `<output_stem>_summary.csv` | Vertical summary CSV (follows resolved scored path stem when default) |
 | `--no-summary` | No | off | Skip summary file |
 | `--config` | No | package default | Weights / KPI config JSON. **Mutually exclusive with `--profile`.** |
 | `--profile` | No | none | Scoring profile **name** or **path** (see [Scoring profiles (2.6.0)](#scoring-profiles-260)). Deep-merges profile `config` onto package default. **Mutually exclusive with `--config`.** |
@@ -276,7 +276,8 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--strict` | No | off | Fail closed without writing files: `roles` = missing/ambiguous roles or skipped metrics; `full` = also low raw-value coverage. Default allows partial ranks (`Success` true with `RankCompleteness` advisory). |
 | `--privacy` | No | (config) | Force PHI field masking on scored output |
 | `--no-privacy` | No | (config) | Disable PHI field masking on scored output |
-| `--dry-run` | No | off | No file writes |
+| `--force` | No | off | Overwrite the exact `--output` path if it exists. **Default (off):** write to a free path with a numerical suffix (`name_1.csv`), matching excel-toolkit collision policy. |
+| `--dry-run` | No | off | No file writes (still reports resolved unique paths) |
 | `--force-diagnostics` | No | off | Refresh diagnostics certificate first |
 | `--skip-diagnostics-gate` | No | off | Emergency bypass of diagnostics gate |
 | `--json` | No | off | JSON on stdout |
@@ -285,6 +286,8 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 `--privacy` and `--no-privacy` are mutually exclusive. When omitted, `privacy.enabled` from the JSON config applies (default **on** in package `config_default.json`). Overrides only the master switch; patient/DOB modes still come from config.
 
 **Score JSON additions (2.6.0+):** `ProfilePath`, `ProfileName` (null when no `--profile`), `MappingSource` (`cli` \| `profile_inline` \| `profile_path` \| `none`). `PoiName` continues to reflect `point_of_interest.name` from the effective config.
+
+**Output collision (2.7.0+):** without `--force`, existing destinations are not overwritten. JSON includes `OutputPath` (write target), `RequestedOutputPath`, `OutputPathAdjusted`, and matching `SummaryPath*` fields when a summary is written. `Force` echoes the CLI flag.
 
 **Column mapping**
 
@@ -490,7 +493,7 @@ Synthetic professional-billing WQ CSV (de-identified).
 ```text
 python -m kpi_modules generate [--rows <n>] [--output <path>]
     [--schema <path>] [--template-csv <path>] [--seed <int>]
-    [--append] [--start-index <n>] [--dry-run] [--json] [--quiet]
+    [--append] [--start-index <n>] [--force] [--dry-run] [--json] [--quiet]
 ```
 
 | Option | Default | Description |
@@ -500,11 +503,12 @@ python -m kpi_modules generate [--rows <n>] [--output <path>]
 | `--schema` | `\<repo>\wq_schema\wq_schema.json` | Field list / types |
 | `--template-csv` | `wq_schema\wq_data.csv` if present | Column **order** only |
 | `--seed` | `42` | Reproducible RNG |
-| `--append` | off | Append; continues Doe name index |
+| `--append` | off | Append; continues Doe name index (always targets exact path) |
+| `--force` | off | Overwrite exact `--output` when not appending. **Default (off):** unique numerical suffix if the file exists |
 | `--dry-run` | off | No write |
 
 Patients: `Doe,John{N}` / `Doe,Jane{N}`. DOB: Excel serial with day-of-month **01**.  
-Use a path under `output\` only for one-off dumps you do not intend to track.
+Use a path under `output\` only for one-off dumps you do not intend to track. Default generate path under `import\` is protected by unique-suffix unless `--force` or `--append`.
 
 ---
 

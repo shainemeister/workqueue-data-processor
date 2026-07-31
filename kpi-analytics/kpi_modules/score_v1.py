@@ -23,8 +23,8 @@ from .completeness import (
     format_strict_failure_message,
     strict_mode_allows,
 )
-from .config import METRIC_KEYS, effective_weights, load_config
-from .io_csv import read_csv_rows, write_csv_rows
+from .config import METRIC_KEYS, effective_weights, load_config, validate_config
+from .io_csv import read_csv_rows, resolve_unique_path, write_csv_rows
 from .kpi_quantifiers import apply_quantifiers_to_rows
 from .metrics import compute_raw_metrics, detect_chaos_mode, resolve_as_of
 from .normalize import normalize_all
@@ -252,15 +252,16 @@ def score_csv(
     mapping_roles: dict[str, str] | None = None,
     interactive_mapping: bool = False,
     strict: str | None = None,
+    force: bool = False,
 ) -> dict[str, Any]:
     """
     Score a data CSV and write an enriched CSV.
 
     Also writes a vertical summary CSV (metrics as rows) unless write_summary is False.
 
-    config: optional pre-validated config dict (e.g. from a scoring profile).
-    When provided, *config_path* is ignored for loading. When omitted, config is
-    loaded via load_config(config_path).
+    config: optional config dict (e.g. from a scoring profile). Validated via
+    validate_config. When provided, *config_path* is ignored for loading. When
+    omitted, config is loaded via load_config(config_path).
 
     privacy_enabled: if not None, overrides config privacy.enabled (CLI --privacy /
     --no-privacy). None keeps the JSON config value.
@@ -276,12 +277,17 @@ def score_csv(
     strict: None (default), \"roles\", or \"full\". When set, fail without writing
     files if rank completeness does not meet that tier (see completeness module).
 
+    force: when False (default), if the output path already exists, write to a
+    unique sibling path with a numerical suffix (``name_1.ext``). When True,
+    overwrite the exact output path. Explicit summary paths are resolved the same
+    way; default summary paths follow the resolved scored path stem.
+
     Returns a result dict suitable for CLI JSON output.
     """
     if config is not None:
         if not isinstance(config, dict):
             raise ValueError("config must be a dict when provided")
-        base_cfg = deepcopy(config)
+        base_cfg = validate_config(deepcopy(config))
     else:
         base_cfg = load_config(config_path)
 
@@ -395,12 +401,31 @@ def score_csv(
         completeness["incomplete_reasons"]
     )
 
-    out_resolved = Path(output_path).resolve()
-    sum_path = (
-        Path(summary_path).resolve()
-        if summary_path
-        else default_summary_path(out_resolved)
+    requested_out = Path(output_path)
+    # Unique path unless force (plan dry-run targets the same way so JSON matches)
+    out_write, out_requested, out_adjusted = resolve_unique_path(
+        requested_out, force=bool(force)
     )
+    out_resolved = out_write.resolve()
+    out_requested_resolved = out_requested.resolve()
+
+    summary_explicit = summary_path is not None
+    if write_summary:
+        if summary_explicit:
+            sum_write, sum_requested, sum_adjusted = resolve_unique_path(
+                Path(summary_path), force=bool(force)
+            )
+            sum_path = sum_write.resolve()
+            sum_requested_resolved = sum_requested.resolve()
+        else:
+            # Derive summary from resolved scored path so pair stays aligned
+            sum_path = default_summary_path(out_resolved)
+            sum_requested_resolved = default_summary_path(out_requested_resolved)
+            sum_adjusted = out_adjusted
+    else:
+        sum_path = None
+        sum_requested_resolved = None
+        sum_adjusted = False
 
     strict_mode = None
     if strict is not None and str(strict).strip():
@@ -423,7 +448,14 @@ def score_csv(
         "Command": "score",
         "InputPath": str(input_resolved),
         "OutputPath": str(out_resolved),
+        "RequestedOutputPath": str(out_requested_resolved),
+        "OutputPathAdjusted": bool(out_adjusted),
         "SummaryPath": str(sum_path) if write_summary else None,
+        "RequestedSummaryPath": (
+            str(sum_requested_resolved) if write_summary else None
+        ),
+        "SummaryPathAdjusted": bool(sum_adjusted) if write_summary else False,
+        "Force": bool(force),
         "RowCount": summary["row_count"],
         "ColumnCount": summary["column_count"],
         "DryRun": dry_run,
@@ -489,8 +521,8 @@ def score_csv(
 
     # Fail-before-write when strict mode rejects partial ranks.
     if not dry_run and success:
-        write_csv_rows(output_path, out_fields, out_rows)
-        if write_summary:
+        write_csv_rows(out_resolved, out_fields, out_rows)
+        if write_summary and sum_path is not None:
             write_summary_csv(
                 sum_path,
                 summary,
@@ -498,13 +530,33 @@ def score_csv(
                 output_path=out_resolved,
                 config_path=config_path,
             )
-            result["Message"] = "Score complete (detail + summary)."
+            if out_adjusted:
+                result["Message"] = (
+                    "Score complete (detail + summary; avoided overwrite of "
+                    f"{out_requested_resolved})."
+                )
+            else:
+                result["Message"] = "Score complete (detail + summary)."
         else:
-            result["Message"] = "Score complete."
+            if out_adjusted:
+                result["Message"] = (
+                    "Score complete (avoided overwrite of "
+                    f"{out_requested_resolved})."
+                )
+            else:
+                result["Message"] = "Score complete."
     elif dry_run and success:
-        result["Message"] = "Dry-run only; no file written."
+        if out_adjusted:
+            result["Message"] = (
+                "Dry-run only; no file written "
+                f"(would write to {out_resolved}; avoided overwrite of "
+                f"{out_requested_resolved})."
+            )
+        else:
+            result["Message"] = "Dry-run only; no file written."
     elif not success:
         result["OutputPath"] = None
         result["SummaryPath"] = None
+        result["RequestedSummaryPath"] = None
 
     return result

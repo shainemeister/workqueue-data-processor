@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.8.0"
+version: "1.8.1"
 status: current
 audience:
   - security
@@ -20,8 +20,8 @@ last_updated: "2026-07-28"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.8.0  
-**Document version:** 1.8.0  
+**Toolkit version:** 1.8.1  
+**Document version:** 1.8.1  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 

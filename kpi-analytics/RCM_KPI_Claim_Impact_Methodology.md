@@ -348,12 +348,20 @@ This section bridges theory (above) to the software contract. **Do not rename pr
 | Contribution to AR > T | `kpi_q_aged{T}_contrib_pct` |
 | \(\Delta\) Days in AR | `kpi_q_days_in_ar_pos` / `_neg` (or single column if dual off) |
 | \(\Delta\) AR > T (pp) | `kpi_q_aged{T}_delta_pp_pos` / `_neg` |
-| Balance \(x_i\) | Config `amount_field` (default `out_ins_amt`) |
+| Balance \(x_i\) | Config `amount_field` (default `out_ins_amt`; raw metric key from scoring) |
 | Age days | Computed AR days (`as_of − service_date`) |
 
 **Checksums** in the vertical summary under **Portfolio KPI Q checksum** re-sum claim-level static and Days-in-AR quantifiers to prove they rebuild portfolio KPIs.
 
-**Default ADC behavior in software:** if `kpi_quantifiers.adc` is unset, ADC may be estimated as total batch billed ÷ lookback days (typically 90), labeled `adc_source = estimate_billed_90`. Production use should set true practice ADC in config.
+**ADC behavior in software (`kpi_quantifiers.adc_mode`):**
+
+| Mode | Behavior |
+|------|----------|
+| `auto` (default) | Use `adc` when &gt; 0; else estimate total batch billed ÷ `adc_lookback_days` (`adc_source = estimate_billed_90`) |
+| `config` | Only config `adc`; if missing/invalid, ADC unavailable (Days-in-AR quantifiers 0) |
+| `estimate` | Always billed ÷ lookback |
+
+Production use should set true practice ADC in config (`adc_mode: config` or `auto` with a positive `adc`).
 
 **Work-queue priority** remains `v1_priority_score` and related `v1_*` columns—orthogonal to this methodology unless deliberately combined later.
 

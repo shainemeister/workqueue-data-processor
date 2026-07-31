@@ -13,6 +13,24 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.10.0] - 2026-07-30
+
+#### Fixed
+
+- **kpi-analytics 2.7.0:** honor `kpi_quantifiers.amount_field` for portfolio balance (was always `out_ins_amt`)
+- **kpi-analytics 2.7.0:** implement `adc_mode` (`auto` \| `config` \| `estimate`; default `auto` matches prior effective behavior); reject invalid `credit_policy`
+- **kpi-analytics 2.7.0:** diagnostics import-smoke includes `kpi_modules.profiles` and stdlib `re`
+- **kpi-analytics 2.7.0:** `score_csv(config=…)` always runs `validate_config`
+- **excel-toolkit 1.8.1:** partial-rank banner/confirm after guided mapping (was skipped when RankCompleteness missing on synthetic JSON)
+
+#### Changed
+
+- **kpi-analytics 2.7.0:** `score` / `generate` do not overwrite existing destinations by default; use free path with numerical suffix unless `--force` (`--append` still targets the exact path). JSON reports `RequestedOutputPath` / `OutputPathAdjusted` (and summary counterparts for score)
+
+#### Docs
+
+- CLI-GUIDE, SCORE-METHODOLOGY, RCM methodology for amount_field, adc_mode, output collision; excel CLI-GUIDE 1.8.1 guided partial-rank note
+
 ### [1.9.0] - 2026-07-30
 
 #### Added

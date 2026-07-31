@@ -191,16 +191,30 @@ def validate_config(cfg: dict[str, Any]) -> dict[str, Any]:
         )
     else:
         kq["aged_day_breaks"] = [int(x) for x in breaks]
-    kq.setdefault("amount_field", "out_ins_amt")
+    amount_field = str(kq.get("amount_field") or "out_ins_amt").strip()
+    if not amount_field:
+        raise ValueError("kpi_quantifiers.amount_field must be a non-empty string")
+    kq["amount_field"] = amount_field
     kq.setdefault("adc", None)
     kq.setdefault("adc_lookback_days", 90)
-    kq.setdefault("adc_mode", "config")
-    credit = str(kq.get("credit_policy", "exclude_from_T")).lower()
-    if credit not in ("exclude_from_t", "exclude_from_T", "include"):
-        pass
-    kq["credit_policy"] = (
-        "include" if credit == "include" else "exclude_from_T"
-    )
+    # auto = config ADC when >0 else estimate; config = only config; estimate = billed/lookback
+    adc_mode = str(kq.get("adc_mode") or "auto").lower()
+    if adc_mode not in ("auto", "config", "estimate"):
+        raise ValueError(
+            "kpi_quantifiers.adc_mode must be 'auto', 'config', or 'estimate'"
+        )
+    kq["adc_mode"] = adc_mode
+    credit_raw = str(kq.get("credit_policy", "exclude_from_T")).strip()
+    credit_norm = credit_raw.lower()
+    if credit_norm == "include":
+        kq["credit_policy"] = "include"
+    elif credit_norm == "exclude_from_t":
+        kq["credit_policy"] = "exclude_from_T"
+    else:
+        raise ValueError(
+            "kpi_quantifiers.credit_policy must be "
+            "'exclude_from_T' or 'include'"
+        )
     kq.setdefault("emit_static_share", True)
     kq.setdefault("emit_exact_delta", True)
     kq.setdefault("dual_sign_columns", True)

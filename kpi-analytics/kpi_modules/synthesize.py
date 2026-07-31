@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from .io_csv import read_csv_rows, write_csv_rows
+from .io_csv import read_csv_rows, resolve_unique_path, write_csv_rows
 from .metrics import date_to_excel_serial, excel_serial_to_date
 
 # ---------------------------------------------------------------------------
@@ -860,9 +860,14 @@ def generate_csv(
     dry_run: bool = False,
     start_index: int = 1,
     append: bool = False,
+    force: bool = False,
 ) -> dict[str, Any]:
     """
     Generate synthetic Professional Billing WQ CSV.
+
+    force: when False (default) and not *append*, if the output path exists,
+    write to a unique sibling path (``name_1.ext``). When True, overwrite.
+    *append* always targets the exact path (creates if missing).
 
     Returns a result dict suitable for CLI JSON output.
     """
@@ -872,22 +877,30 @@ def generate_csv(
     )
 
     existing: list[dict[str, str]] = []
-    out = Path(output_path)
-    if append and out.is_file():
-        prev_fields, existing = read_csv_rows(out)
-        # Prefer existing header order when appending
-        fieldnames = list(prev_fields)
-        if existing:
-            # Continue patient numbering after highest Doe,*N if possible
-            max_idx = start_index - 1
-            for r in existing:
-                p = r.get("patient") or ""
-                for prefix in ("Doe,John", "Doe,Jane"):
-                    if p.startswith(prefix):
-                        suffix = p[len(prefix) :]
-                        if suffix.isdigit():
-                            max_idx = max(max_idx, int(suffix))
-            start_index = max_idx + 1
+    requested_out = Path(output_path)
+    path_adjusted = False
+    if append:
+        # Append always targets the exact path (create or extend).
+        out = requested_out
+        if out.is_file():
+            prev_fields, existing = read_csv_rows(out)
+            # Prefer existing header order when appending
+            fieldnames = list(prev_fields)
+            if existing:
+                # Continue patient numbering after highest Doe,*N if possible
+                max_idx = start_index - 1
+                for r in existing:
+                    p = r.get("patient") or ""
+                    for prefix in ("Doe,John", "Doe,Jane"):
+                        if p.startswith(prefix):
+                            suffix = p[len(prefix) :]
+                            if suffix.isdigit():
+                                max_idx = max(max_idx, int(suffix))
+                start_index = max_idx + 1
+    else:
+        out, _req, path_adjusted = resolve_unique_path(
+            requested_out, force=bool(force)
+        )
 
     rows = generate_rows(
         row_count=row_count,
@@ -923,6 +936,9 @@ def generate_csv(
         "Success": True,
         "Command": "generate",
         "OutputPath": str(out.resolve()),
+        "RequestedOutputPath": str(requested_out.resolve()),
+        "OutputPathAdjusted": bool(path_adjusted),
+        "Force": bool(force),
         "RowCount": len(all_rows),
         "RowsGenerated": len(rows),
         "Append": append,
@@ -942,6 +958,18 @@ def generate_csv(
 
     if not dry_run:
         write_csv_rows(out, fieldnames, all_rows)
-        result["Message"] = "Generate complete."
+        if path_adjusted:
+            result["Message"] = (
+                "Generate complete (avoided overwrite of "
+                f"{requested_out.resolve()})."
+            )
+        else:
+            result["Message"] = "Generate complete."
+    elif path_adjusted:
+        result["Message"] = (
+            "Dry-run only; no file written "
+            f"(would write to {out.resolve()}; avoided overwrite of "
+            f"{requested_out.resolve()})."
+        )
 
     return result

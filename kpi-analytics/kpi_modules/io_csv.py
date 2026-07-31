@@ -7,6 +7,38 @@ from pathlib import Path
 from typing import Any
 
 
+def resolve_unique_path(
+    path: str | Path,
+    *,
+    force: bool = False,
+    max_attempts: int = 999,
+) -> tuple[Path, Path, bool]:
+    """
+    Resolve a destination path that will not clobber an existing file.
+
+    Without *force*, if *path* already exists, appends ``_1``, ``_2``, ... before
+    the extension until a free path is found (cap *max_attempts*). With *force*,
+    returns the exact path (caller may overwrite).
+
+    Returns ``(write_path, requested_path, path_adjusted)``.
+    """
+    requested = Path(path)
+    if force or not requested.exists():
+        return requested, requested, False
+
+    stem = requested.stem
+    suffix = requested.suffix
+    parent = requested.parent
+    for i in range(1, max_attempts + 1):
+        candidate = parent / f"{stem}_{i}{suffix}"
+        if not candidate.exists():
+            return candidate, requested, True
+    raise OSError(
+        f"Could not find a free output path after {max_attempts} "
+        f"attempts for: {requested}"
+    )
+
+
 def read_csv_rows(path: str | Path) -> tuple[list[str], list[dict[str, str]]]:
     """Return (fieldnames, rows) from a CSV with a header row."""
     p = Path(path)

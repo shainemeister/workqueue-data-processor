@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.6.0"
+version: "2.7.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 2.6.0  
+**Toolkit version:** 2.7.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Focus profiles:** `profiles\poi_*.json` (POI multipliers only; CLI `--profile`)  
@@ -354,10 +354,12 @@ Portfolio: \(T = 50000\), AR>90% = **50%**, Days in AR = **25**.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
+| `amount_field` | `out_ins_amt` | Raw metric key used as claim balance \(x_i\) (must exist on the raw-metrics map; typically `out_ins_amt` or `billed_amount`) |
 | `aged_day_breaks` | `[30,60,90,120]` | Aging thresholds |
-| `adc` | null | If null → estimate billed / 90 |
+| `adc` | null | Explicit Average Daily Charges when mode allows |
+| `adc_mode` | `auto` | `auto` = use `adc` when &gt; 0 else estimate; `config` = only `adc` (else Days-in-AR quantifiers 0); `estimate` = always billed÷lookback |
 | `adc_lookback_days` | 90 | Lookback for estimate |
-| `credit_policy` | `exclude_from_T` | Or `include` |
+| `credit_policy` | `exclude_from_T` | `exclude_from_T` or `include` (invalid values fail config load) |
 | `emit_static_share` | true | Static family |
 | `emit_exact_delta` | true | Exact Δ family |
 | `dual_sign_columns` | true | pos/neg split for signed values |
@@ -539,3 +541,4 @@ Checks include:
 | 2.4.0 | Rank completeness + `--strict roles\|full` fail-closed optional |
 | 2.5.0 | Privacy header aliases; default patient `token_digits` **4** (`DOE0001`) |
 | 2.6.0 | Scoring profiles + three POI focus presets (multipliers only; base weights/formulas unchanged) |
+| 2.7.0 | Honor `amount_field`; implement `adc_mode` (`auto`/`config`/`estimate`); non-clobber score/generate outputs + `--force`; strict `credit_policy` validation |
