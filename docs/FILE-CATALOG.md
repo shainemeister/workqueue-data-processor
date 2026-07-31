@@ -121,7 +121,7 @@ Maintainer and design documentation (not end-user product entry points).
 | Path | Type | Summary |
 |------|------|---------|
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
-| [PLAN.md](./PLAN.md) | doc | Living post-V1 plan: Cluster 1 (POI presets + scoring profiles) design-frozen; Clusters 2–3 multi-file / analysis still developing. |
+| [PLAN.md](./PLAN.md) | doc | Living post-V1 plan (0.3.0): Cluster 1 CLI shipped (kpi 2.6.0); residual menu profile picker + optional base retune; Clusters 2–3 multi-file / analysis still developing. |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
 
 ---
@@ -336,7 +336,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
-| 1.9.0 | kpi-analytics 2.6.0: `profiles.py`, shipped `profiles/poi_*.json` focus presets; CLI profile verbs |
+| 1.9.0 | kpi-analytics 2.6.0: `profiles.py`, shipped `profiles/poi_*.json` focus presets; CLI profile verbs; PLAN blurb updated for 0.3.0 backlog status |
 | 1.8.6 | Data contract moved to `wq_schema/` (`wq_schema.json`, `wq_schema.csv`, `wq_data.csv`); root no longer holds schema/sample CSVs |
 | 1.8.5 | Root cleanup: `PLAN.md`, `FILE-CATALOG.md`, and concept doc under `docs/`; root keeps data contract + entry shim only among product docs |
 | 1.8.4 | repo-kit **2.0.1**: standards under `kit/`; catalog hub + rules modules + templates; root RULES/MARKDOWN/templates removed |

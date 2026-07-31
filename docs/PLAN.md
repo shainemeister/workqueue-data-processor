@@ -1,7 +1,7 @@
 ---
 title: "Development Plan — Post-V1 Enhancement Concepts"
-description: "Living plan for post-V1 enhancements. Cluster 1 (config/profiles) is design-frozen; Clusters 2–3 remain developing concepts."
-version: "0.2.0"
+description: "Living plan: Cluster 1 CLI shipped (kpi 2.6.0); residual menu picker and optional base retune; Clusters 2–3 still developing."
+version: "0.3.0"
 status: current
 audience:
   - developers
@@ -22,24 +22,38 @@ last_updated: "2026-07-30"
 
 # Development Plan — Post-V1 Enhancement Concepts
 
-Living plan for product improvements after the V1 priority matrix, dynamic mapping, guided menu, and the **gap-safety program** (excel-toolkit 1.8.0 / kpi-analytics 2.5.0: guided mapping, serial dates, coverage, rank completeness, privacy aliases).
+Living plan for product improvements after the V1 priority matrix, dynamic mapping, guided menu, the **gap-safety program** (excel-toolkit 1.8.0 / kpi-analytics 2.5.0), and **scoring profiles** (kpi-analytics **2.6.0** / repo **1.9.0**).
 
-**Document version:** 0.2.0  
-**Status:** Cluster 1 **design-frozen** (ready for implementation); Clusters 2–3 still developing  
-**Related:** [README.md](../README.md) · [kit/RULES.md](../kit/RULES.md) · [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) · [kpi-analytics/SCORE-METHODOLOGY.md](../kpi-analytics/SCORE-METHODOLOGY.md)
+**Document version:** 0.3.0  
+**Status:** Cluster 1 **CLI shipped** (kpi-analytics **2.6.0** / repo **1.9.0**). Residual: optional menu profile picker (**1f**), optional base-weight retune. Clusters **2–3** still developing (not implementation-ready).  
+**Related:** [README.md](../README.md) · [kit/RULES.md](../kit/RULES.md) · [CHANGELOG.md](../CHANGELOG.md) · [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) · [kpi-analytics/SCORE-METHODOLOGY.md](../kpi-analytics/SCORE-METHODOLOGY.md) · [kpi-analytics/CLI-GUIDE.md](../kpi-analytics/CLI-GUIDE.md)
 
 ---
 
 ## Summary
 
-This plan organizes a backlog of enhancement ideas into three non-overlapping clusters that respect the current architecture:
+### Architecture constraints (unchanged)
 
-- Two independent toolkits (kpi-analytics = Python 3.13 stdlib scoring; excel-toolkit = PowerShell 5.1 + Excel COM).
-- Shared data contract only (`wq_schema.*` + sample rows).
+- Two independent toolkits: **kpi-analytics** (Python 3.13 stdlib scoring) and **excel-toolkit** (PowerShell 5.1 + Excel COM).
+- Shared data contract only (`wq_schema/` schema + sample rows).
 - V1 priority formulas + dual RCM `kpi_q_*` attribution already shipped and must stay explainable.
-- Design-only V2/V3 roadmap in `WQ_Priority_Matrix_Concept.md` (denial volume/velocity, recovery probability, capacity).
+- Design-only V2/V3 roadmap in [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) (denial volume/velocity, recovery probability, capacity).
 
-The clusters are ordered so that low-risk config/profile work can ship first, multi-file workflow improvements second, and higher-complexity grouping/analysis last (with explicit watch for V2 overlap). **Cluster 1 open questions are frozen below** so implementation may begin. Clusters 2–3 still require freezes before code.
+### Shipped since PLAN 0.2.0
+
+- Scoring **profiles** (`score --profile`, `profile-list` / `profile-show` / `profile-save`).
+- Three **POI focus presets** (`protect_writeoffs`, `maximize_cash`, `suppress_aging`) under `kpi-analytics/profiles/`.
+- Default path (no profile) unchanged vs 2.5.0 fixtures; full certification at ship.
+- See [CHANGELOG.md](../CHANGELOG.md) **[1.9.0]** and [CLI-GUIDE — scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
+
+### Active backlog
+
+| Tier | Items |
+|------|--------|
+| **Pending (actionable)** | Cluster 1 residual: menu profile picker (**1f**); optional evidence-based base-weight retune |
+| **Developing (needs freeze before code)** | **Cluster 2** multi-file / naming / default xlsx / preview / by-WQ totals; **Cluster 3** grouping / multi-sort / denial analysis sheet (reporting-only vs V2) |
+
+Do not start Cluster 2/3 product code until open questions in those sections are design-frozen.
 
 ---
 
@@ -48,9 +62,9 @@ The clusters are ordered so that low-risk config/profile work can ship first, mu
 1. [Summary](#summary)
 2. [Background and current baseline](#background-and-current-baseline)
 3. [Shared principles and hard constraints](#shared-principles-and-hard-constraints)
-4. [Cluster 1 — KPI config optimization and saved profiles](#cluster-1--kpi-config-optimization-and-saved-profiles) (**design-frozen**)
-5. [Cluster 2 — Multi-file ingest, aggregation, and output conventions](#cluster-2--multi-file-ingest-aggregation-and-output-conventions)
-6. [Cluster 3 — Grouping, sorting, and denial analysis sheet](#cluster-3--grouping-sorting-and-denial-analysis-sheet)
+4. [Cluster 1 — KPI config optimization and saved profiles](#cluster-1--kpi-config-optimization-and-saved-profiles) (**CLI shipped; residual pending**)
+5. [Cluster 2 — Multi-file ingest, aggregation, and output conventions](#cluster-2--multi-file-ingest-aggregation-and-output-conventions) (**developing**)
+6. [Cluster 3 — Grouping, sorting, and denial analysis sheet](#cluster-3--grouping-sorting-and-denial-analysis-sheet) (**developing**)
 7. [Recommended sequencing](#recommended-sequencing)
 8. [Compliance, versioning, and change control](#compliance-versioning-and-change-control)
 9. [Cross-cutting open questions](#cross-cutting-open-questions)
@@ -61,18 +75,20 @@ The clusters are ordered so that low-risk config/profile work can ship first, mu
 
 ## Background and current baseline
 
-| Area | Current state (as of repo **1.8.1** / kpi **2.5.0** / excel **1.8.0**) |
-|------|-----------------------------------------------------------|
-| Priority scoring | V1 foundation fully implemented; batch-relative minmax/percentile; full audit columns; chaos + POI multipliers |
+| Area | Current state (as of repo **1.9.0** / kpi **2.6.0** / excel **1.8.0**) |
+|------|-----------------------------------------------------------------------|
+| Priority scoring | V1 foundation fully implemented; batch-relative minmax/percentile; full audit columns; chaos + POI multipliers (presets selectable) |
 | RCM impact | Dual attribution (`kpi_q_*`) independent of priority; RCM golden in certification |
 | Column mapping | Auto-detect + mapping profile + interactive guided mapping (menu TTY-safe) |
 | Rank quality signals | `MetricValueCoverage`, `RankCompleteness`, optional `--strict roles\|full`; menu partial-rank confirm |
 | Privacy | Score-output masking; header aliases; default **4-digit** patient tokens |
-| Config | Single `config_default.json` (weights, chaos, POI, privacy, kpi_quantifiers); CLI `--config` only |
+| Config | `config_default.json` (weights, chaos, POI, privacy, kpi_quantifiers); CLI `--config` **or** `--profile` (mutually exclusive); `profile-list` / `show` / `save` |
+| Profiles / POI | Shipped thin presets under `kpi-analytics/profiles/`; user `user_*.json` gitignored; focus defaults **not** outcome-optimized |
 | Multi-file | Menu multi-selects CSV/XLSX under `import\`; processes **per file** (no cross-file aggregation) |
 | Summary | Vertical summary **CSV**; Excel export separate |
 | Output naming | Free `name_N` suffix on collision |
-| Schema | No dedicated “WQ name” field |
+| Schema | No dedicated “WQ name” field (`wq_schema/`) |
+| Layout | Product under toolkit folders; standards under `kit/` (repo-kit **2.0.1**); maintainer docs under `docs/` |
 | Gap-safety program | **Closed** (H1–H3, D1–D3, M1) |
 | Roadmap | V2/V3 design targets only in `WQ_Priority_Matrix_Concept.md` |
 
@@ -92,59 +108,78 @@ These apply to every concept in this plan.
 | Additive first | Prefer new optional flags, columns, sheets, or profiles over silent renames or breaking contract changes. |
 | Schema ownership | Field definitions live in `wq_schema/wq_schema.json` / `wq_schema/wq_schema.csv`. Renames or new required roles are coordinated with fixtures + docs. |
 | Output safety | Never clobber existing destinations by default; continue unique-suffix policy. |
-| Privacy | Existing PHI masking on score output stays configurable; new features must not re-introduce raw patient identifiers into tracked samples. |
+| Privacy | Existing PHI masking on score output stays configurable; new features must not re-introduce raw patient identifiers into tracked samples. Profiles must not embed claim rows. |
 | Certification | Any product code or gate change requires full `certification/Invoke-Certification.ps1` (Domain A + Domain B) before completion. |
 | Documentation | Behavior change ⇒ canonical doc update in the **same change set** (CLI-GUIDE, SCORE-METHODOLOGY, README, ENTERPRISE-SECURITY as applicable). |
-| Versioning | Package version bump + root CHANGELOG entry required for release-worthy behavior or contract changes. |
+| Versioning | Package version bump + root CHANGELOG entry required for release-worthy behavior or contract changes. PLAN-only docs commits need not bump package versions. |
 
 ---
 
 ## Cluster 1 — KPI config optimization and saved profiles
 
-**Status:** **design-frozen** (2026-07-30) — ready for implementation  
-**Primary surface:** kpi-analytics (menu composition optional in same or follow-on release)  
-**Risk to existing contracts:** low (additive POI presets + profile load/save; default weights unchanged until data-backed retune)  
-**Target package version (indicative):** kpi-analytics **2.6.0** when implemented  
+**Status:** **CLI shipped** (2026-07-30, kpi-analytics **2.6.0** / repo **1.9.0**). Residual items in [Outstanding / pending](#outstanding--pending-cluster-1-residual).  
+**Primary surface:** kpi-analytics (CLI complete); excel-toolkit menu composition still optional  
+**Risk to existing contracts:** low for residual menu work (subprocess only)  
+**Shipped package version:** kpi-analytics **2.6.0**
+
+### Shipped (as-built)
+
+| Deliverable | Location / note |
+|-------------|-----------------|
+| Profile module | `kpi-analytics/kpi_modules/profiles.py` |
+| POI presets | `kpi-analytics/profiles/poi_protect_writeoffs.json`, `poi_maximize_cash.json`, `poi_suppress_aging.json` (no `poi_default.json`; default = no `--profile`) |
+| CLI | `score --profile`, `profile-list`, `profile-show`, `profile-save` |
+| Docs | [CLI-GUIDE](../kpi-analytics/CLI-GUIDE.md), [SCORE-METHODOLOGY](../kpi-analytics/SCORE-METHODOLOGY.md), [CHANGELOG 1.9.0](../CHANGELOG.md) |
+| Acceptance (CLI) | See checkboxes below — **done** |
+
+> **Note:** Design freezes in §1.1–1.2 describe the **shipped** CLI contract. Treat them as as-built reference, not an open implementation TODO. Day-to-day usage: [CLI-GUIDE — scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
+
+### Outstanding / pending (Cluster 1 residual)
+
+| ID | Item | Status | Notes |
+|----|------|--------|-------|
+| **1f** | excel-toolkit menu scoring-profile picker | **Pending** | Process my data and/or Advanced; must call `kpi-analytics.cmd score --profile …` only (no scoring math in PowerShell) |
+| **B1.1-retune** | Analyst-backed base weight / chaos retune | **Pending (optional)** | Requires documented rationale, fixture note if needed, CHANGELOG under Changed; separate from focus presets; not blocking 1f |
 
 ### 1.1 Optimize KPI config for real-world use cases
 
 **Intent**  
 Improve ranking usefulness for typical professional-billing denial/follow-up queues **without changing V1 formulas** (same metric keys, audit columns, renorm rules).
 
-#### Frozen decisions (B1.1)
+#### Frozen decisions (B1.1) — shipped contract
 
-| Decision | Freeze |
-|----------|--------|
-| Default weights / chaos in `config_default.json` | **Keep current values** as POI name `default` until an analyst-backed retune ships in a later change set |
-| Named focus presets | Ship **three additive POI presets** (multipliers only; base weights unchanged) |
-| Chaos thresholds | **No change** in first implementation of Cluster 1 |
+| Decision | Freeze / as-built |
+|----------|-------------------|
+| Default weights / chaos in `config_default.json` | **Kept** as POI name `default` until an optional analyst-backed retune ships later |
+| Named focus presets | **Shipped:** three additive POI presets (multipliers only; base weights unchanged) |
+| Chaos thresholds | **No change** in Cluster 1 CLI ship |
 | Metric keys / directions | **Unchanged** |
-| How presets apply | Same path as today: `point_of_interest.multipliers` × base weights × chaos multipliers → renorm over active metrics |
-| Validation | Handcalc + RCM fixtures must stay green with default profile; each preset must load and score synthetic without error; document expected *directional* ranking shift (not hard-coded patient order) |
-| Documentation | SCORE-METHODOLOGY table of presets + rationale; CLI-GUIDE how to select |
+| How presets apply | `point_of_interest.multipliers` × base weights × chaos multipliers → renorm over active metrics |
+| Validation | Handcalc + RCM fixtures green with default; each preset loads and scores synthetic without error; no hard-coded patient order goldens |
+| Documentation | SCORE-METHODOLOGY preset table + CLI-GUIDE selection |
 
-#### Named POI presets (initial multipliers)
+#### Named POI presets (as shipped)
 
 Multipliers apply on top of existing base weights. Values are **product defaults for focus**, not a claim of optimized cash recovery. Operators may override via full config or saved profile.
 
 | Preset id | Display name | Intent | Multiplier highlights (others = 1.0) |
 |-----------|--------------|--------|--------------------------------------|
-| `default` | Balanced (package default) | Current behavior | All 1.0 |
+| `default` | Balanced (package default) | No `--profile` | All 1.0 |
 | `protect_writeoffs` | Protect write-offs | Emphasize aging past target, dual deadlines, appeal urgency | `claim_age_days` 1.2, `claim_age_disparity` 1.4, `appeal_urgency` 1.5, `dual_deadline_urgency` 1.5, `balance_weighted_days_outstanding` 1.2 |
 | `maximize_cash` | Maximize cash | Emphasize dollars and BWDO | `out_ins_amt` 1.5, `billed_amount` 1.2, `balance_weighted_days_outstanding` 1.4, `denial_count` 1.1 |
-| `suppress_aging` | Suppress aging | Emphasize recently stalled / high denial / short deadline work over pure age | `days_since_last_worked` 1.4, `denial_count` 1.3, `appeal_urgency` 1.3, `dual_deadline_urgency` 1.3, `claim_age_days` 0.85, `claim_age_disparity` 0.85 |
+| `suppress_aging` | Suppress aging | Emphasize stalled / high denial / short deadline over pure age | `days_since_last_worked` 1.4, `denial_count` 1.3, `appeal_urgency` 1.3, `dual_deadline_urgency` 1.3, `claim_age_days` 0.85, `claim_age_disparity` 0.85 |
 
-**Later retune of base weights** (optional second slice of B1.1): requires (a) documented rationale from real or synthetic distributions, (b) deliberate fixture refresh note, (c) CHANGELOG under Changed. Not blocking first Cluster 1 ship.
+**Optional later retune of base weights (B1.1-retune):** requires (a) documented rationale from real or synthetic distributions, (b) deliberate fixture refresh note if expected values change, (c) CHANGELOG under Changed. Not required for residual menu work.
 
-#### Implementation shape (B1.1)
+#### Implementation shape (B1.1) — as shipped
 
 | Artifact | Role |
 |----------|------|
-| `kpi-analytics/profiles/poi_default.json` | Optional thin file or omit (package default already `default`) |
-| `kpi-analytics/profiles/poi_protect_writeoffs.json` | Full or partial config with `point_of_interest` set |
+| *(omit `poi_default.json`)* | Package default already `default` when no profile |
+| `kpi-analytics/profiles/poi_protect_writeoffs.json` | Thin profile; `point_of_interest` set |
 | `kpi-analytics/profiles/poi_maximize_cash.json` | Same |
 | `kpi-analytics/profiles/poi_suppress_aging.json` | Same |
-| CLI | Prefer unified profile load (see 1.2): `score --profile protect_writeoffs` resolves shipped POI files and user profiles |
+| CLI | `score --profile protect_writeoffs` resolves `profiles\<name>.json` or `profiles\poi_<name>.json` |
 
 ---
 
@@ -153,22 +188,22 @@ Multipliers apply on top of existing base weights. Values are **product defaults
 **Intent**  
 Persist a scoring configuration (and optional column mapping) under a logical name so the same settings reapply on subsequent extracts.
 
-#### Frozen decisions (B1.2)
+#### Frozen decisions (B1.2) — shipped contract
 
-| Decision | Freeze |
-|----------|--------|
-| Storage root | Convention: **`profiles\`** under **kpi-analytics toolkit root** (`kpi-analytics\profiles\`) for shipped presets; user-writable same folder or path via flag |
+| Decision | Freeze / as-built |
+|----------|-------------------|
+| Storage root | **`kpi-analytics\profiles\`** for shipped presets; user-writable same folder |
 | Never store under | `output\`, `import\` (extracts), gitignored cert/diagnostics folders |
-| Git policy | **Shipped presets** (POI files) may be tracked. **User-created** profiles: allowed locally; prefer `.gitignore` pattern `kpi-analytics/profiles/user_*.json` or document “do not commit PHI/config with secrets” — profiles must not embed claim rows |
-| Profile vs mapping | **Separate concerns, one load path:** profile JSON may *reference* a mapping file path or embed a `mapping` object (role→header). Existing `--mapping` remains; if both supplied, **CLI order wins:** explicit `--mapping` overrides profile mapping; explicit `--config` overrides profile config body |
-| Full vs partial config | Profile is a **JSON object** that is deep-merged onto `config_default` then validated via existing `validate_config` / `load_config` rules. Partial profiles only need keys they override |
-| Metadata | Required: `profile_schema_version` (start `"1.0"`), `name` (slug), `description` (string). Optional: `min_toolkit_version` (semver string; warn or fail if package older), `wq_label` (operator free text — **not** PHI), `created_at` (ISO date) |
-| WQ identity in profile | **Operator-supplied `wq_label` only** for Cluster 1 (no schema field). Filename stem may be suggested in menu later; not required for CLI |
-| PHI | Profiles must not contain patient rows, account lists, or raw extracts. Validation: reject keys `rows`, `data`, or arrays of claim objects if introduced by mistake (simple deny-list) |
-| Failure mode | Missing file / invalid JSON / validate_config error → **fail clearly**, no silent fallback to default |
-| Menu | **Phase 1 CLI-only** is acceptable for first ship; menu “pick profile” can follow in excel-toolkit patch. If menu in same release: Advanced or Process-my-data optional profile list from `profiles\*.json` |
+| Git policy | **Shipped presets** tracked. **User-created:** `kpi-analytics/profiles/user_*.json` gitignored; no claim rows |
+| Profile vs mapping | Profile may embed `mapping` or `mapping_path`. Explicit `--mapping` overrides profile mapping; `--config` and `--profile` are **mutually exclusive** |
+| Full vs partial config | Deep-merge onto `config_default` then `validate_config` |
+| Metadata | Required: `profile_schema_version` (`"1.0"`), `name`, non-empty `description`. Optional: `min_toolkit_version` (fail if package older), `wq_label`, `created_at` |
+| WQ identity in profile | Operator-supplied `wq_label` only (no schema field) |
+| PHI | Deny-list: `rows`, `data`, `claims`, `records` |
+| Failure mode | Missing / invalid profile → fail clearly; no silent fallback to default |
+| Menu | **Phase 1 CLI-only shipped**; menu pick remains residual **1f** |
 
-#### Profile JSON shape (frozen)
+#### Profile JSON shape (as-built)
 
 ```json
 {
@@ -194,24 +229,23 @@ Persist a scoring configuration (and optional column mapping) under a logical na
 }
 ```
 
-- `config`: optional object; deep-merged onto package default. Omit or `{}` means package default config.  
-- `mapping`: optional inline role map (same semantics as existing mapping profile roles).  
-- `mapping_path`: optional path string relative to profile file or absolute; ignored if `mapping` object present.  
-- Unknown top-level keys: **reject** (strict) to avoid silent misconfig.
+- `config`: optional; deep-merged onto package default. Omit or `{}` means package default.  
+- `mapping` / `mapping_path`: optional; explicit CLI `--mapping` wins.  
+- Unknown top-level keys: **reject** (strict).
 
-#### CLI surface (frozen)
+#### CLI surface (as-built)
 
 | Command / flag | Behavior |
 |----------------|----------|
-| `score --profile <name-or-path>` | Resolve `name` to `profiles\<name>.json` or `profiles\poi_<name>.json` under toolkit root; or use path if it contains `\` / ends with `.json` |
-| `score --config` + `--profile` | **Error** unless documented merge: freeze = **mutually exclusive** with full `--config` (pick one). `--profile` supplies config merge; optional `--mapping` still overrides profile mapping |
-| `profile-list` (new subcommand) | List JSON files in `profiles\` with `name` + `description` from metadata (no PHI) |
-| `profile-save --name <slug> [--from-config path] [--from-mapping path] [--description …]` | Write `profiles\<slug>.json` merging current default + optional sources; refuse overwrite without `--force` |
-| `profile-show <name-or-path>` | Print resolved metadata + effective key summary (not full PHI) as JSON |
+| `score --profile <name-or-path>` | Resolve name to `profiles\<name>.json` or `profiles\poi_<name>.json`; or path if `\` / `.json` |
+| `score --config` + `--profile` | **Error** (mutually exclusive) |
+| `profile-list` | List JSON under `profiles\` (metadata; no PHI) |
+| `profile-save --name <slug> …` | Write `profiles\<slug>.json`; refuse overwrite without `--force` |
+| `profile-show <name-or-path>` | Metadata + effective weight summary |
 
-Exit codes: align with existing CLI (0 success, 1 validation, 2 runtime).
+Exit codes: 0 success, 1 validation, 2 runtime. Profile list/show/save are **not** diagnostics-gated.
 
-#### Menu surface (optional same release / follow-on)
+#### Menu surface (residual 1f)
 
 | Action | Behavior |
 |--------|----------|
@@ -220,23 +254,28 @@ Exit codes: align with existing CLI (0 success, 1 validation, 2 runtime).
 
 Menu must call the same `kpi-analytics.cmd score --profile …` (no scoring math in PowerShell).
 
-#### Acceptance criteria (Cluster 1 done)
+#### Acceptance criteria
 
-**B1.1 / presets**
+**B1.1 / presets (CLI) — done**
 
 - [x] Three named POI presets load via `--profile` and score synthetic data successfully  
 - [x] Default (no `--profile`) unchanged vs 2.5.0 behavior on handcalc + RCM fixtures  
 - [x] SCORE-METHODOLOGY documents each preset intent and multipliers  
 - [x] CHANGELOG notes additive presets  
 
-**B1.2 / profiles**
+**B1.2 / profiles (CLI) — done**
 
 - [x] `profile-list`, `profile-save`, `profile-show`, `score --profile` work as specified  
 - [x] Invalid profile fails with clear message; no silent default  
 - [x] `--config` and `--profile` mutually exclusive  
 - [x] Explicit `--mapping` overrides profile mapping  
 - [x] No claim rows allowed in profile JSON  
-- [x] CLI-GUIDE + FILE-CATALOG + version bump; full certification (run at ship)  
+- [x] CLI-GUIDE + FILE-CATALOG + version bump; full certification at ship  
+
+**Residual acceptance (not done)**
+
+- [ ] **1f:** Menu offers profile pick and passes `--profile` into score subprocess  
+- [ ] **B1.1-retune (optional):** Only when evidence-backed; fixtures + CHANGELOG if weights change  
 
 **Non-goals for Cluster 1**
 
@@ -247,13 +286,13 @@ Menu must call the same `kpi-analytics.cmd score --profile …` (no scoring math
 
 #### Implementation order (within Cluster 1)
 
-| Step | Work |
-|------|------|
-| 1 | Profile load/merge helper + CLI `--profile` + schema validation |
-| 2 | Shipped POI preset files under `kpi-analytics/profiles\` |
-| 3 | `profile-list` / `profile-save` / `profile-show` |
-| 4 | Docs + fixtures smoke + cert |
-| 5 | Optional: menu profile picker |
+| Step | Work | Status |
+|------|------|--------|
+| 1 | Profile load/merge helper + CLI `--profile` + schema validation | **Done** |
+| 2 | Shipped POI preset files under `kpi-analytics/profiles\` | **Done** |
+| 3 | `profile-list` / `profile-save` / `profile-show` | **Done** |
+| 4 | Docs + fixtures smoke + cert | **Done** |
+| 5 | Optional: menu profile picker | **Pending (1f)** |
 
 ---
 
@@ -262,6 +301,11 @@ Menu must call the same `kpi-analytics.cmd score --profile …` (no scoring math
 **Status:** developing concept  
 **Primary surface:** excel-toolkit menu / workflow (with light kpi-analytics support if needed)  
 **Risk to existing contracts:** medium (new aggregation paths; must preserve per-file score semantics)
+
+| Gate | State |
+|------|--------|
+| Implementation-ready? | **No** — freeze open questions first |
+| Role in backlog | Primary multi-file / delivery UX track after Cluster 1 residual |
 
 ### 2.1 Ingest multiple files and parse / total by WQ
 
@@ -312,6 +356,11 @@ After file discovery and before the operator chooses Full pipeline / Score only 
 **Primary surface:** both toolkits (post-score reporting preferred)  
 **Risk to existing contracts:** higher — closest to V2 design territory
 
+| Gate | State |
+|------|--------|
+| Implementation-ready? | **No** — freeze open questions first; keep reporting-only vs V2 boundary explicit |
+| Role in backlog | Post-score analysis / presentation; higher risk of V2 overlap |
+
 ### 3.1 Group qualifier (break by filters: DOS or dollar amount by Patient name)
 
 **Intent**  
@@ -351,16 +400,21 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 
 ## Recommended sequencing
 
-| Order | Cluster / item | Status | Rationale |
-|-------|----------------|--------|-----------|
-| 1 | **1.1 + 1.2 Config presets + profiles** | **Design-frozen — implement next** | Additive; high operator value; low formula risk |
-| 2 | 2.2 + 2.3 + 2.4 Naming, default-xlsx, multi-file preview | Developing | UX on multi-select menu |
-| 3 | 2.1 Cross-file / by-WQ totals | Developing | Needs WQ-identity freeze |
-| 4 | 3.2 Multi-sort | Developing | Low-risk post-score |
-| 5 | 3.1 Group qualifier | Developing | Privacy care |
-| 6 | 3.3 Denial analysis sheet | Developing | Reporting-only until V2 |
+| Order | Item | Status | Rationale |
+|-------|------|--------|-----------|
+| 1 | **1f** Menu profile picker | **Pending** (optional) | Low risk; uses shipped CLI |
+| 2 | **B1.1-retune** Base weights | **Pending** (optional) | Data / analyst gated |
+| 3 | Cluster **2.2–2.4** Naming, default xlsx, multi-file preview | Developing | Freeze before code |
+| 4 | Cluster **2.1** Cross-file / by-WQ totals | Developing | Needs WQ-identity freeze |
+| 5 | Cluster **3.2** Multi-sort | Developing | Low-risk post-score |
+| 6 | Cluster **3.1** Group qualifier | Developing | Privacy care |
+| 7 | Cluster **3.3** Denial analysis sheet | Developing | Reporting-only until V2 |
 
-**Next implementation slice:** Cluster 1 (presets + profile CLI) per frozen acceptance above.
+**Next recommended product slice**
+
+- Prefer **1f** if operator UX for profiles is the priority.  
+- Prefer a **Cluster 2 design freeze** if multi-file delivery is the priority.  
+- Do **not** start Cluster 2/3 code without freezes.
 
 ---
 
@@ -374,6 +428,7 @@ All work under this plan must follow `kit/RULES.md` and `kit/rules/`:
 - After any product code or gate change: full certification harness must pass (`OverallPass = true`); outputs remain untracked.
 - Package version bumps (`kpi_modules.__version__` or `ExcelToolkitVersion`) only when the public contract or observable behavior changes; document the bump in CHANGELOG.
 - Prefer feature branches (`feature/…`, `docs/…`) for non-trivial work.
+- PLAN-only documentation updates do not require a package version bump.
 
 When a concept moves from “developing” to “ready for implementation”, a short design note or updated section in this PLAN (or a focused follow-on PLAN) should freeze the open questions before code starts.
 
@@ -383,12 +438,13 @@ When a concept moves from “developing” to “ready for implementation”, a 
 
 | # | Question | Status |
 |---|----------|--------|
-| 1 | **WQ identity** for multi-file / naming | **Open** (Cluster 2). Cluster 1 uses optional free-text `wq_label` on profiles only |
+| 1 | **WQ identity** for multi-file / naming | **Open** (Cluster 2). Profiles may carry optional free-text `wq_label` only |
 | 2 | **Combined vs. per-file scoring** | **Open** (Cluster 2). Default assumption: per-file only |
-| 3 | **Profile storage** | **Frozen in Cluster 1:** `kpi-analytics\profiles\`; shipped presets tracked; no PHI |
+| 3 | **Profile storage** | **Shipped** — `kpi-analytics\profiles\`; shipped presets tracked; user `user_*.json` gitignored; no PHI |
 | 4 | **Analysis vs. V2 boundary** | **Open** (Cluster 3): reporting-only until V2 opened |
 | 5 | **Default artifact** CSV vs Excel | **Open** (Cluster 2.3) |
-| 6 | **Schema evolution** for WQ name | **Open** (Cluster 2); not required for Cluster 1 |
+| 6 | **Schema evolution** for WQ name | **Open** (Cluster 2) |
+| 7 | **Menu profile UX (1f)** | **Pending implementation** (design sketched; not blocked on a freeze) |
 
 ---
 
@@ -401,6 +457,7 @@ When a concept moves from “developing” to “ready for implementation”, a 
 - Committing real PHI, production extracts, or regenerable `output\` / certification artifacts.
 - Permanent changes to PowerShell execution policy or force-killing Excel.
 - Third-party compliance claims (HIPAA Safe Harbor, SOC 2, etc.).
+- Re-opening shipped Cluster 1 CLI contracts without a versioned change set.
 
 ---
 
@@ -410,3 +467,4 @@ When a concept moves from “developing” to “ready for implementation”, a 
 |---------|--------|
 | 0.1.0 | Initial living plan. Captures sorted enhancement concepts from operator discussion; all items marked developing; details still to be worked out. |
 | 0.2.0 | Baseline updated to kpi 2.5.0 / excel 1.8.0 after gap-safety close. **Cluster 1 design-frozen** (POI presets + profile schema/CLI). |
+| 0.3.0 | Baseline → repo **1.9.0** / kpi **2.6.0** / excel **1.8.0**. Cluster 1 CLI + POI presets marked **shipped**. Residual: menu **1f**, optional base retune. Sequencing reframed; Clusters 2–3 remain developing (not implementation-ready). |
