@@ -51,12 +51,17 @@ def _default_generate_output() -> Path:
     return _import_dir() / "wq_synthetic_data.csv"
 
 
+def _schema_dir() -> Path:
+    """Shared WQ data contract directory (schema + sample template)."""
+    return _repo_root() / "wq_schema"
+
+
 def _default_schema() -> Path:
-    return _repo_root() / "wq_schema.json"
+    return _schema_dir() / "wq_schema.json"
 
 
 def _default_template_csv() -> Path:
-    return _repo_root() / "wq_data.csv"
+    return _schema_dir() / "wq_data.csv"
 
 
 def _toolkit_root() -> Path:
@@ -274,13 +279,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--schema",
         dest="schema_path",
         default=None,
-        help="Schema JSON for field list/types (default: <repo>/wq_schema.json)",
+        help="Schema JSON for field list/types (default: <repo>/wq_schema/wq_schema.json)",
     )
     p_gen.add_argument(
         "--template-csv",
         dest="template_csv",
         default=None,
-        help="Template CSV for column order only (default: <repo>/wq_data.csv)",
+        help="Template CSV for column order only (default: <repo>/wq_schema/wq_data.csv)",
     )
     p_gen.add_argument(
         "--seed",

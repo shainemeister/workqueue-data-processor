@@ -91,34 +91,45 @@ function Wait-ForEnter {
     catch { }
 }
 
+function Get-SchemaDir {
+    return (Join-Path $repoRoot 'wq_schema')
+}
+
 function Get-DefaultSchemaPathForFormat {
     param([string]$Format)
 
+    $schemaDir = Get-SchemaDir
     if ($Format -eq 'Csv') {
-        $preferred = Join-Path $repoRoot 'wq_schema.csv'
+        $preferred = Join-Path $schemaDir 'wq_schema.csv'
         if (Test-Path -LiteralPath $preferred) { return $preferred }
-        $hit = Get-ChildItem -LiteralPath $repoRoot -Filter '*schema*.csv' -File -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -ne $hit) { return $hit.FullName }
+        if (Test-Path -LiteralPath $schemaDir) {
+            $hit = Get-ChildItem -LiteralPath $schemaDir -Filter '*schema*.csv' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($null -ne $hit) { return $hit.FullName }
+        }
         return $preferred
     }
 
     if ($Format -eq 'Json') {
-        $preferred = Join-Path $repoRoot 'wq_schema.json'
+        $preferred = Join-Path $schemaDir 'wq_schema.json'
         if (Test-Path -LiteralPath $preferred) { return $preferred }
-        $hit = Get-ChildItem -LiteralPath $repoRoot -Filter '*schema*.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($null -ne $hit) { return $hit.FullName }
+        if (Test-Path -LiteralPath $schemaDir) {
+            $hit = Get-ChildItem -LiteralPath $schemaDir -Filter '*schema*.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($null -ne $hit) { return $hit.FullName }
+        }
         return $preferred
     }
 
-    # Auto: prefer JSON then CSV
-    $j = Join-Path $repoRoot 'wq_schema.json'
+    # Auto: prefer JSON then CSV under wq_schema\
+    $j = Join-Path $schemaDir 'wq_schema.json'
     if (Test-Path -LiteralPath $j) { return $j }
-    $jHit = Get-ChildItem -LiteralPath $repoRoot -Filter '*schema*.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($null -ne $jHit) { return $jHit.FullName }
-    $c = Join-Path $repoRoot 'wq_schema.csv'
-    if (Test-Path -LiteralPath $c) { return $c }
-    $cHit = Get-ChildItem -LiteralPath $repoRoot -Filter '*schema*.csv' -File -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($null -ne $cHit) { return $cHit.FullName }
+    if (Test-Path -LiteralPath $schemaDir) {
+        $jHit = Get-ChildItem -LiteralPath $schemaDir -Filter '*schema*.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -ne $jHit) { return $jHit.FullName }
+        $c = Join-Path $schemaDir 'wq_schema.csv'
+        if (Test-Path -LiteralPath $c) { return $c }
+        $cHit = Get-ChildItem -LiteralPath $schemaDir -Filter '*schema*.csv' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -ne $cHit) { return $cHit.FullName }
+    }
     return $j
 }
 

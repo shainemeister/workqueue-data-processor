@@ -13,6 +13,13 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.8.6] - 2026-07-30
+
+#### Changed
+
+- **Data contract paths:** moved `wq_schema.json`, `wq_schema.csv`, and `wq_data.csv` into `wq_schema/`; product defaults (kpi-analytics `--schema` / `--template-csv`, Excel schema lookup) resolve under that directory
+- Migration for external scripts: prefix former root schema/sample paths with `wq_schema\`
+
 ### [1.8.5] - 2026-07-30
 
 #### Changed

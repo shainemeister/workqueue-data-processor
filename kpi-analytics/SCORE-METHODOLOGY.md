@@ -148,7 +148,7 @@ On each `score` run, CSV headers are bound to config **roles** (`fields` keys) v
 2. Config field names present in the header row  
 3. Case/space-tolerant aliases (e.g. display-style “Service Date”)
 
-Unresolved roles are **not** silently filled with the role name. Mapping is a runtime adapter only — it never mutates `wq_schema.json`.
+Unresolved roles are **not** silently filled with the role name. Mapping is a runtime adapter only — it never mutates `wq_schema/wq_schema.json`.
 
 | Metric key | Required role(s) |
 |------------|------------------|

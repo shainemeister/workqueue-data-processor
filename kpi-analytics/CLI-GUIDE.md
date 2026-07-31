@@ -306,7 +306,7 @@ Unresolved roles are **not** silently filled with the role name. If a metric’s
 | Flag on + problems + TTY | Guided prompts (index / header name / skip / different file / quit); optional save of a mapping profile next to the input CSV (`{stem}_mapping.json`) |
 | Flag on + problems + non-TTY | Exit **1** with a clear message listing problems (does not call `input()`) |
 
-Guided mode truncates sample values and redacts headers that look like patient/DOB/account identifiers. Schema (`wq_schema.json`) remains the canonical vocabulary; mapping is a runtime adapter only.
+Guided mode truncates sample values and redacts headers that look like patient/DOB/account identifiers. Schema (`wq_schema/wq_schema.json`) remains the canonical vocabulary; mapping is a runtime adapter only.
 
 Mapping profile shape:
 
@@ -420,8 +420,8 @@ python -m kpi_modules generate [--rows <n>] [--output <path>]
 |--------|---------|-------------|
 | `--rows` | `100` | Data rows to create |
 | `--output` | `\<repo>\import\wq_synthetic_data.csv` | Destination (tracked **input** folder; refresh carefully) |
-| `--schema` | `\<repo>\wq_schema.json` | Field list / types |
-| `--template-csv` | `wq_data.csv` if present | Column **order** only |
+| `--schema` | `\<repo>\wq_schema\wq_schema.json` | Field list / types |
+| `--template-csv` | `wq_schema\wq_data.csv` if present | Column **order** only |
 | `--seed` | `42` | Reproducible RNG |
 | `--append` | off | Append; continues Doe name index |
 | `--dry-run` | off | No write |

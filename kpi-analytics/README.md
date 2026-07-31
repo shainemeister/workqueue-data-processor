@@ -247,7 +247,7 @@ from kpi_modules.score_v1 import score_csv
 
 root = toolkit.parent
 result = score_csv(
-    root / "wq_data.csv",
+    root / "wq_schema" / "wq_data.csv",
     root / "output" / "wq_scored.csv",
     # summary_path=..., write_summary=True by default
 )

@@ -38,24 +38,31 @@ if (-not (Test-Path -LiteralPath $modulePath)) {
 }
 Import-Module -Name $modulePath -Force -ErrorAction Stop
 
-# Defaults for interactive / menu use
+# Defaults for interactive / menu use (shared data contract under wq_schema\)
+$schemaDir = Join-Path $repoRoot 'wq_schema'
 if ([string]::IsNullOrWhiteSpace($CsvPath)) {
-    $preferred = Join-Path $repoRoot 'wq_data.csv'
+    $preferred = Join-Path $schemaDir 'wq_data.csv'
     if (Test-Path -LiteralPath $preferred) {
         $CsvPath = $preferred
     }
     else {
-        $first = Get-ChildItem -LiteralPath $repoRoot -Filter '*.csv' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        $first = $null
+        if (Test-Path -LiteralPath $schemaDir) {
+            $first = Get-ChildItem -LiteralPath $schemaDir -Filter '*.csv' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        }
         if ($null -ne $first) { $CsvPath = $first.FullName } else { $CsvPath = $preferred }
     }
 }
 if ([string]::IsNullOrWhiteSpace($SchemaPath)) {
-    $preferred = Join-Path $repoRoot 'wq_schema.json'
+    $preferred = Join-Path $schemaDir 'wq_schema.json'
     if (Test-Path -LiteralPath $preferred) {
         $SchemaPath = $preferred
     }
     else {
-        $first = Get-ChildItem -LiteralPath $repoRoot -Filter '*schema*.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        $first = $null
+        if (Test-Path -LiteralPath $schemaDir) {
+            $first = Get-ChildItem -LiteralPath $schemaDir -Filter '*schema*.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        }
         if ($null -ne $first) { $SchemaPath = $first.FullName } else { $SchemaPath = $preferred }
     }
 }

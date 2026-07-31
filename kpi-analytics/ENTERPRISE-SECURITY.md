@@ -157,7 +157,7 @@ KPI Analytics does not depend on PowerShell execution policy. The `.cmd` shim on
 kpi-analytics.cmd version
 kpi-analytics.cmd diagnostics --json
 rem If OverallPass is false, collect diagnostics\last_diagnostics.txt for IT
-kpi-analytics.cmd probe --csv ..\wq_data.csv --json
+kpi-analytics.cmd probe --csv ..\wq_schema\wq_data.csv --json
 kpi-analytics.cmd validate-score --json
 kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\rcm_impact_config.json --output ..\output\rcm_demo_scored.csv --json
 ```

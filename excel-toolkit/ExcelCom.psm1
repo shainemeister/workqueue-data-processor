@@ -1434,7 +1434,7 @@ function Test-ExcelComEnvironment {
         Skip the live COM create/quit probe (path-only checks).
 
     .EXAMPLE
-        Test-ExcelComEnvironment -CsvPath .\wq_data.csv -Verbose
+        Test-ExcelComEnvironment -CsvPath .\wq_schema\wq_data.csv -Verbose
 
     .OUTPUTS
         PSCustomObject with Passed (bool), Checks (array of results).

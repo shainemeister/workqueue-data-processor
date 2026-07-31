@@ -93,8 +93,8 @@ The CLI is a thin wrapper around the same module functions. It does not replace 
 cd /d C:\path\to\workqueue-data-processor\excel-toolkit
 
 excel-toolkit.cmd version
-excel-toolkit.cmd probe -CsvPath ..\wq_data.csv
-excel-toolkit.cmd export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx -Json
+excel-toolkit.cmd probe -CsvPath ..\wq_schema\wq_data.csv
+excel-toolkit.cmd export-csv -CsvPath ..\wq_schema\wq_data.csv -OutputPath ..\output\export.xlsx -Json
 ```
 
 `excel-toolkit.cmd` starts PowerShell with **process-scoped** `-ExecutionPolicy Bypass` only (does not change machine policy). See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
@@ -107,10 +107,10 @@ cd C:\path\to\workqueue-data-processor\excel-toolkit
 powershell -NoProfile -ExecutionPolicy Bypass -File .\ExcelToolkit.ps1 version
 powershell -NoProfile -ExecutionPolicy Bypass -File .\ExcelToolkit.ps1 probe -Json
 powershell -NoProfile -ExecutionPolicy Bypass -File .\ExcelToolkit.ps1 export-csv `
-  -CsvPath ..\wq_data.csv `
+  -CsvPath ..\wq_schema\wq_data.csv `
   -OutputPath ..\output\export.xlsx `
   -UseDisplayNames `
-  -SchemaPath ..\wq_schema.json `
+  -SchemaPath ..\wq_schema\wq_schema.json `
   -Json
 ```
 
@@ -208,7 +208,7 @@ excel-toolkit.cmd probe
 ```
 
 ```bat
-excel-toolkit.cmd probe -CsvPath ..\wq_data.csv -SchemaPath ..\wq_schema.json -Json
+excel-toolkit.cmd probe -CsvPath ..\wq_schema\wq_data.csv -SchemaPath ..\wq_schema\wq_schema.json -Json
 ```
 
 **Human output (illustrative)**
@@ -325,21 +325,21 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
 Dry-run (no workbook):
 
 ```bat
-excel-toolkit.cmd export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx -DryRun
+excel-toolkit.cmd export-csv -CsvPath ..\wq_schema\wq_data.csv -OutputPath ..\output\export.xlsx -DryRun
 ```
 
 Export with technical CSV headers:
 
 ```bat
-excel-toolkit.cmd export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx
+excel-toolkit.cmd export-csv -CsvPath ..\wq_schema\wq_data.csv -OutputPath ..\output\export.xlsx
 ```
 
 Export with schema display names + JSON for automation:
 
 ```bat
 excel-toolkit.cmd export-csv ^
-  -CsvPath ..\wq_data.csv ^
-  -SchemaPath ..\wq_schema.json ^
+  -CsvPath ..\wq_schema\wq_data.csv ^
+  -SchemaPath ..\wq_schema\wq_schema.json ^
   -UseDisplayNames ^
   -OutputPath ..\output\export.xlsx ^
   -Json
@@ -489,9 +489,9 @@ $toolkit = Join-Path $PSScriptRoot '..\excel-toolkit\ExcelToolkit.psm1'
 Import-Module $toolkit -Force
 
 $r = Export-ExcelFromCsv `
-    -CsvPath (Join-Path $PSScriptRoot '..\wq_data.csv') `
+    -CsvPath (Join-Path $PSScriptRoot '..\wq_schema\wq_data.csv') `
     -OutputPath (Join-Path $PSScriptRoot '..\output\from_component.xlsx') `
-    -SchemaPath (Join-Path $PSScriptRoot '..\wq_schema.json') `
+    -SchemaPath (Join-Path $PSScriptRoot '..\wq_schema\wq_schema.json') `
     -UseDisplayNames
 
 if (-not $r.Success) { throw $r.Message }
@@ -523,8 +523,8 @@ cmd = [
     "-ExecutionPolicy", "Bypass",
     "-File", str(cli),
     "export-csv",
-    "-CsvPath", str(root / "wq_data.csv"),
-    "-SchemaPath", str(root / "wq_schema.json"),
+    "-CsvPath", str(root / "wq_schema" / "wq_data.csv"),
+    "-SchemaPath", str(root / "wq_schema" / "wq_schema.json"),
     "-UseDisplayNames",
     "-OutputPath", str(root / "output" / "from_python.xlsx"),
     "-Json",
@@ -542,9 +542,9 @@ print("Wrote", result["OutputPath"])
 ### 6.4 Preflight before a batch job
 
 ```bat
-excel-toolkit.cmd probe -CsvPath ..\wq_data.csv -Json
+excel-toolkit.cmd probe -CsvPath ..\wq_schema\wq_data.csv -Json
 if errorlevel 1 exit /b 1
-excel-toolkit.cmd export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx
+excel-toolkit.cmd export-csv -CsvPath ..\wq_schema\wq_data.csv -OutputPath ..\output\export.xlsx
 ```
 
 ### 6.5 Import Excel from `import\` (module)

@@ -21,13 +21,13 @@
     .\ExcelToolkit.ps1 version
 
 .EXAMPLE
-    .\ExcelToolkit.ps1 probe -CsvPath ..\wq_data.csv -Json
+    .\ExcelToolkit.ps1 probe -CsvPath ..\wq_schema\wq_data.csv -Json
 
 .EXAMPLE
     .\ExcelToolkit.ps1 diagnostics -Json
 
 .EXAMPLE
-    .\ExcelToolkit.ps1 export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx -Json
+    .\ExcelToolkit.ps1 export-csv -CsvPath ..\wq_schema\wq_data.csv -OutputPath ..\output\export.xlsx -Json
 
 .EXAMPLE
     .\ExcelToolkit.ps1 import-excel -ExcelPath ..\import\wq_synthetic_data.xlsx -OutputPath ..\import\from_xlsx_smoke.csv -Json

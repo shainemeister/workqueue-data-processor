@@ -45,15 +45,20 @@ $ErrorActionPreference = 'Stop'
 $scriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot   = Split-Path -Parent $scriptDir
 $modulePath = Join-Path $scriptDir 'ExcelCom.psm1'
-$sampleCsv = Join-Path $repoRoot 'wq_data.csv'
+$schemaDir = Join-Path $repoRoot 'wq_schema'
+$sampleCsv = Join-Path $schemaDir 'wq_data.csv'
 if (-not (Test-Path -LiteralPath $sampleCsv)) {
-    $foundCsv = Get-ChildItem -LiteralPath $repoRoot -Filter '*.csv' -File -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($null -ne $foundCsv) { $sampleCsv = $foundCsv.FullName }
+    if (Test-Path -LiteralPath $schemaDir) {
+        $foundCsv = Get-ChildItem -LiteralPath $schemaDir -Filter '*.csv' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -ne $foundCsv) { $sampleCsv = $foundCsv.FullName }
+    }
 }
-$sampleSchema = Join-Path $repoRoot 'wq_schema.json'
+$sampleSchema = Join-Path $schemaDir 'wq_schema.json'
 if (-not (Test-Path -LiteralPath $sampleSchema)) {
-    $foundSchema = Get-ChildItem -LiteralPath $repoRoot -Filter '*schema*.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($null -ne $foundSchema) { $sampleSchema = $foundSchema.FullName }
+    if (Test-Path -LiteralPath $schemaDir) {
+        $foundSchema = Get-ChildItem -LiteralPath $schemaDir -Filter '*schema*.json' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -ne $foundSchema) { $sampleSchema = $foundSchema.FullName }
+    }
 }
 if (-not (Test-Path -LiteralPath $modulePath)) {
     Write-Error ("Module not found: {0}" -f $modulePath)

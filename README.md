@@ -25,7 +25,7 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | Score and open Excel in one step | Double-click `Start-ExcelMenu.cmd` → **Process my data** → Full pipeline |
 | Rank WQ work by priority only | [kpi-analytics](./kpi-analytics/README.md) · `score` |
 | Put an existing CSV into Excel | [excel-toolkit](./excel-toolkit/README.md) |
-| See what a claim row looks like | [wq_data.csv](./wq_data.csv) · [wq_schema.json](./wq_schema.json) |
+| See what a claim row looks like | [wq_data.csv](./wq_schema/wq_data.csv) · [wq_schema.json](./wq_schema/wq_schema.json) |
 
 **Privacy:** samples and synthetic files in this repo are for demo and testing. Do **not** commit real patient or production extracts.
 
@@ -42,7 +42,7 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | **Score and Excel in one menu step** | Scored + summary workbooks under `output\` | `Start-ExcelMenu.cmd` → **Process my data** → Full pipeline |
 | **Score only (no Excel)** | Scored + summary CSV under `output\` | `Start-ExcelMenu.cmd` → **Process my data** → Score only |
 | **First run on a locked-down PC** | Pass/fail environment certificates for IT | KPI or Excel `diagnostics` · [KPI security](./kpi-analytics/ENTERPRISE-SECURITY.md) · [Excel security](./excel-toolkit/ENTERPRISE-SECURITY.md) |
-| **Understand the data layout** | Field definitions and sample fact rows | [wq_schema.json](./wq_schema.json) · [wq_data.csv](./wq_data.csv) |
+| **Understand the data layout** | Field definitions and sample fact rows | [wq_schema.json](./wq_schema/wq_schema.json) · [wq_data.csv](./wq_schema/wq_data.csv) |
 
 ---
 
@@ -52,8 +52,8 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 |------|------|------|
 | KPI / priority scoring | `kpi-analytics\` | Score, generate, validate, first-run diagnostics |
 | Excel export / import | `excel-toolkit\` | Menu, CLI, and Excel COM automation |
-| Data contract | `wq_schema.json`, `wq_schema.csv` | Column names, types, display labels |
-| Sample data | `wq_data.csv` | Example WQ rows (headers match schema `field_name`) |
+| Data contract | `wq_schema/wq_schema.json`, `wq_schema/wq_schema.csv` | Column names, types, display labels |
+| Sample data | `wq_schema/wq_data.csv` | Example WQ rows (headers match schema `field_name`) |
 | Demo inputs | `import\` | Tracked synthetic (or other non-PHI) inputs you choose to keep |
 | Run outputs | `output\` | Scored CSVs and Excel files (regenerable; not versioned) |
 | Design (optional) | `docs\WQ_Priority_Matrix_Concept.md` | Priority matrix roadmap (V1–V3); **V1 is implemented** |
@@ -112,9 +112,9 @@ kpi-analytics.cmd generate --rows 250 --seed 42
 
 | File | Purpose |
 |------|---------|
-| [wq_schema.json](./wq_schema.json) | Canonical field list: `field_name`, original WQ label, type, nullability |
-| [wq_schema.csv](./wq_schema.csv) | Same schema in CSV form |
-| [wq_data.csv](./wq_data.csv) | Sample records—one row per WQ item; first row is `field_name` headers |
+| [wq_schema.json](./wq_schema/wq_schema.json) | Canonical field list: `field_name`, original WQ label, type, nullability |
+| [wq_schema.csv](./wq_schema/wq_schema.csv) | Same schema in CSV form |
+| [wq_data.csv](./wq_schema/wq_data.csv) | Sample records—one row per WQ item; first row is `field_name` headers |
 
 The **schema** describes columns; the **data file** holds rows. Types are `str`, `int`, and `float`; empty cells mean missing values. Prefer headers aligned with `field_name`. For extracts with different labels, scoring can auto-detect common synonyms, use an optional mapping profile (`score --mapping path.json`), or walk through guided mapping on a TTY (`score --interactive-mapping`).
 

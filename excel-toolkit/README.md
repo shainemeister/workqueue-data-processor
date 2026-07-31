@@ -229,9 +229,9 @@ $toolkit = Join-Path $PSScriptRoot '..\excel-toolkit\ExcelToolkit.psm1'
 Import-Module $toolkit -Force
 
 $r = Export-ExcelFromCsv `
-    -CsvPath (Join-Path $PSScriptRoot '..\wq_data.csv') `
+    -CsvPath (Join-Path $PSScriptRoot '..\wq_schema\wq_data.csv') `
     -OutputPath (Join-Path $PSScriptRoot '..\output\from_script.xlsx') `
-    -SchemaPath (Join-Path $PSScriptRoot '..\wq_schema.json') `
+    -SchemaPath (Join-Path $PSScriptRoot '..\wq_schema\wq_schema.json') `
     -UseDisplayNames
 
 if (-not $r.Success) { throw $r.Message }
@@ -303,8 +303,8 @@ Quick start:
 cd excel-toolkit
 excel-toolkit.cmd version
 excel-toolkit.cmd diagnostics
-excel-toolkit.cmd probe -CsvPath ..\wq_data.csv -Json
-excel-toolkit.cmd export-csv -CsvPath ..\wq_data.csv -OutputPath ..\output\export.xlsx -Json
+excel-toolkit.cmd probe -CsvPath ..\wq_schema\wq_data.csv -Json
+excel-toolkit.cmd export-csv -CsvPath ..\wq_schema\wq_data.csv -OutputPath ..\output\export.xlsx -Json
 excel-toolkit.cmd import-excel -ExcelPath ..\import\wq_synthetic_data.xlsx -OutputPath ..\import\from_xlsx_smoke.csv -Json
 ```
 
