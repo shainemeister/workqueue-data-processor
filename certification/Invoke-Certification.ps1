@@ -25,18 +25,35 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'
 
+function Test-RepoRootMarker {
+    param([string]$Path)
+    if (-not $Path) { return $false }
+    # repo-kit 2.x: standards under kit/; project CHANGELOG stays at root
+    if (Test-Path -LiteralPath (Join-Path $Path 'kit\RULES.md')) { return $true }
+    if (Test-Path -LiteralPath (Join-Path $Path 'CHANGELOG.md')) {
+        if ((Test-Path -LiteralPath (Join-Path $Path 'LICENSE')) -or
+            (Test-Path -LiteralPath (Join-Path $Path 'kpi-analytics')) -or
+            (Test-Path -LiteralPath (Join-Path $Path 'excel-toolkit'))) {
+            return $true
+        }
+    }
+    # legacy 1.x root-layout marker
+    if (Test-Path -LiteralPath (Join-Path $Path 'RULES.md')) { return $true }
+    return $false
+}
+
 function Get-RepoRoot {
     param([string]$Hint)
-    if ($Hint -and (Test-Path -LiteralPath (Join-Path $Hint 'RULES.md'))) {
+    if ($Hint -and (Test-RepoRootMarker -Path $Hint)) {
         return (Resolve-Path -LiteralPath $Hint).Path
     }
     $here = $PSScriptRoot
     if (-not $here) { $here = Split-Path -Parent $MyInvocation.MyCommand.Path }
     $candidate = Split-Path -Parent $here
-    if (Test-Path -LiteralPath (Join-Path $candidate 'RULES.md')) {
+    if (Test-RepoRootMarker -Path $candidate) {
         return (Resolve-Path -LiteralPath $candidate).Path
     }
-    throw "Could not resolve repository root (expected RULES.md above certification\)."
+    throw "Could not resolve repository root (expected kit\RULES.md or CHANGELOG.md above certification\)."
 }
 
 function Get-GitMeta {

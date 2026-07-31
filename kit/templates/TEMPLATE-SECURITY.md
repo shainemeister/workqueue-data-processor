@@ -50,7 +50,7 @@ last_updated: "{{LAST_UPDATED}}"
 
 ## 1. Purpose of this document
 
-> **Modularity:** Create this file only when the package has an execution surface, network access, elevated privilege, or handles secrets. Docs-only or pure libraries with no runtime side effects may omit `SECURITY.md` entirely—see [RULES — Security documentation modularity](../RULES.md#security-documentation-modularity).
+> **Modularity:** Create this file only when the package has an execution surface, network access, elevated privilege, or handles secrets. Docs-only or pure libraries with no runtime side effects may omit `SECURITY.md` entirely—see [Security documentation modularity](../rules/security.md#security-documentation-modularity).
 
 Summarize:
 
@@ -110,7 +110,7 @@ Summarize:
 
 ## 6. Recommended validation
 
-> **Delete unused OS blocks.** Keep both when multi-platform; drop the unused OS when primary platform is single and declared. Prefer language-specific developer gates from the project [language surface inventory](../RULES.md#language-surface-inventory) and [RULES — Security / SAST gates](../RULES.md#security--sast-gates-required-when-declared) only for languages this package ships. Declared Domain A/B gates are **required** before task completion. For formal self-attestation certificates (optional), see [RULES — Certification](../RULES.md#security-and-code-validation-certification) and [TEMPLATE-CERTIFICATION-README.md](./TEMPLATE-CERTIFICATION-README.md).
+> **Delete unused OS blocks.** Keep both when multi-platform; drop the unused OS when primary platform is single and declared. Prefer language-specific developer gates from the project [language surface inventory](../rules/security.md#language-surface-inventory) and [Security / SAST gates](../rules/security.md#security--sast-gates-required-when-declared) only for languages this package ships. Declared Domain A/B gates are **required** before task completion. For formal self-attestation certificates (optional), see [Certification](../rules/security.md#security-and-code-validation-certification) and [TEMPLATE-CERTIFICATION-README.md](./TEMPLATE-CERTIFICATION-README.md).
 
 **Windows**
 

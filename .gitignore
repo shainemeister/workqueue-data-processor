@@ -42,7 +42,7 @@ htmlcov/
 # Node (light — mixed or frontend-adjacent tooling)
 node_modules/
 
-# Generated toolkit outputs (regenerable; never commit — see RULES.md)
+# Generated toolkit outputs (regenerable; never commit — see kit/RULES.md)
 output/
 
 # Local operator copies under import\ (not cataloged; do not commit PHI)
@@ -60,7 +60,7 @@ kpi-analytics/diagnostics/last_diagnostics.txt
 excel-toolkit/diagnostics/last_diagnostics.json
 excel-toolkit/diagnostics/last_diagnostics.txt
 
-# Formal security + code-validation certificates (regenerable; see RULES.md)
+# Formal security + code-validation certificates (regenerable; see kit/rules/security.md)
 # Distinct from package diagnostics above — do not merge folders.
 certification/last_certification.json
 certification/last_certification.txt

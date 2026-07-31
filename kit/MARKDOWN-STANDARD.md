@@ -1,7 +1,7 @@
 ---
 title: Markdown Documentation Standard
-description: Cross-functional standard for consistent, professional markdown across this repository and its toolkits.
-version: "1.2.0"
+description: Cross-functional standard for consistent, professional markdown across any repository or project.
+version: "1.1.0"
 status: current
 audience:
   - developers
@@ -10,29 +10,30 @@ audience:
   - security
 doc_type: other
 related:
-  - README.md
+  - ../README.md
   - RULES.md
-  - CHANGELOG.md
+  - rules/contracts.md
+  - rules/authoring-and-style.md
   - templates/TEMPLATE-GENERIC.md
   - templates/TEMPLATE-README.md
-last_updated: "2026-07-25"
+last_updated: "2026-07-28"
 ---
 
 # Markdown Documentation Standard
 
-A repeatable standard for professional, consistent markdown in this repository—usable across product toolkits, methodologies, security notes, design concepts, and runbooks.
+A repeatable standard for professional, consistent markdown in any repository—usable across packages, CLIs, methodologies, security notes, design concepts, and runbooks.
 
-**Standard version:** 1.2.0  
-**Location:** repository root (`MARKDOWN-STANDARD.md`)  
+**Standard version:** 1.1.0  
+**Location:** `kit/MARKDOWN-STANDARD.md`  
 **Templates:** [`templates/`](./templates/)
 
-**Related:** [README.md](./README.md) · [RULES.md](./RULES.md) · [CHANGELOG.md](./CHANGELOG.md) · [templates/TEMPLATE-GENERIC.md](./templates/TEMPLATE-GENERIC.md) · [templates/TEMPLATE-README.md](./templates/TEMPLATE-README.md)
+**Related:** [README.md](../README.md) · [RULES.md](./RULES.md) · [contracts.md](./rules/contracts.md) · [authoring-and-style.md](./rules/authoring-and-style.md) · [templates/TEMPLATE-GENERIC.md](./templates/TEMPLATE-GENERIC.md) · [templates/TEMPLATE-README.md](./templates/TEMPLATE-README.md)
 
 ---
 
 ## Summary
 
-This document defines **how we structure and write markdown** so docs stay scannable, professional, and easy to maintain. It is **product-agnostic**: the same rules apply to `kpi-analytics`, `excel-toolkit`, and future packages.
+This document defines **how we structure and write markdown** so docs stay scannable, professional, and easy to maintain. It is **product-agnostic**: the same rules apply to libraries, services, CLIs, data tools, monorepos, and docs-only projects.
 
 Most **substantial** documents use **YAML frontmatter**, a clear **H1**, a short **lead**, a **status block**, a **Summary**, a linked **Contents** list, then the **body** in a type-appropriate order. Copy-paste skeletons live in [`templates/`](./templates/).
 
@@ -49,13 +50,14 @@ Most **substantial** documents use **YAML frontmatter**, a clear **H1**, a short
 5. [YAML frontmatter](#yaml-frontmatter)
 6. [Headings and anchors](#headings-and-anchors)
 7. [Writing conventions](#writing-conventions)
-8. [Tables, code, and links](#tables-code-and-links)
-9. [Platform-aware examples](#platform-aware-examples)
-10. [Document types and body outlines](#document-types-and-body-outlines)
-11. [Templates](#templates)
-12. [Author checklist](#author-checklist)
-13. [Anti-patterns](#anti-patterns)
-14. [Document history](#document-history)
+8. [Cross-linking form](#cross-linking-form)
+9. [Tables, code, and links](#tables-code-and-links)
+10. [Platform-aware examples](#platform-aware-examples)
+11. [Document types and body outlines](#document-types-and-body-outlines)
+12. [Templates](#templates)
+13. [Author checklist](#author-checklist)
+14. [Anti-patterns](#anti-patterns)
+15. [Document history](#document-history)
 
 ---
 
@@ -63,13 +65,13 @@ Most **substantial** documents use **YAML frontmatter**, a clear **H1**, a short
 
 | Use for | Examples | Frontmatter |
 |---------|----------|-------------|
-| Product / toolkit overview | Package `README.md` (`kpi-analytics\`, `excel-toolkit\`) | **Yes** |
-| CLI or API contract | `CLI-GUIDE.md` | **Yes** |
+| Product / package overview | Package `README.md` under `packages/…` or `my-service/` | **Yes** |
+| CLI or API contract | `CLI-GUIDE.md`, `API.md` | **Yes** |
 | How formulas or processes work | Methodology, design notes | **Yes** |
-| Security / enterprise posture | `ENTERPRISE-SECURITY.md` | **Yes** |
+| Security / trust boundary | `SECURITY.md`, `ENTERPRISE-SECURITY.md` | **Yes** |
 | Design concepts | Progressive design, multi-version concepts | **Yes** |
 | Operational runbooks | Deploy, validate, recover | **Yes** |
-| **Repo landing / root entry** | Root [README.md](./README.md) | **No** (by design) |
+| **Repo landing / root entry** | Root [README.md](../README.md) | **No** (by design) |
 
 | Optional / lighter treatment | Examples |
 |------------------------------|----------|
@@ -87,8 +89,8 @@ Use this pattern for the **repository root `README.md`** (and any similar **end-
 
 | This page does | This page does not |
 |----------------|--------------------|
-| Explain what the repo is for in plain language | Replace toolkit READMEs or CLI guides |
-| Lead with **Summary** and **Use cases** | Open with RULES, FILE-CATALOG, or template inventories |
+| Explain what the repo is for in plain language | Replace package READMEs or CLI guides |
+| Lead with **Summary** and **Use cases** | Open with RULES, catalogs, or template inventories |
 | Show one **Quick start** path | Paste every flag, formula, or security matrix |
 | Link to deep docs by need | Duplicate another document in full |
 
@@ -96,14 +98,14 @@ Use this pattern for the **repository root `README.md`** (and any similar **end-
 
 | # | Block | Required? | Notes |
 |---|--------|-----------|--------|
-| 1 | **H1** | Yes | Product-facing title (e.g. Work Queue Data Processor) |
+| 1 | **H1** | Yes | Product-facing title |
 | 2 | **Lead** | Yes | One or two sentences under the H1—no frontmatter above it |
-| 3 | **Summary** | Yes | What it is, for whom, key constraint (e.g. offline / stdlib) |
+| 3 | **Summary** | Yes | What it is, for whom, key constraints |
 | 4 | **Use cases** | Yes | Table: goal · outcome · start path |
-| 5 | **What’s included** | Recommended | Compact map of toolkits and data—not every source file |
+| 5 | **What’s included** | Recommended | Compact map of packages and assets—not every source file |
 | 6 | **Prerequisites** | Yes if software is required | Short table only |
 | 7 | **Quick start** | Yes | One realistic end-to-end example; language-tagged fence |
-| 8 | **Your data** (or equivalent) | If a data contract exists | Schema vs rows; types in one line |
+| 8 | **Your data** (or equivalent) | If a data or config contract exists | Schema vs rows; types in one line |
 | 9 | **Where to go next** | Yes | Links by user need |
 | 10 | **For maintainers** | Optional, last | RULES, catalog, this standard—keep thin |
 
@@ -119,24 +121,24 @@ Use this pattern for the **repository root `README.md`** (and any similar **end-
 | Jargon | Pair product terms with a plain phrase the first time |
 | Length | Prefer roughly **under 120 lines**; link out for depth |
 | Tables | Use for use cases, prerequisites, and “start here” maps |
-| Code | One primary workflow example; more examples live in toolkit docs |
+| Code | One primary workflow example; more examples live in package docs |
 
 ### Maintenance rules
 
-1. When a toolkit **entry point or recommended workflow** changes, update **Quick start** and **Use cases** in the **same change set**.  
-2. When a new end-user capability ships, add a **use case row** or a **Where to go next** link—do not only update FILE-CATALOG.  
+1. When a package **entry point or recommended workflow** changes, update **Quick start** and **Use cases** in the **same change set**.  
+2. When a new end-user capability ships, add a **use case row** or a **Where to go next** link—do not only update an inventory catalog.  
 3. Keep **For maintainers** short; never move it above Summary / Use cases.  
-4. Do not list every path in the repo; inventory belongs in [FILE-CATALOG.md](./FILE-CATALOG.md).  
-5. Relative links only from the file’s directory (root: `./kpi-analytics/README.md`).
+4. Do not list every path in the repo; inventory belongs in a catalog file if you maintain one.  
+5. Relative links only from the file’s directory (root: `./packages/my-service/README.md`).
 
-### Relationship to toolkit READMEs
+### Relationship to package READMEs
 
 | Document | Pattern |
 |----------|---------|
 | **Root landing** (`/README.md`) | This section—**no** frontmatter; use cases first |
-| **Toolkit README** (`kpi-analytics\README.md`, etc.) | Full standard + frontmatter + `doc_type: readme` · [TEMPLATE-README.md](./templates/TEMPLATE-README.md) |
+| **Package README** (`packages/my-service/README.md`, etc.) | Full standard + frontmatter + `doc_type: readme` · [TEMPLATE-README.md](./templates/TEMPLATE-README.md) |
 
-Do not force the landing outline onto deep toolkit docs, and do not force full frontmatter onto the root landing page.
+Do not force the landing outline onto deep package docs, and do not force full frontmatter onto the root landing page.
 
 ---
 
@@ -239,8 +241,24 @@ Include **Summary** as item 1 when Summary exists as an H2.
 | Placeholders | `{{LIKE_THIS}}` in templates; `C:\path\to\...` or `/path/to/...` in examples |
 | Dates | Prefer ISO in metadata; human dates OK in narrative |
 | Versioning | Bump `version` + `last_updated` when behavior or contract changes |
-| Cross-links | Prefer relative links: `./CLI-GUIDE.md`, `../README.md` |
+| Cross-links | Prefer relative links: `./CLI-GUIDE.md`, `../README.md` — see [Cross-linking form](#cross-linking-form) |
 | Platform | When examples are OS-specific, follow [Platform-aware examples](#platform-aware-examples) |
+
+---
+
+## Cross-linking form
+
+How to wire documents so humans and AI agents can navigate without duplicating full contracts. **Policy** (when to co-update, what is a contract): [rules/contracts.md](./rules/contracts.md). **This section** is **form** only.
+
+| Mechanism | Guidance |
+|-----------|----------|
+| Frontmatter **`related:`** | List true peer paths (not the entire tree) |
+| Visible **Related:** line | Mirror peers under the lead for scannability |
+| Relative links | Always from *this file’s* directory |
+| Deep anchors | Prefer linking a specific heading when citing a rule |
+| Summary + link | Prefer over pasting another document’s full table |
+
+Substantial docs should keep `related:` and Related lines current when peers move. Authority-map **owners** live in [RULES.md](./RULES.md#authority-map).
 
 ---
 
@@ -271,7 +289,7 @@ Always specify a language when possible:
 | `yaml` | Frontmatter examples |
 | `text` | Architecture diagrams, plain trees |
 | `markdown` | Nested examples of markdown itself |
-| `bash` / `sh` | Unix shell (when multi-OS templates need it) |
+| `bash` / `sh` | Unix shell |
 
 ### Architecture / trees
 
@@ -296,15 +314,14 @@ Shell, path, and build examples must match how the project is actually developed
 | Rule | Guidance |
 |------|----------|
 | **Primary platform** | When examples are OS-specific, state the primary platform in the status block, prerequisites, or a short note (Windows, Linux, macOS, or multi). |
-| **This repository** | **Primary platform is Windows** (PowerShell 5.1 + Excel COM; Windows-first launchers). Product docs may use Windows-only fences when that matches reality. |
 | **Single-platform projects** | One shell fence is enough; keep paths and commands consistent with that OS. |
-| **Multi-platform or templates** | Prefer **dual fences** (Windows + Linux/macOS) for invocation, quick start, and validation, **or** one primary fence plus a one-line alternate. |
+| **Multi-platform or unknown host** | Prefer **dual fences** (Windows + Linux/macOS) for invocation, quick start, and validation, **or** one primary fence plus a one-line alternate. |
 | **Shell language tags** | Use `bat` / `cmd`, `powershell`, or `bash` / `sh` to match the example—not a generic fence. |
 | **Paths** | Placeholders (`C:\path\to\...` and `/path/to/...`) plus one concrete repo-relative example when helpful. |
-| **Product OS detection** | If scripts adapt by host, document that behavior in the CLI or security contract—not only in prose. |
-| **Verification commands** | Fill [RULES.md](./RULES.md) verification rows with the command(s) used on the team’s platform(s). |
+| **Product OS detection** | If scripts adapt by host (`sys.platform`, `$IsWindows`, `uname`), document that behavior in the CLI or security contract—not only in prose. |
+| **Verification commands** | Fill [verification table](./rules/verification-and-ops.md#verification-before-ship) rows with the command(s) used on the team’s platform(s); list both when multi-OS. |
 
-### Dual-path pattern (illustrative; for templates / multi-OS)
+### Dual-path pattern (illustrative)
 
 **Windows**
 
@@ -320,7 +337,7 @@ cd /path/to/{{FOLDER_NAME}}
 {{QUICKSTART_COMMANDS}}
 ```
 
-Templates for README, CLI, and security show this pattern where shell matters. Drop the unused OS block only when the project is deliberately single-platform and that is declared.
+Templates for README, CLI, and security already show this pattern where shell matters. Drop the unused OS block only when the project is deliberately single-platform.
 
 ---
 
@@ -328,7 +345,7 @@ Templates for README, CLI, and security show this pattern where shell matters. D
 
 Set `doc_type` in frontmatter. After **Summary** and **Contents**, use the body flow for that type.
 
-### `readme` — product or toolkit overview
+### `readme` — product or package overview
 
 Use for **package** READMEs (with frontmatter). For the **repository root** landing page, use [Landing / root README](#landing--root-readme-no-frontmatter) instead—do not force this full outline on the root file.
 
@@ -341,7 +358,7 @@ Use for **package** READMEs (with frontmatter). For the **repository root** land
 7. How to consume (API / import)  
 8. CLI quick reference (or link out)  
 9. Validation / tests  
-10. Enterprise notes (short) or link  
+10. Security notes (short) or link  
 11. Troubleshooting  
 12. Out of scope  
 
@@ -371,7 +388,7 @@ Use for **package** READMEs (with frontmatter). For the **repository root** land
 8. Out of scope  
 9. Document history  
 
-### `security` — enterprise / trust boundary
+### `security` — trust boundary / enterprise posture
 
 1. Purpose of this document  
 2. Trust boundary  
@@ -380,7 +397,7 @@ Use for **package** READMEs (with frontmatter). For the **repository root** land
 5. Runtime / policy restrictions  
 6. Recommended validation  
 7. Audit snapshot / decisions  
-8. Statement for IT / security reviewers  
+8. Statement for reviewers  
 9. Related files  
 10. Document history  
 
@@ -418,12 +435,14 @@ Use **Summary → Contents → logical H2s → History**. Prefer `TEMPLATE-GENER
 | Concept / design | `concept` | [templates/TEMPLATE-CONCEPT.md](./templates/TEMPLATE-CONCEPT.md) |
 | Minimal / any | `other` | [templates/TEMPLATE-GENERIC.md](./templates/TEMPLATE-GENERIC.md) |
 
+There is no dedicated runbook file. For `runbook`, copy [TEMPLATE-GENERIC.md](./templates/TEMPLATE-GENERIC.md) and follow the [runbook body outline](#runbook--operational-procedure) (or freeform H2s that match When to use → Preconditions → Steps → Verification → Failure / recovery → Escalation).
+
 ### How to use a template
 
-1. Copy the file into the target folder (e.g. `my-toolkit\README.md`).  
+1. Copy the file into the target folder (e.g. `packages/my-service/README.md`).  
 2. Replace all `{{PLACEHOLDERS}}`.  
 3. Delete sections that do not apply; do not leave placeholder prose.  
-4. Keep dual-path shell blocks when the project is multi-platform; drop the unused OS when primary platform is single and declared (this repo: Windows-primary product docs are fine).  
+4. Keep dual-path shell blocks when the project is multi-platform; drop the unused OS when primary platform is single and declared.  
 5. Refresh **Contents** links to match final headings.  
 6. Run through the [Author checklist](#author-checklist).  
 
@@ -500,6 +519,6 @@ Before merging or publishing a doc:
 
 | Version | Notes |
 |---------|--------|
-| 1.0.0 | Initial cross-functional standard; root placement; templates under `templates/` |
-| 1.1.0 | Landing / root README pattern (no frontmatter); use cases and checklist; anti-patterns |
-| 1.2.0 | Platform-aware examples (aligned with repo-kit 1.1.1); dual-path template guidance; author checklist and anti-pattern updates |
+| 1.1.0 | Cross-linking form section; kit 2.0 paths (`kit/`); links to contracts and verification modules |
+| 1.0.1 | Platform-aware examples; runbook → GENERIC pointer; placeholder completeness note |
+| 1.0.0 | Initial portable standard (generalized for multi-domain repos); root landing pattern; templates under `templates/` |

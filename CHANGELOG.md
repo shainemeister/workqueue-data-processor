@@ -7,11 +7,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 Dates are ISO 8601. There is no Unreleased section—record each change under the version section that ships it.
 
 **Package versions** (`kpi_modules.__version__`, `ExcelToolkitVersion`) are independent of repository changelog versions unless a release intentionally aligns them.  
-**Standards kit version** lives only in [RULES.md — Kit baseline](./RULES.md#kit-baseline) (not as kit release history here). Upstream: https://github.com/shainemeister/repo-kit
+**Standards kit version** lives only in [kit/RULES.md — Kit baseline](./kit/RULES.md#kit-baseline) (not as kit release history here). Upstream: https://github.com/shainemeister/repo-kit
 
 ---
 
 ## workqueue-data-processor
+
+### [1.8.4] - 2026-07-30
+
+#### Changed
+
+- Upgraded repo-kit baseline to **2.0.1** (standards under `kit/`; hub + domain modules; 1.x root-layout migration per [kit/UPGRADE.md](./kit/UPGRADE.md))
+- Moved `RULES.md`, `MARKDOWN-STANDARD.md`, and `templates/` into `kit/`; certification harness root detection accepts `kit/RULES.md`
 
 ### [1.8.3] - 2026-07-30
 

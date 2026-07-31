@@ -1,7 +1,7 @@
 ---
 title: "Work Queue Data Processor — Security and code-validation certification"
 description: "Operator guide for the formal regenerable self-attestation certificate (Domain A security + Domain B code validation, including dual-mode Gitleaks)."
-version: "1.0.1"
+version: "1.0.2"
 status: current
 audience:
   - developers
@@ -9,21 +9,22 @@ audience:
   - it
 doc_type: other
 related:
-  - ../RULES.md
+  - ../kit/RULES.md
+  - ../kit/rules/security.md
   - ../CHANGELOG.md
   - checks.json
   - Invoke-Certification.ps1
-last_updated: "2026-07-28"
+last_updated: "2026-07-30"
 ---
 
 # Work Queue Data Processor — Certification
 
 Operator guide for the **formal, regenerable** security and code-validation certificate for this repository. One package covers **Domain A (security / SAST + secrets)** and **Domain B (code validation)** in a single certificate pair.
 
-**Document version:** 1.0.1  
+**Document version:** 1.0.2  
 **Status:** current  
 
-**Related:** [RULES — Security and code-validation certification](../RULES.md#security-and-code-validation-certification) · [Language surface inventory](../RULES.md#language-surface-inventory) · [checks.json](./checks.json) · [Invoke-Certification.ps1](./Invoke-Certification.ps1)
+**Related:** [Security and code-validation certification](../kit/rules/security.md#security-and-code-validation-certification) · [Language surface inventory](../kit/rules/security.md#language-surface-inventory) · [checks.json](./checks.json) · [Invoke-Certification.ps1](./Invoke-Certification.ps1)
 
 ---
 
@@ -60,7 +61,7 @@ This is **not** a third-party audit, SOC 2, or ISO seal.
 
 ## When to regenerate (renewal)
 
-Policy authority: [RULES — Certification renewal enforcement](../RULES.md#certification-renewal-enforcement-required).
+Policy authority: [Certification renewal enforcement](../kit/rules/security.md#certification-renewal-enforcement-required).
 
 After any change set that touches **product code**, **gate definitions** (`checks.json`, harness, `.pylintrc`), or **language surface inventory**:
 
@@ -153,7 +154,7 @@ JSON fields include: `CertificateType`, `OverallPass`, `Message`, timestamps, `R
 
 ### PSScriptAnalyzer Warning (not a certification gate)
 
-PSScriptAnalyzer may report **Warning**-severity `PSAvoidUsingPlainTextForPassword` on automation bridges such as CLI `-Password` (string) and related COM helpers. Per [RULES](../RULES.md#security--sast-gates-required-when-declared), **Warning** findings stay **advisory** unless the project promotes them to critical.
+PSScriptAnalyzer may report **Warning**-severity `PSAvoidUsingPlainTextForPassword` on automation bridges such as CLI `-Password` (string) and related COM helpers. Per [SAST gates](../kit/rules/security.md#security--sast-gates-required-when-declared), **Warning** findings stay **advisory** unless the project promotes them to critical.
 
 - Certification Domain A for PowerShell requires **zero Error** findings only.  
 - Interactive menu paths already prefer **SecureString** for workbook open passwords where practical.  
@@ -176,5 +177,6 @@ Self-attestation of automated checks only. Not a third-party audit. Not runtime 
 
 | Version | Notes |
 |---------|--------|
+| 1.0.2 | Links updated for repo-kit 2.x (`kit/rules/security.md`); harness root detection uses `kit/RULES.md` |
 | 1.0.1 | PSSA product-only scope (align with parse/BOM); dual-mode Gitleaks; declarative pylint score; cert schema polish (`PackageVersions`, `DurationMs`, `Message`); password Warning advisory note |
 | 1.0.0 | Initial certification package: full-suite harness, checks.json, Secrets/Gitleaks required, renewal enforcement pointer to RULES |

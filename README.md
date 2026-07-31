@@ -139,12 +139,13 @@ Policy and inventory (not required for day-to-day scoring or export):
 
 | Document | Purpose |
 |----------|---------|
-| [RULES.md](./RULES.md) | Maintenance policy; **kit baseline** (adopted repo-kit version lives only there); certification renewal rules |
+| [kit/RULES.md](./kit/RULES.md) | Maintenance policy hub; **kit baseline** (adopted repo-kit version lives only there); domain modules under `kit/rules/` |
+| [kit/UPGRADE.md](./kit/UPGRADE.md) | Durable repo-kit upgrade / 1.x→2.x migration guide |
 | [CHANGELOG.md](./CHANGELOG.md) | Project history (Keep a Changelog); kit upgrades get a short note only—not kit release history |
 | [PLAN.md](./PLAN.md) | Post-V1 product roadmap; **Cluster 1** (config presets / profiles) design-frozen for implementation |
 | [LICENSE](./LICENSE) | MIT license |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | Purpose of every intentional source file |
-| [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | How we structure documentation |
+| [kit/MARKDOWN-STANDARD.md](./kit/MARKDOWN-STANDARD.md) | How we structure documentation |
 | [certification/](./certification/) | Formal security + code-validation self-attestation (full harness after code changes; developer-only; not product diagnostics) |
-| [templates/](./templates/) | Skeletons for toolkit README, CLI, methodology, security, certification README |
-| [repo-kit](https://github.com/shainemeister/repo-kit) | Upstream standards kit — compare latest to [RULES kit baseline](./RULES.md#kit-baseline) before upgrading |
+| [kit/templates/](./kit/templates/) | Skeletons for toolkit README, CLI, methodology, security, certification README |
+| [repo-kit](https://github.com/shainemeister/repo-kit) | Upstream standards kit — compare latest to [Kit baseline](./kit/RULES.md#kit-baseline) before upgrading |
