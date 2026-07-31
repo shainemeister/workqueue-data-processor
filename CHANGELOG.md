@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.8.2] - 2026-07-30
+
+#### Changed
+
+- **PLAN.md 0.2.0:** Cluster 1 (KPI POI presets + saved scoring profiles) **design-frozen** for implementation; baseline aligned to kpi 2.5.0 / excel 1.8.0 after gap-safety close
+
 ### [1.8.1] - 2026-07-28
 
 #### Added

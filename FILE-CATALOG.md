@@ -95,7 +95,7 @@ workqueue-data-processor/
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
 | [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline (**1.2.0**), CHANGELOG policy, language surface inventory (Python + PowerShell + **Secrets** declared), SAST required-when-declared, **certification renewal enforcement** (full Domain A+B after code changes; dual Gitleaks; product-only PSSA), formatting, architecture, data, git, and verification. |
-| [PLAN.md](./PLAN.md) | doc | Living development plan for post-V1 enhancement concepts (KPI config, multi-file aggregation, grouping, analysis sheets, saved profiles); draft status — details still to be worked out. |
+| [PLAN.md](./PLAN.md) | doc | Living post-V1 plan: Cluster 1 (POI presets + scoring profiles) design-frozen; Clusters 2–3 multi-file / analysis still developing. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
