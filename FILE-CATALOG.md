@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.6.2"
+version: "1.8.3"
 status: current
 audience:
   - developers
@@ -16,14 +16,14 @@ related:
   - LICENSE
   - certification/README.md
   - PLAN.md
-last_updated: "2026-07-28"
+last_updated: "2026-07-30"
 ---
 
 # File Catalog
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.6.2  
+**Document version:** 1.8.3  
 **Baseline layout:** repository root  
 
 **Related:** [README.md](./README.md) · [CHANGELOG.md](./CHANGELOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [RULES.md](./RULES.md) · [PLAN.md](./PLAN.md)
@@ -72,13 +72,14 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 
 ```text
 workqueue-data-processor/
-  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md, PLAN.md
+  README.md, CHANGELOG.md, FILE-CATALOG.md, MARKDOWN-STANDARD.md, RULES.md, PLAN.md, LICENSE
   wq_schema.json, wq_schema.csv, wq_data.csv
   WQ_Priority_Matrix_Concept.md
   Start-ExcelMenu.cmd
-  import/                 # tracked input CSVs (synthetic / non-PHI extracts)
+  import/                 # tracked synthetic / non-PHI inputs only
   excel-toolkit/          # PowerShell Excel COM toolkit
   kpi-analytics/          # Python KPI + priority scoring
+  certification/          # formal Domain A/B self-attestation (outputs gitignored)
   templates/              # Markdown document skeletons
   output/                 # generated only (gitignored)
 ```
@@ -94,20 +95,20 @@ workqueue-data-processor/
 | [CHANGELOG.md](./CHANGELOG.md) | doc | Project history (Keep a Changelog); required by repo-kit. Kit version lives in RULES kit baseline only. |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) | doc | Repo-wide markdown structure, frontmatter fields, platform-aware examples, and author checklist. |
-| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline (**1.2.0**), CHANGELOG policy, language surface inventory (Python + PowerShell + **Secrets** declared), SAST required-when-declared, **certification renewal enforcement** (full Domain A+B after code changes; dual Gitleaks; product-only PSSA), formatting, architecture, data, git, and verification. |
+| [RULES.md](./RULES.md) | doc | Maintenance rules: authority map, kit baseline (**1.2.1**), CHANGELOG policy, language surface inventory (Python + PowerShell + **Secrets** declared), SAST required-when-declared, **certification renewal enforcement** (full Domain A+B after code changes; dual Gitleaks; product-only PSSA), formatting, architecture, data, git, and verification. |
 | [PLAN.md](./PLAN.md) | doc | Living post-V1 plan: Cluster 1 (POI presets + scoring profiles) design-frozen; Clusters 2–3 multi-file / analysis still developing. |
 | [Start-ExcelMenu.cmd](./Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [wq_schema.json](./wq_schema.json) | data | Canonical field catalog (`field_name`, types, nullability, display names). |
 | [wq_schema.csv](./wq_schema.csv) | data | Same schema as CSV for spreadsheet review and display-name mapping. |
 | [wq_data.csv](./wq_data.csv) | data | Small sample WQ fact table; column headers use schema `field_name` values (also generate template). |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
-| [.gitignore](./.gitignore) | config | Excludes `output\`, package diagnostics certificates, formal `certification/last_certification.*`, Python caches, local env dirs, and common editor noise. |
+| [.gitignore](./.gitignore) | config | Excludes `output\`, local numbered `import\` copies, mapping profiles, package diagnostics certs, formal `certification/last_certification.*` + logs, Python caches, env dirs, editor noise. |
 
 ---
 
 ## import
 
-Tracked **input** CSVs for scoring demos and local runs. Prefer synthetic or de-identified data only—**no real PHI**. Scored results still go under `output\` (gitignored).
+Tracked **input** files for scoring demos and local runs. Prefer synthetic or de-identified data only—**no real PHI** (RULES.md). Scored results go under `output\` (gitignored). Local numbered copies (`wq_synthetic_data_1.csv`, etc.) and `*_mapping.json` are **gitignored**—do not force-add them.
 
 | Path | Type | Summary |
 |------|------|---------|
@@ -185,7 +186,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 |------|------|---------|
 | [__init__.py](./kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.5.0). |
 | [__main__.py](./kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
-| [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--interactive-mapping`), `generate`, `validate-score`; diagnostics gate. |
+| [cli.py](./kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--interactive-mapping`, `--strict roles\|full`), `generate`, `validate-score`; diagnostics gate. |
 | [column_map.py](./kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
 | [completeness.py](./kpi-analytics/kpi_modules/completeness.py) | module | Rank completeness evaluation (`RankCompleteness`, strict roles/full tiers) for score JSON and CLI `--strict`. |
 | [diagnostics.py](./kpi-analytics/kpi_modules/diagnostics.py) | module | Enterprise runtime/import dry-run, durable pass/fail report, operational gate helpers. |
@@ -239,7 +240,7 @@ Formal **security + code-validation** self-attestation package (developer-only).
 | Path | Type | Summary |
 |------|------|---------|
 | [README.md](./certification/README.md) | doc | Operator guide: surfaces, dual-mode Gitleaks, product-only PSSA, schema fields, advisory password Warning note |
-| [checks.json](./certification/checks.json) | config | Declarative required Domain A/B checks (`RequirePylintScore`, dual Gitleaks modes, shared PSSA/parse excludes) |
+| [checks.json](./certification/checks.json) | config | Declarative required Domain A/B checks (pylint 10.00, Bandit, PSSA Error, dual Gitleaks, validate-score handcalc + **validate-score-rcm**) |
 | [Invoke-Certification.ps1](./certification/Invoke-Certification.ps1) | script | Full-suite harness; `PackageVersions`/`DurationMs`/`Message`; exit 0 iff OverallPass |
 
 ---
@@ -267,6 +268,8 @@ These paths are produced at runtime or by the interpreter. They are listed for o
 | Path | Note |
 |------|------|
 | `output\` | Scored CSVs, summary CSVs, and Excel workbooks from toolkit runs (not tracked inputs). |
+| `import\wq_synthetic_data_N.*` / `import\*_mapping.json` | Local operator copies / mapping profiles (gitignored; not catalog source). |
+| `kpi-analytics\profiles\user_*.json` | User-created scoring profiles (gitignored; shipped presets may be tracked later). |
 | `kpi-analytics\diagnostics\last_diagnostics.*` | Regenerable package diagnostics certificates. |
 | `excel-toolkit\diagnostics\last_diagnostics.*` | Regenerable package diagnostics certificates. |
 | `certification\last_certification.*` | Regenerable formal security + code-validation certs (not package diagnostics). |
@@ -313,6 +316,7 @@ rem Existing destinations require -Force to overwrite
 | 1.6.2 | Re-added root `PLAN.md` (post-V1 enhancement concepts, draft) |
 | 1.7.0 | excel-toolkit 1.7.0 menu mapping preflight + guided column mapping (Start-ExcelMenu.ps1) |
 | 1.7.2 | kpi-analytics 2.2.0 Excel serial date parse; fixture `excel_serial_dates_input.csv` |
+| 1.8.3 | RULES hygiene: catalog kit baseline 1.2.1; gitignore local import copies/mapping/user profiles; certification layout + RCM check; cli --strict note |
 | 1.1.4 | excel-toolkit 1.3.0: unique output paths; menu Score→Excel (kpi-analytics composition) |
 | 1.1.5 | excel-toolkit 1.4.0: diagnostics gate + `diagnostics\` certificate folder |
 | 1.2.0 | Root `CHANGELOG.md`; repo-kit 1.1.1 baseline (RULES kit baseline, MARKDOWN platform-aware examples, templates sync) |

@@ -42,8 +42,17 @@ htmlcov/
 # Node (light — mixed or frontend-adjacent tooling)
 node_modules/
 
-# Generated toolkit outputs
+# Generated toolkit outputs (regenerable; never commit — see RULES.md)
 output/
+
+# Local operator copies under import\ (not cataloged; do not commit PHI)
+# Tracked demos remain: wq_synthetic_data.csv / .xlsx / _protected.xlsx only.
+import/wq_synthetic_data_[0-9]*.csv
+import/wq_synthetic_data_[0-9]*.xlsx
+import/*_mapping.json
+
+# User-created scoring profiles (Cluster 1); shipped poi_*.json may be tracked later
+kpi-analytics/profiles/user_*.json
 
 # Enterprise diagnostics certificates (regenerable on each machine)
 kpi-analytics/diagnostics/last_diagnostics.json

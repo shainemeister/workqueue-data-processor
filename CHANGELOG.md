@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.8.3] - 2026-07-30
+
+#### Changed
+
+- **Hygiene (RULES.md):** `.gitignore` blocks local numbered `import\wq_synthetic_data_N.*`, `import\*_mapping.json`, and `kpi-analytics/profiles/user_*.json`; FILE-CATALOG refreshed (kit baseline **1.2.1**, certification RCM check, ignored-path inventory)
+
 ### [1.8.2] - 2026-07-30
 
 #### Changed
