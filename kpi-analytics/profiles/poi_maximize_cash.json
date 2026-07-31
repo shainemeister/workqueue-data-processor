@@ -1,0 +1,17 @@
+{
+  "profile_schema_version": "1.0",
+  "name": "maximize_cash",
+  "description": "Focus: dollars and balance-weighted days outstanding. Product focus preset; not outcome-optimized.",
+  "min_toolkit_version": "2.6.0",
+  "config": {
+    "point_of_interest": {
+      "name": "maximize_cash",
+      "multipliers": {
+        "out_ins_amt": 1.5,
+        "billed_amount": 1.2,
+        "balance_weighted_days_outstanding": 1.4,
+        "denial_count": 1.1
+      }
+    }
+  }
+}

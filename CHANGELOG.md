@@ -13,6 +13,21 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.9.0] - 2026-07-30
+
+#### Added
+
+- **kpi-analytics 2.6.0:** scoring profiles (Cluster 1 slices 1a–1e)
+  - `score --profile <name-or-path>` deep-merges profile `config` onto package default; mutually exclusive with `--config`
+  - CLI `profile-list`, `profile-show`, `profile-save` (metadata / weights summary; no claim rows in profiles)
+  - Shipped thin POI focus presets under `kpi-analytics/profiles/`: `protect_writeoffs`, `maximize_cash`, `suppress_aging` (directional emphasis only; not outcome-optimized)
+  - Module `kpi_modules/profiles.py`; score JSON adds `ProfilePath`, `ProfileName`, `MappingSource`
+  - Explicit `--mapping` overrides profile-embedded mapping; guided mapping preserves profile-resolved config
+
+#### Changed
+
+- Docs: CLI-GUIDE, SCORE-METHODOLOGY, kpi README, FILE-CATALOG for profiles and POI presets
+
 ### [1.8.6] - 2026-07-30
 
 #### Changed

@@ -1,0 +1,19 @@
+{
+  "profile_schema_version": "1.0",
+  "name": "suppress_aging",
+  "description": "Focus: stalled / high-denial / short-deadline work; slight downweight of pure age. Product focus preset; not outcome-optimized.",
+  "min_toolkit_version": "2.6.0",
+  "config": {
+    "point_of_interest": {
+      "name": "suppress_aging",
+      "multipliers": {
+        "days_since_last_worked": 1.4,
+        "denial_count": 1.3,
+        "appeal_urgency": 1.3,
+        "dual_deadline_urgency": 1.3,
+        "claim_age_days": 0.85,
+        "claim_age_disparity": 0.85
+      }
+    }
+  }
+}

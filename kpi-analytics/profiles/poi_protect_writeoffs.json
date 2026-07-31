@@ -1,0 +1,18 @@
+{
+  "profile_schema_version": "1.0",
+  "name": "protect_writeoffs",
+  "description": "Focus: aging past target and deadline urgency. Product focus preset; not outcome-optimized.",
+  "min_toolkit_version": "2.6.0",
+  "config": {
+    "point_of_interest": {
+      "name": "protect_writeoffs",
+      "multipliers": {
+        "claim_age_days": 1.2,
+        "claim_age_disparity": 1.4,
+        "appeal_urgency": 1.5,
+        "dual_deadline_urgency": 1.5,
+        "balance_weighted_days_outstanding": 1.2
+      }
+    }
+  }
+}

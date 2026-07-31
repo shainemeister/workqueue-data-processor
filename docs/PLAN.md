@@ -224,19 +224,19 @@ Menu must call the same `kpi-analytics.cmd score --profile …` (no scoring math
 
 **B1.1 / presets**
 
-- [ ] Three named POI presets load via `--profile` and score synthetic data successfully  
-- [ ] Default (no `--profile`) unchanged vs 2.5.0 behavior on handcalc + RCM fixtures  
-- [ ] SCORE-METHODOLOGY documents each preset intent and multipliers  
-- [ ] CHANGELOG notes additive presets  
+- [x] Three named POI presets load via `--profile` and score synthetic data successfully  
+- [x] Default (no `--profile`) unchanged vs 2.5.0 behavior on handcalc + RCM fixtures  
+- [x] SCORE-METHODOLOGY documents each preset intent and multipliers  
+- [x] CHANGELOG notes additive presets  
 
 **B1.2 / profiles**
 
-- [ ] `profile-list`, `profile-save`, `profile-show`, `score --profile` work as specified  
-- [ ] Invalid profile fails with clear message; no silent default  
-- [ ] `--config` and `--profile` mutually exclusive  
-- [ ] Explicit `--mapping` overrides profile mapping  
-- [ ] No claim rows allowed in profile JSON  
-- [ ] CLI-GUIDE + FILE-CATALOG + version bump; full certification  
+- [x] `profile-list`, `profile-save`, `profile-show`, `score --profile` work as specified  
+- [x] Invalid profile fails with clear message; no silent default  
+- [x] `--config` and `--profile` mutually exclusive  
+- [x] Explicit `--mapping` overrides profile mapping  
+- [x] No claim rows allowed in profile JSON  
+- [x] CLI-GUIDE + FILE-CATALOG + version bump; full certification (run at ship)  
 
 **Non-goals for Cluster 1**
 

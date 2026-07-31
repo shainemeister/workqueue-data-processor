@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -242,11 +243,13 @@ def score_csv(
     output_path: str | Path,
     *,
     config_path: str | Path | None = None,
+    config: dict[str, Any] | None = None,
     dry_run: bool = False,
     summary_path: str | Path | None = None,
     write_summary: bool = True,
     privacy_enabled: bool | None = None,
     mapping_path: str | Path | None = None,
+    mapping_roles: dict[str, str] | None = None,
     interactive_mapping: bool = False,
     strict: str | None = None,
 ) -> dict[str, Any]:
@@ -255,12 +258,17 @@ def score_csv(
 
     Also writes a vertical summary CSV (metrics as rows) unless write_summary is False.
 
+    config: optional pre-validated config dict (e.g. from a scoring profile).
+    When provided, *config_path* is ignored for loading. When omitted, config is
+    loaded via load_config(config_path).
+
     privacy_enabled: if not None, overrides config privacy.enabled (CLI --privacy /
     --no-privacy). None keeps the JSON config value.
 
-    mapping_path: optional JSON profile mapping semantic roles to CSV headers.
-    Headers are always inspected (case/space tolerant + aliases); the profile
-    overrides auto-detect for listed roles.
+    mapping_path: optional JSON mapping profile (role → CSV headers).
+    mapping_roles: optional in-memory role map (used when mapping_path is None).
+    Headers are always inspected (case/space tolerant + aliases); explicit roles
+    override auto-detect for listed roles.
 
     interactive_mapping: when True and mapping problems exist, run guided
     resolution on a TTY; on non-TTY fail clearly instead of hanging.
@@ -270,7 +278,14 @@ def score_csv(
 
     Returns a result dict suitable for CLI JSON output.
     """
-    cfg = load_config(config_path)
+    if config is not None:
+        if not isinstance(config, dict):
+            raise ValueError("config must be a dict when provided")
+        base_cfg = deepcopy(config)
+    else:
+        base_cfg = load_config(config_path)
+
+    cfg = deepcopy(base_cfg)
     if privacy_enabled is not None:
         privacy = cfg.setdefault("privacy", {})
         if not isinstance(privacy, dict):
@@ -284,6 +299,8 @@ def score_csv(
     profile_roles: dict[str, str] | None = None
     if mapping_path is not None:
         profile_roles = load_mapping_profile(mapping_path)
+    elif mapping_roles is not None:
+        profile_roles = dict(mapping_roles)
 
     # Defer the zero-metrics hard-fail until after optional guided recovery.
     cfg, mapping_report = apply_mapping_to_config(
@@ -318,8 +335,9 @@ def score_csv(
         except MappingGuideAbort as exc:
             raise ValueError(str(exc)) from exc
 
-        # Re-load config so guided profile fully rewrites fields.
-        cfg = load_config(config_path)
+        # Re-apply guided roles on a fresh copy of the resolved base config
+        # (preserves scoring-profile / POI overlays; do not reload package default).
+        cfg = deepcopy(base_cfg)
         if privacy_enabled is not None:
             privacy = cfg.setdefault("privacy", {})
             if not isinstance(privacy, dict):

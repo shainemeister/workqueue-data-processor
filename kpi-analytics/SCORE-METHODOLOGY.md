@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.5.0"
+version: "2.6.0"
 status: current
 audience:
   - users
@@ -13,7 +13,7 @@ related:
   - CLI-GUIDE.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-25"
+last_updated: "2026-07-30"
 ---
 
 # KPI Analytics — Score Methodology & Validation
@@ -25,9 +25,10 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 2.5.0  
+**Toolkit version:** 2.6.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
+**Focus profiles:** `profiles\poi_*.json` (POI multipliers only; CLI `--profile`)  
 **Fixtures:** `fixtures\v1_handcalc_*`, `fixtures\rcm_impact_*`
 
 **Related docs:** [README.md](./README.md) · [CLI-GUIDE.md](./CLI-GUIDE.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [docs/WQ_Priority_Matrix_Concept.md](../docs/WQ_Priority_Matrix_Concept.md)
@@ -217,8 +218,23 @@ w_i     = raw_w_i / sum(raw_w_j)   # over active metrics only when roles missing
 ```
 
 Default chaos multipliers: `claim_age_days` × **1.2**, `claim_age_disparity` × **1.4**, `out_ins_amt` × **1.5**, `appeal_urgency` × **1.5**, `balance_weighted_days_outstanding` × **1.2**, `dual_deadline_urgency` × **1.5** (others × **1.0**).  
-POI multipliers default to 1.0.  
-Audit: `v1_weight_*` (constant across rows in a batch).
+POI multipliers default to **1.0** (`point_of_interest.name` = `default`) when no scoring profile is applied.  
+Audit: `v1_weight_*` (constant across rows in a batch); `v1_poi_name` records the active focus name.
+
+### Focus presets (POI multipliers, 2.6.0+)
+
+Shipped under `kpi-analytics\profiles\` as **thin** scoring profiles. They change relative emphasis only via `point_of_interest.multipliers`. **Base weights, chaos thresholds, metric keys, and formulas are unchanged.**
+
+These are **product defaults for focus**, not calibrated recovery or write-off outcomes. Compare default vs profile runs and inspect `v1_weight_*` / `v1_contrib_*`. Operators may override with a custom profile or full `--config`.
+
+| Profile name | Intent | Multiplier highlights (others = 1.0) |
+|--------------|--------|--------------------------------------|
+| *(none / default)* | Balanced package default | All 1.0 |
+| `protect_writeoffs` | Emphasize aging past target and deadline risk | `claim_age_days` 1.2, `claim_age_disparity` 1.4, `appeal_urgency` 1.5, `dual_deadline_urgency` 1.5, `balance_weighted_days_outstanding` 1.2 |
+| `maximize_cash` | Emphasize dollars and BWDO | `out_ins_amt` 1.5, `billed_amount` 1.2, `balance_weighted_days_outstanding` 1.4, `denial_count` 1.1 |
+| `suppress_aging` | Emphasize stalled / denial / short deadline; slight downweight of pure age | `days_since_last_worked` 1.4, `denial_count` 1.3, `appeal_urgency` 1.3, `dual_deadline_urgency` 1.3, `claim_age_days` 0.85, `claim_age_disparity` 0.85 |
+
+Select with `score --profile <name>` (see [CLI-GUIDE.md](./CLI-GUIDE.md)). RCM `kpi_q_*` columns are independent of POI / priority weights.
 
 ---
 
@@ -522,3 +538,4 @@ Checks include:
 | 2.3.0 | Metric value coverage (`MetricValueCoverage` / `LowCoverageMetrics`) — role resolved vs raw values present |
 | 2.4.0 | Rank completeness + `--strict roles\|full` fail-closed optional |
 | 2.5.0 | Privacy header aliases; default patient `token_digits` **4** (`DOE0001`) |
+| 2.6.0 | Scoring profiles + three POI focus presets (multipliers only; base weights/formulas unchanged) |

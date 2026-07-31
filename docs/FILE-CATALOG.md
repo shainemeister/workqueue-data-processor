@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.8.6"
+version: "1.9.0"
 status: current
 audience:
   - developers
@@ -23,7 +23,7 @@ last_updated: "2026-07-30"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.8.6  
+**Document version:** 1.9.0  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards + `docs/`  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [PLAN.md](./PLAN.md)
@@ -63,11 +63,12 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 9. [excel-toolkit/sample-test](#excel-toolkitsample-test)
 10. [kpi-analytics](#kpi-analytics)
 11. [kpi-analytics/kpi_modules](#kpi-analyticskpi_modules)
-12. [kpi-analytics/diagnostics](#kpi-analyticsdiagnostics)
-13. [kpi-analytics/fixtures](#kpi-analyticsfixtures)
-14. [certification](#certification)
-15. [Generated and ignored paths](#generated-and-ignored-paths)
-16. [Document history](#document-history)
+12. [kpi-analytics/profiles](#kpi-analyticsprofiles)
+13. [kpi-analytics/diagnostics](#kpi-analyticsdiagnostics)
+14. [kpi-analytics/fixtures](#kpi-analyticsfixtures)
+15. [certification](#certification)
+16. [Generated and ignored paths](#generated-and-ignored-paths)
+17. [Document history](#document-history)
 
 ---
 
@@ -224,24 +225,37 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.5.0). |
+| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.6.0). |
 | [__main__.py](../kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
-| [cli.py](../kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--interactive-mapping`, `--strict roles\|full`), `generate`, `validate-score`; diagnostics gate. |
+| [cli.py](../kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--profile`, `--interactive-mapping`, `--strict`), `generate`, `validate-score`, `profile-list` / `profile-show` / `profile-save`; diagnostics gate on operational score/generate/validate. |
 | [column_map.py](../kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
 | [completeness.py](../kpi-analytics/kpi_modules/completeness.py) | module | Rank completeness evaluation (`RankCompleteness`, strict roles/full tiers) for score JSON and CLI `--strict`. |
 | [diagnostics.py](../kpi-analytics/kpi_modules/diagnostics.py) | module | Enterprise runtime/import dry-run, durable pass/fail report, operational gate helpers. |
 | [config.py](../kpi-analytics/kpi_modules/config.py) | module | Loads and validates JSON config; resolves healthy vs chaos weight sets (optional active-metric renorm). |
 | [config_default.json](../kpi-analytics/kpi_modules/config_default.json) | config | Default field maps, weights, thresholds, and KPI quantifier settings. |
+| [profiles.py](../kpi-analytics/kpi_modules/profiles.py) | module | Scoring profile envelope, deep-merge onto package default, path resolve, list/show/save helpers. |
 | [io_csv.py](../kpi-analytics/kpi_modules/io_csv.py) | module | Stdlib CSV read/write helpers shared by score and generate paths. |
 | [metrics.py](../kpi-analytics/kpi_modules/metrics.py) | module | Raw priority metrics (claim age, BWDO, denial count, dual-deadline, balances, appeal, WQ age); date parse including Excel serials. |
 | [normalize.py](../kpi-analytics/kpi_modules/normalize.py) | module | Normalizes raw metrics to [0, 1] via minmax or percentile ranks. |
 | [privacy.py](../kpi-analytics/kpi_modules/privacy.py) | module | Score-output PHI masking for patient name / DOB (header aliases; prefix+4-digit token by default; configurable omit). |
-| [score_v1.py](../kpi-analytics/kpi_modules/score_v1.py) | module | Orchestrates metrics → queue mode → weights → norms → contributions → final score. |
+| [score_v1.py](../kpi-analytics/kpi_modules/score_v1.py) | module | Orchestrates metrics → queue mode → weights → norms → contributions → final score; accepts pre-merged config and mapping roles. |
 | [kpi_quantifiers.py](../kpi-analytics/kpi_modules/kpi_quantifiers.py) | module | Portfolio KPIs plus per-claim static share and resolution-delta (`kpi_q_*`) columns. |
 | [summary_report.py](../kpi-analytics/kpi_modules/summary_report.py) | module | Builds the vertical summary CSV (metric rows with values, formulas, explanations). |
 | [synthesize.py](../kpi-analytics/kpi_modules/synthesize.py) | module | Generates synthetic professional-billing WQ rows for demos and local tests. |
 | [probe.py](../kpi-analytics/kpi_modules/probe.py) | module | Optional path preflight (Python version, imports, optional CSV paths); does not satisfy gate. |
 | [validate_score.py](../kpi-analytics/kpi_modules/validate_score.py) | module | Integrity checks on scores/KPI Q plus optional golden-fixture comparison. |
+
+---
+
+## kpi-analytics/profiles
+
+Shipped POI focus presets and optional operator-saved scoring profiles. User files `user_*.json` are gitignored.
+
+| Path | Type | Summary |
+|------|------|---------|
+| [poi_protect_writeoffs.json](../kpi-analytics/profiles/poi_protect_writeoffs.json) | config | Focus preset: aging / deadline urgency POI multipliers. |
+| [poi_maximize_cash.json](../kpi-analytics/profiles/poi_maximize_cash.json) | config | Focus preset: dollars / BWDO POI multipliers. |
+| [poi_suppress_aging.json](../kpi-analytics/profiles/poi_suppress_aging.json) | config | Focus preset: stall / denial emphasis; mild age downweight. |
 
 ---
 
@@ -322,6 +336,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.9.0 | kpi-analytics 2.6.0: `profiles.py`, shipped `profiles/poi_*.json` focus presets; CLI profile verbs |
 | 1.8.6 | Data contract moved to `wq_schema/` (`wq_schema.json`, `wq_schema.csv`, `wq_data.csv`); root no longer holds schema/sample CSVs |
 | 1.8.5 | Root cleanup: `PLAN.md`, `FILE-CATALOG.md`, and concept doc under `docs/`; root keeps data contract + entry shim only among product docs |
 | 1.8.4 | repo-kit **2.0.1**: standards under `kit/`; catalog hub + rules modules + templates; root RULES/MARKDOWN/templates removed |

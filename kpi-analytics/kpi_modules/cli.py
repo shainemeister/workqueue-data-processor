@@ -17,6 +17,15 @@ from .diagnostics import (
     run_diagnostics,
 )
 from .probe import run_probe
+from .profiles import (
+    config_from_profile,
+    list_profiles,
+    load_profile,
+    mapping_roles_from_profile,
+    profile_show_summary,
+    resolve_profile_path,
+    save_profile,
+)
 from .score_v1 import score_csv
 from .synthesize import generate_csv  # professional billing synthetic WQ
 from .validate_score import validate_score
@@ -188,7 +197,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         dest="config_path",
         default=None,
-        help="Optional weights/thresholds JSON (default: package config)",
+        help=(
+            "Optional weights/thresholds JSON (default: package config). "
+            "Mutually exclusive with --profile."
+        ),
+    )
+    p_score.add_argument(
+        "--profile",
+        dest="profile_ref",
+        default=None,
+        help=(
+            "Scoring profile name or path under profiles\\ "
+            "(POI focus / saved config). Mutually exclusive with --config."
+        ),
     )
     p_score.add_argument(
         "--dry-run",
@@ -359,6 +380,66 @@ def build_parser() -> argparse.ArgumentParser:
     p_val.add_argument("--json", action="store_true")
     p_val.add_argument("--quiet", action="store_true")
 
+    p_plist = sub.add_parser(
+        "profile-list",
+        help="List scoring profiles under profiles\\ (metadata only)",
+    )
+    p_plist.add_argument("--json", action="store_true")
+    p_plist.add_argument("--quiet", action="store_true")
+
+    p_pshow = sub.add_parser(
+        "profile-show",
+        help="Show scoring profile metadata and effective weight summary",
+    )
+    p_pshow.add_argument(
+        "profile_ref",
+        help="Profile name or path (same resolution as score --profile)",
+    )
+    p_pshow.add_argument("--json", action="store_true")
+    p_pshow.add_argument("--quiet", action="store_true")
+
+    p_psave = sub.add_parser(
+        "profile-save",
+        help="Save a scoring profile JSON under profiles\\",
+    )
+    p_psave.add_argument(
+        "--name",
+        dest="profile_name",
+        required=True,
+        help="Slug for profiles\\<name>.json (prefer user_<name> for local files)",
+    )
+    p_psave.add_argument(
+        "--description",
+        dest="description",
+        default=None,
+        help="Human-readable description",
+    )
+    p_psave.add_argument(
+        "--from-config",
+        dest="from_config",
+        default=None,
+        help="Full config JSON to store under profile config (optional)",
+    )
+    p_psave.add_argument(
+        "--from-mapping",
+        dest="from_mapping",
+        default=None,
+        help="Column mapping JSON to embed under profile mapping (optional)",
+    )
+    p_psave.add_argument(
+        "--wq-label",
+        dest="wq_label",
+        default=None,
+        help="Optional operator label for the work queue (not PHI)",
+    )
+    p_psave.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing profiles\\<name>.json",
+    )
+    p_psave.add_argument("--json", action="store_true")
+    p_psave.add_argument("--quiet", action="store_true")
+
     p_help = sub.add_parser("help", help="Show help")
     p_help.add_argument("--json", action="store_true")
     p_help.add_argument("--quiet", action="store_true")
@@ -506,19 +587,77 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     return EXIT_VALIDATION
 
+            config_path = getattr(args, "config_path", None)
+            profile_ref = getattr(args, "profile_ref", None)
+            if config_path and profile_ref:
+                _emit(
+                    {
+                        "Success": False,
+                        "Command": "score",
+                        "Version": __version__,
+                        "Message": (
+                            "Cannot combine --config and --profile; pick one."
+                        ),
+                    },
+                    as_json=as_json,
+                    quiet=quiet,
+                )
+                return EXIT_VALIDATION
+
+            score_config: dict[str, Any] | None = None
+            profile_path_s: str | None = None
+            profile_name: str | None = None
+            mapping_roles: dict[str, str] | None = None
+            mapping_source = "none"
+            cli_mapping = getattr(args, "mapping_path", None)
+
+            if profile_ref:
+                try:
+                    p_path = resolve_profile_path(profile_ref)
+                    prof = load_profile(p_path)
+                    score_config = config_from_profile(prof)
+                    profile_path_s = str(p_path)
+                    profile_name = str(prof.get("name") or "")
+                    prof_roles, prof_map_src = mapping_roles_from_profile(
+                        prof, p_path
+                    )
+                    if cli_mapping:
+                        mapping_source = "cli"
+                    elif prof_roles is not None:
+                        mapping_roles = prof_roles
+                        mapping_source = prof_map_src or "profile_inline"
+                except (FileNotFoundError, ValueError, OSError) as exc:
+                    _emit(
+                        {
+                            "Success": False,
+                            "Command": "score",
+                            "Version": __version__,
+                            "Message": str(exc),
+                        },
+                        as_json=as_json,
+                        quiet=quiet,
+                    )
+                    return EXIT_VALIDATION
+            elif cli_mapping:
+                mapping_source = "cli"
+
             output_path = args.output_path or str(_default_score_output())
             try:
                 result = score_csv(
                     csv_path,
                     output_path,
-                    config_path=getattr(args, "config_path", None),
+                    config_path=None if score_config is not None else config_path,
+                    config=score_config,
                     dry_run=bool(getattr(args, "dry_run", False)),
                     summary_path=getattr(args, "summary_path", None),
                     write_summary=not bool(
                         getattr(args, "no_summary", False)
                     ),
                     privacy_enabled=getattr(args, "privacy_override", None),
-                    mapping_path=getattr(args, "mapping_path", None),
+                    mapping_path=cli_mapping,
+                    mapping_roles=(
+                        None if cli_mapping else mapping_roles
+                    ),
                     interactive_mapping=bool(
                         getattr(args, "interactive_mapping", False)
                     ),
@@ -537,8 +676,71 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 return EXIT_VALIDATION
             result["Version"] = __version__
+            result["ProfilePath"] = profile_path_s
+            result["ProfileName"] = profile_name
+            result["MappingSource"] = mapping_source
             if gate:
                 attach_gate_fields(result, gate)
+            _emit(result, as_json=as_json, quiet=quiet)
+            return EXIT_OK if result.get("Success") else EXIT_VALIDATION
+
+        if command == "profile-list":
+            entries = list_profiles()
+            result = {
+                "Success": True,
+                "Command": "profile-list",
+                "Version": __version__,
+                "ProfilesDir": str(
+                    Path(__file__).resolve().parents[1] / "profiles"
+                ),
+                "Count": len(entries),
+                "Profiles": entries,
+            }
+            _emit(result, as_json=as_json, quiet=quiet)
+            return EXIT_OK
+
+        if command == "profile-show":
+            try:
+                result = profile_show_summary(args.profile_ref)
+            except (FileNotFoundError, ValueError, OSError) as exc:
+                _emit(
+                    {
+                        "Success": False,
+                        "Command": "profile-show",
+                        "Version": __version__,
+                        "Message": str(exc),
+                    },
+                    as_json=as_json,
+                    quiet=quiet,
+                )
+                return EXIT_VALIDATION
+            result["Version"] = __version__
+            _emit(result, as_json=as_json, quiet=quiet)
+            return EXIT_OK
+
+        if command == "profile-save":
+            try:
+                result = save_profile(
+                    args.profile_name,
+                    description=getattr(args, "description", None),
+                    from_config=getattr(args, "from_config", None),
+                    from_mapping=getattr(args, "from_mapping", None),
+                    wq_label=getattr(args, "wq_label", None),
+                    force=bool(getattr(args, "force", False)),
+                )
+            except (FileNotFoundError, FileExistsError, ValueError, OSError) as exc:
+                _emit(
+                    {
+                        "Success": False,
+                        "Command": "profile-save",
+                        "Version": __version__,
+                        "Message": str(exc),
+                    },
+                    as_json=as_json,
+                    quiet=quiet,
+                )
+                return EXIT_VALIDATION
+            result["Version"] = __version__
             _emit(result, as_json=as_json, quiet=quiet)
             return EXIT_OK if result.get("Success") else EXIT_VALIDATION
 

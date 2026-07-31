@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics
 description: Python 3.13 stdlib toolkit for Work Queue priority scoring, RCM claim-level KPI impacts, synthetic data, and validation.
-version: "2.5.0"
+version: "2.6.0"
 status: current
 audience:
   - users
@@ -13,7 +13,7 @@ related:
   - SCORE-METHODOLOGY.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-25"
+last_updated: "2026-07-30"
 ---
 
 # KPI Analytics (`kpi-analytics`)
@@ -26,9 +26,10 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 4. **Synthetic data** — de-identified professional billing test CSVs.  
 5. **Validation** — integrity checks and golden fixtures.  
 6. **Enterprise diagnostics** — first-run runtime/import dry-run with a durable pass/fail report and a gate on operational commands.  
-7. **PHI field masking** — optional score-output masking of patient name and DOB (config-driven; default on).
+7. **PHI field masking** — optional score-output masking of patient name and DOB (config-driven; default on).  
+8. **Scoring profiles** — named POI focus presets and saved configs (`score --profile`, `profile-list` / `show` / `save`).
 
-**Toolkit version:** 2.5.0  
+**Toolkit version:** 2.6.0  
 **Product folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\` (implementation; name differs from the product folder on purpose)
 
@@ -51,6 +52,8 @@ KPI Analytics is a local, offline Python toolkit for professional billing Work Q
 |-----------|------------|
 | First-run on a locked-down PC | `kpi-analytics.cmd diagnostics` · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md) |
 | Run scoring end-to-end | [Recommended workflow](#recommended-workflow) |
+| Emphasize cash / write-off / stall focus | `score --profile maximize_cash` (or `protect_writeoffs` / `suppress_aging`) · [CLI-GUIDE](./CLI-GUIDE.md#scoring-profiles-260) |
+| List or save scoring profiles | `profile-list` · `profile-save --name user_…` |
 | CLI syntax & automation | [CLI-GUIDE.md](./CLI-GUIDE.md) |
 | Formulas & validation | [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) |
 | RCM dual-attribution theory | [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) |
@@ -105,6 +108,10 @@ kpi-analytics.cmd generate --rows 250 --seed 42
 
 rem Score: default --csv is ..\import\wq_synthetic_data.csv
 kpi-analytics.cmd score --output ..\output\wq_scored.csv --json
+
+rem Optional focus preset (POI multipliers only; not outcome-optimized)
+kpi-analytics.cmd profile-list --json
+kpi-analytics.cmd score --profile maximize_cash --output ..\output\wq_scored_cash.csv --json
 
 kpi-analytics.cmd validate-score --json
 ```
@@ -307,7 +314,8 @@ Default: `kpi_modules\config_default.json`.
 
 | Area | Keys (examples) |
 |------|-----------------|
-| Priority | `weights`, `chaos`, `point_of_interest`, `normalization`, `ar_day_target`, `as_of_date`, `fields` |
+| Priority | `weights`, `chaos`, `point_of_interest`, `normalization`, `claim_age_target`, `as_of_date`, `fields` |
+| Scoring profiles (2.6.0+) | `profiles\*.json` via `score --profile`; shipped POI presets + optional `user_*.json` (gitignored) |
 | RCM KPI Q | `kpi_quantifiers.adc`, `aged_day_breaks`, `credit_policy`, `emit_static_share`, `emit_exact_delta`, `dual_sign_columns` |
 | Privacy (score output) | `privacy.enabled`, `privacy.patient.mode` (`prefix_token` / `omit` / `passthrough`), `privacy.patient.name_order`, `privacy.dob.mode` (`omit` / `passthrough`) |
 

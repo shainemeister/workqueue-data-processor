@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.5.0"
+version: "2.6.0"
 status: current
 audience:
   - developers
@@ -12,14 +12,14 @@ related:
   - SCORE-METHODOLOGY.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-25"
+last_updated: "2026-07-30"
 ---
 
 # KPI Analytics — CLI Reference
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.5.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.6.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -28,11 +28,11 @@ Professional reference for the command-line interface used by automation, Task S
 | **Toolkit folder** | `kpi-analytics\` |
 | **CLI module** | `python -m kpi_modules` |
 | **Windows shim** | `kpi-analytics.cmd` |
-| **Library** | `kpi_modules` (`score_v1`, `kpi_quantifiers`, `summary_report`, `synthesize`, `diagnostics`, …) |
+| **Library** | `kpi_modules` (`score_v1`, `kpi_quantifiers`, `summary_report`, `synthesize`, `diagnostics`, `profiles`, …) |
 
 ## Summary
 
-This guide is the authoritative **command-line contract** for KPI Analytics. It documents how to invoke `kpi-analytics.cmd` / `python -m kpi_modules`, each verb (`version`, `probe`, `diagnostics`, `score`, `generate`, `validate-score`), flags (`--json`, `--quiet`, diagnostics gate options), exit codes (**0** / **1** / **2**), and illustrative JSON shapes for automation.
+This guide is the authoritative **command-line contract** for KPI Analytics. It documents how to invoke `kpi-analytics.cmd` / `python -m kpi_modules`, each verb (`version`, `probe`, `diagnostics`, `score`, `generate`, `validate-score`, `profile-list`, `profile-show`, `profile-save`), flags (`--json`, `--quiet`, diagnostics gate options), exit codes (**0** / **1** / **2**), and illustrative JSON shapes for automation.
 
 | Command | Produces |
 |---------|----------|
@@ -41,6 +41,9 @@ This guide is the authoritative **command-line contract** for KPI Analytics. It 
 | `generate` | Synthetic professional-billing WQ CSV (de-identified) |
 | `validate-score` | Integrity checks on priority contributions and KPI Q checksums (optional golden fixtures) |
 | `probe` | Optional path preflight (does **not** satisfy the diagnostics gate) |
+| `profile-list` | Metadata for JSON files under `profiles\` (no diagnostics gate) |
+| `profile-show` | Resolved profile metadata + effective weight summary (no diagnostics gate) |
+| `profile-save` | Writes `profiles\<name>.json` (no diagnostics gate) |
 
 Use **Import-Module-style** Python APIs when already in-process; use this CLI for Task Scheduler, cmd, and cross-language orchestration. Security constraints are summarized in [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md); scoring math is in [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md).
 
@@ -252,7 +255,8 @@ Scores a data CSV:
 
 ```text
 python -m kpi_modules score [--csv <path>] [--output <path>]
-    [--config <path>] [--mapping <path>] [--interactive-mapping]
+    [--config <path> | --profile <name-or-path>]
+    [--mapping <path>] [--interactive-mapping]
     [--strict roles|full]
     [--summary <path>] [--no-summary]
     [--privacy | --no-privacy]
@@ -265,8 +269,9 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--output` | No | `\<repo>\output\wq_scored.csv` | Claim-level scored CSV |
 | `--summary` | No | `<output_stem>_summary.csv` | Vertical summary CSV |
 | `--no-summary` | No | off | Skip summary file |
-| `--config` | No | package default | Weights / KPI config |
-| `--mapping` | No | none | JSON profile mapping semantic roles to CSV column names (see below) |
+| `--config` | No | package default | Weights / KPI config JSON. **Mutually exclusive with `--profile`.** |
+| `--profile` | No | none | Scoring profile **name** or **path** (see [Scoring profiles (2.6.0)](#scoring-profiles-260)). Deep-merges profile `config` onto package default. **Mutually exclusive with `--config`.** |
+| `--mapping` | No | none | JSON profile mapping semantic roles to CSV column names (see below). Overrides any mapping embedded in `--profile`. |
 | `--interactive-mapping` | No | off | When missing / ambiguous / low-confidence roles exist, guide assignment on a TTY; fail clearly if no TTY. Clean files are not prompted. |
 | `--strict` | No | off | Fail closed without writing files: `roles` = missing/ambiguous roles or skipped metrics; `full` = also low raw-value coverage. Default allows partial ranks (`Success` true with `RankCompleteness` advisory). |
 | `--privacy` | No | (config) | Force PHI field masking on scored output |
@@ -278,6 +283,8 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--quiet` | No | off | Minimal host text |
 
 `--privacy` and `--no-privacy` are mutually exclusive. When omitted, `privacy.enabled` from the JSON config applies (default **on** in package `config_default.json`). Overrides only the master switch; patient/DOB modes still come from config.
+
+**Score JSON additions (2.6.0+):** `ProfilePath`, `ProfileName` (null when no `--profile`), `MappingSource` (`cli` \| `profile_inline` \| `profile_path` \| `none`). `PoiName` continues to reflect `point_of_interest.name` from the effective config.
 
 **Column mapping**
 
@@ -330,6 +337,8 @@ Mapping profile shape:
 kpi-analytics.cmd score --json
 
 kpi-analytics.cmd score --csv ..\import\wq_synthetic_data.csv --output ..\output\wq_scored.csv --json
+
+kpi-analytics.cmd score --profile maximize_cash --json
 
 kpi-analytics.cmd score --no-privacy --json
 
@@ -403,6 +412,74 @@ kpi-analytics.cmd score --csv D:\exports\odd_headers.csv ^
 | `explanation` | Plain-language description |
 
 `KpiTotals` and `kpi_q_*` follow [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md). Priority fields follow [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md).
+
+---
+
+### Scoring profiles (2.6.0)
+
+Named JSON documents under `kpi-analytics\profiles\` that deep-merge an optional `config` overlay onto package `config_default.json` and may embed or reference a column mapping. Used for **POI focus presets** and operator-saved settings. Profiles must **not** contain claim rows (`rows` / `data` / `claims` / `records` keys are rejected).
+
+**Path resolution for `--profile <token>` / `profile-show`:**
+
+| Token | Resolution |
+|-------|------------|
+| Contains `\` or `/`, or ends with `.json` | Filesystem path (CWD-relative or absolute) |
+| Bare name (e.g. `protect_writeoffs`) | `profiles\<name>.json`, then `profiles\poi_<name>.json` |
+| Missing file | Exit **1**; no silent fallback to default |
+
+**Precedence**
+
+| Flags | Behavior |
+|-------|----------|
+| `--config` + `--profile` | Error (mutually exclusive) |
+| `--profile` + `--mapping` | Profile supplies config; **CLI `--mapping` wins** for roles |
+| `--profile` only with embedded mapping | Profile mapping applies |
+| Neither | Package default config; auto-detect / CLI mapping only |
+
+**Shipped focus presets** (thin POI multipliers only; not outcome-optimized — see [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md)):
+
+| Name | File |
+|------|------|
+| `protect_writeoffs` | `profiles\poi_protect_writeoffs.json` |
+| `maximize_cash` | `profiles\poi_maximize_cash.json` |
+| `suppress_aging` | `profiles\poi_suppress_aging.json` |
+
+Default balanced scoring is **no** `--profile` (all POI multipliers 1.0, `v1_poi_name` = `default`).
+
+**Profile envelope (strict):** required `profile_schema_version` (`"1.0"`), `name`, non-empty `description`. Optional: `min_toolkit_version` (fail if package older), `wq_label`, `created_at`, `config`, `mapping`, `mapping_path`. Unknown top-level keys are rejected. `config` is deep-merged onto package default (`null` overlay values skipped; lists replace).
+
+#### `profile-list`
+
+```text
+python -m kpi_modules profile-list [--json] [--quiet]
+```
+
+Lists `profiles\*.json` (non-recursive). Corrupt files appear with `Valid: false` and a message. No diagnostics gate. Empty directory → success with count 0.
+
+#### `profile-show`
+
+```text
+python -m kpi_modules profile-show <name-or-path> [--json] [--quiet]
+```
+
+Prints metadata, POI multipliers, base weights, and effective weights (chaos off and on). Exit **1** if missing/invalid. No diagnostics gate.
+
+#### `profile-save`
+
+```text
+python -m kpi_modules profile-save --name <slug>
+    [--description <text>] [--from-config <path>] [--from-mapping <path>]
+    [--wq-label <text>] [--force] [--json] [--quiet]
+```
+
+Writes `profiles\<slug>.json`. Slug must match `^[a-z][a-z0-9_]*$`. Refuse overwrite without `--force`. Prefer `user_<name>` for local files (gitignored). `--from-config` expects a full loadable config JSON stored under `config`; omit for package-default overlay `{}`. No diagnostics gate.
+
+```bat
+kpi-analytics.cmd profile-list --json
+kpi-analytics.cmd profile-show maximize_cash --json
+kpi-analytics.cmd score --profile protect_writeoffs --output ..\output\wq_scored.csv --json
+kpi-analytics.cmd profile-save --name user_my_wq --description "My site focus" --from-config my_config.json
+```
 
 ---
 
