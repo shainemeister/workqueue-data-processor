@@ -13,6 +13,21 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.13.0] - 2026-08-09
+
+#### Added
+
+- **excel-toolkit 1.9.0:** interactive menu **scoring profile** picker (Cluster 1 residual **1f**)
+  - Process my data → Full pipeline / Score only: optional POI focus / named profile once per batch
+  - Passes sibling `kpi-analytics.cmd score --profile …` on preflight dry-run, full score, guided mapping, and rank-enrich dry-run (no scoring math in PowerShell)
+  - Advanced → **Scoring profiles (list / CLI help)** via `profile-list` only
+  - Package default remains omit `--profile` (Balanced)
+
+#### Changed
+
+- excel-toolkit docs (README, CLI-GUIDE, ENTERPRISE-SECURITY) for 1.9.0 menu composition
+- `docs/PLAN.md`: residual **1f** marked shipped; baseline packages refreshed
+
 ### [1.12.0] - 2026-07-30
 
 #### Added

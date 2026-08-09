@@ -36,7 +36,7 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | Use case | What you get | Start here |
 |----------|--------------|------------|
 | **Prioritize denial / follow-up work** | Scored CSV with `v1_priority_score` and clear audit columns | [kpi-analytics](./kpi-analytics/README.md) · `score` |
-| **Emphasize a focus (cash / write-offs / stall)** | Same score path with POI focus preset (`--profile`) | [KPI CLI — profiles](./kpi-analytics/CLI-GUIDE.md#scoring-profiles-260) |
+| **Emphasize a focus (cash / write-offs / stall)** | Same score path with POI focus preset (`--profile`), also selectable from the Excel menu | [KPI CLI — profiles](./kpi-analytics/CLI-GUIDE.md#scoring-profiles-260) · [Excel menu](./excel-toolkit/README.md#for-most-users-recommended) |
 | **Measure RCM claim impact** | Portfolio KPIs plus per-claim static share and resolution impact (`kpi_q_*`) | `score` · [methodology](./kpi-analytics/SCORE-METHODOLOGY.md) |
 | **Demo or test without real PHI** | Synthetic professional-billing WQ CSV (de-identified names) | `generate` · [KPI CLI guide](./kpi-analytics/CLI-GUIDE.md) |
 | **Share results with leadership** | Formatted `.xlsx` from a scored or summary CSV | [excel-toolkit](./excel-toolkit/README.md) |

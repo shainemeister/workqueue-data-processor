@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.8.1"
+version: "1.9.0"
 status: current
 audience:
   - users
@@ -11,14 +11,14 @@ related:
   - README.md
   - CLI-GUIDE.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-28"
+last_updated: "2026-08-09"
 ---
 
 # Excel Toolkit (`excel-toolkit`)
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), guided **Process my data** menu (via sibling `kpi-analytics` for scoring), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.8.1  
+**Toolkit version:** 1.9.0  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
@@ -81,18 +81,20 @@ Excel Toolkit is a **local Windows** PowerShell **5.1** package for controlled d
 | Option | What it does |
 |--------|----------------|
 | **1** | **Process my data** — list CSV + Excel under `import\`, multi-select with print-style ranges (`1`, `1-3`, `1,3-5`), then full pipeline / score only / export only |
-| **2** | **Advanced tools…** — schema-header export, import Excel→CSV, folders, env, schema, diagnostics |
+| **2** | **Advanced tools…** — schema-header export, import Excel→CSV, folders, env, schema, diagnostics, scoring profiles list/help |
 | **0** | Exit |
 
 **Process my data (option 1) actions**
 
 | Action | What it does |
 |--------|----------------|
-| **1 Full pipeline** | Score with `kpi-analytics`, export scored + summary workbooks under `output\` (optional workbook password) |
-| **2 Score only** | Scored + summary **CSV** only (no Excel) |
-| **3 Export only** | CSV → Excel without scoring (optional workbook password) |
+| **1 Full pipeline** | Score with `kpi-analytics` (optional **scoring profile** pick), export scored + summary workbooks under `output\` (optional workbook password) |
+| **2 Score only** | Scored + summary **CSV** only (optional **scoring profile** pick; no Excel) |
+| **3 Export only** | CSV → Excel without scoring (optional workbook password; no profile prompt) |
 
 Excel selections are imported to CSV first (open-password prompt if the workbook is protected), then the same actions apply.
+
+**Scoring profile pick (Full pipeline / Score only only):** after files are selected, choose **Balanced (package default)** or a named POI focus preset (e.g. `maximize_cash`). The menu passes `kpi-analytics.cmd score --profile …` only—no scoring math in PowerShell. This is separate from a **column mapping** file (`*_mapping.json`). Full CLI contract: [kpi-analytics/CLI-GUIDE.md — Scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
 
 **Advanced (option 2)**
 
@@ -104,6 +106,7 @@ Excel selections are imported to CSV first (open-password prompt if the workbook
 | **4** | Show environment / policy info |
 | **5** | Schema: show source, preview fields, switch JSON/CSV |
 | **6** | Diagnostics (readiness dry-run / full self-test) |
+| **7** | Scoring profiles (list via `profile-list` / CLI help; no score) |
 | **0** | Back to main menu |
 
 3. Open export / scored workbooks under **`output\`**; imported CSVs default under **`import\`**.
@@ -114,17 +117,18 @@ Composes the two toolkits at the **workflow** layer only (no shared process, no 
 
 1. Pick CSV and/or Excel file(s) from `import\` (ranges: `1`, `1,2`, `1-3`, `1,3-5`) or type a path.  
 2. Import any Excel files to CSV under `import\` (unique paths; open-password if needed).  
-3. For each CSV, resolve free paths for scored/summary CSV under `output\` (`<stem>_scored.csv`, `<stem>_scored_summary.csv`, with `_N` if needed).  
-4. Score via `kpi-analytics` with **mapping preflight**:
-   - Auto-apply sibling `<stem>_mapping.json` next to the CSV when present.
+3. Choose a **scoring profile** once for the batch (default = package balanced / no `--profile`, or a listed POI focus / typed name-or-path).  
+4. For each CSV, resolve free paths for scored/summary CSV under `output\` (`<stem>_scored.csv`, `<stem>_scored_summary.csv`, with `_N` if needed).  
+5. Score via `kpi-analytics` with **mapping preflight** (and optional `--profile` on every score invoke, including dry-run):
+   - Auto-apply sibling `<stem>_mapping.json` next to the CSV when present (column mapping; not the scoring profile).
    - Dry-run score to inspect column roles (missing / ambiguous / low-confidence).
    - **Clean headers** (or only low-confidence samples) → full score; low-confidence roles print a warning and continue.
    - **Missing or ambiguous roles** on an interactive console → guided column mapping (`--interactive-mapping` on a TTY); optional save of a mapping profile next to the input.
    - **Missing or ambiguous roles** when non-interactive → fail with a clear message (no hang); use CLI `score --mapping` / `--interactive-mapping` instead.
    - **After score:** if `RankCompleteness` is not `full` (skipped metrics and/or low value coverage), a partial-rank banner appears; you must confirm before keeping CSVs or exporting Excel (decline removes just-written scored CSVs).
-5. Optionally set a workbook open password, then export both CSVs to `.xlsx` (unique paths if those workbooks already exist).
+6. Optionally set a workbook open password, then export both CSVs to `.xlsx` (unique paths if those workbooks already exist).
 
-**Score only** stops after scoring (CSV only; no Excel diagnostics gate).
+**Score only** stops after scoring (CSV only; no Excel diagnostics gate). Same scoring-profile pick as Full pipeline.
 
 **Needs:** Python **3.13** (for `kpi-analytics`) **and** desktop Excel (for COM on pipeline/export). First score may run KPI diagnostics once (gate). Prefer schema `field_name` headers or a saved mapping profile so guided prompts stay rare.
 

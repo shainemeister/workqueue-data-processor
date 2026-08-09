@@ -10,12 +10,15 @@
 
     Main menu: Process my data (discover CSV/Excel under import\, print-style
     multi-select, then full pipeline / score only / export), and Advanced tools
-    (schema-header export, import, folders, schema, diagnostics, environment).
+    (schema-header export, import, folders, schema, diagnostics, scoring
+    profiles list/help, environment).
 
     Scoring uses sibling kpi-analytics with a mapping preflight: schema-aligned
     headers score silently; incomplete/ambiguous headers open guided column
     mapping on an interactive console (or fail clearly when non-interactive).
     A sibling <stem>_mapping.json next to the CSV is auto-applied when present.
+    Full pipeline and Score only optionally pick a scoring profile (POI focus)
+    and pass it as kpi-analytics score --profile (no scoring math in PowerShell).
 
     Column layout always comes from your data CSV. An optional schema (JSON or
     CSV) supplies display labels only. Nothing domain-specific is hard-coded.
@@ -730,7 +733,7 @@ function ConvertFrom-KpiScoreJsonText {
 function ConvertTo-KpiScoreCmdArgumentLine {
     <#
     .SYNOPSIS
-        Build a cmd.exe /c argument string for kpi-analytics.cmd score (quoted paths).
+        Build a cmd.exe /c argument string for kpi-analytics.cmd (quoted args).
     #>
     [CmdletBinding()]
     param(
@@ -750,6 +753,296 @@ function ConvertTo-KpiScoreCmdArgumentLine {
     }
     $inner = ($quoted -join ' ')
     return ('/c ""{0}" {1}"' -f $kpiAnalyticsCmd, $inner)
+}
+
+function Invoke-KpiAnalyticsProfileList {
+    <#
+    .SYNOPSIS
+        Call sibling kpi-analytics.cmd profile-list --json (metadata only; no scoring).
+    .OUTPUTS
+        PSCustomObject: ExitCode, Success, Profiles (array of entries), ProfilesDir, Message, Json
+    #>
+    [CmdletBinding()]
+    param()
+
+    $empty = [pscustomobject]@{
+        ExitCode    = 1
+        Success     = $false
+        Profiles    = @()
+        ProfilesDir = ''
+        Message     = ''
+        Json        = $null
+    }
+
+    if (-not (Test-Path -LiteralPath $kpiAnalyticsCmd)) {
+        $empty.Message = ("kpi-analytics launcher not found: {0}" -f $kpiAnalyticsCmd)
+        return $empty
+    }
+
+    $listArgs = [System.Collections.Generic.List[string]]::new()
+    $listArgs.Add('profile-list')
+    $listArgs.Add('--json')
+
+    $tmpOut = [System.IO.Path]::GetTempFileName()
+    $tmpErr = [System.IO.Path]::GetTempFileName()
+    $exitCode = 1
+    $stdout = ''
+    $stderr = ''
+
+    try {
+        $argLine = ConvertTo-KpiScoreCmdArgumentLine -ScoreArgs $listArgs
+        $proc = Start-Process -FilePath 'cmd.exe' `
+            -ArgumentList $argLine `
+            -WorkingDirectory $kpiAnalyticsDir `
+            -Wait -PassThru -NoNewWindow `
+            -RedirectStandardOutput $tmpOut `
+            -RedirectStandardError $tmpErr
+
+        if ($null -ne $proc) {
+            $exitCode = [int]$proc.ExitCode
+        }
+        if (Test-Path -LiteralPath $tmpOut) {
+            $stdout = [System.IO.File]::ReadAllText($tmpOut)
+        }
+        if (Test-Path -LiteralPath $tmpErr) {
+            $stderr = [System.IO.File]::ReadAllText($tmpErr)
+        }
+    }
+    catch {
+        $empty.Message = $_.Exception.Message
+        return $empty
+    }
+    finally {
+        Remove-Item -LiteralPath $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue
+    }
+
+    $jsonObj = ConvertFrom-KpiScoreJsonText -Text $stdout
+    $profiles = @()
+    $profilesDir = ''
+    $ok = ($exitCode -eq 0)
+    $msg = ''
+
+    if ($null -ne $jsonObj) {
+        $names = @($jsonObj.PSObject.Properties.Name)
+        if ($names -contains 'Success') {
+            try { $ok = $ok -and [bool]$jsonObj.Success } catch { }
+        }
+        if ($names -contains 'ProfilesDir') {
+            $profilesDir = [string]$jsonObj.ProfilesDir
+        }
+        if ($names -contains 'Profiles' -and $null -ne $jsonObj.Profiles) {
+            $profiles = @($jsonObj.Profiles)
+        }
+        if ($names -contains 'Message' -and -not [string]::IsNullOrWhiteSpace([string]$jsonObj.Message)) {
+            $msg = [string]$jsonObj.Message
+        }
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($stderr)) {
+        $msg = $stderr.Trim()
+        $ok = $false
+    }
+    elseif (-not $ok) {
+        $msg = 'profile-list failed (no JSON).'
+    }
+
+    return [pscustomobject]@{
+        ExitCode    = $exitCode
+        Success     = $ok
+        Profiles    = $profiles
+        ProfilesDir = $profilesDir
+        Message     = $msg
+        Json        = $jsonObj
+    }
+}
+
+function Select-KpiScoringProfile {
+    <#
+    .SYNOPSIS
+        Interactive scoring-profile picker for menu score paths.
+    .DESCRIPTION
+        Returns $null for package default (no --profile), or a non-empty token
+        (profile name or path) for kpi-analytics score --profile.
+        Lists metadata via profile-list only; does not merge configs or score.
+    .PARAMETER SkipPrompt
+        When set, return $null without prompting (non-interactive hosts).
+    #>
+    [CmdletBinding()]
+    param(
+        [switch]$SkipPrompt
+    )
+
+    if ($SkipPrompt -or -not (Test-ExcelMenuHostInteractive)) {
+        return $null
+    }
+
+    $listResult = $null
+    $validEntries = @()
+
+    while ($true) {
+        Write-Host ''
+        Write-Host 'Scoring profile (optional POI focus; not a column mapping profile):' -ForegroundColor Cyan
+        Write-Host '  [1] Balanced (package default)     <- recommended' -ForegroundColor DarkGray
+
+        $listResult = Invoke-KpiAnalyticsProfileList
+        $validEntries = @()
+        $optNum = 2
+
+        if (-not $listResult.Success) {
+            $failMsg = $listResult.Message
+            if ([string]::IsNullOrWhiteSpace($failMsg)) {
+                $failMsg = 'Could not list profiles via kpi-analytics profile-list.'
+            }
+            Write-Host ("  (List unavailable: {0})" -f $failMsg) -ForegroundColor Yellow
+            Write-Host '  Use [1] default or [P] to type a known name/path.' -ForegroundColor Yellow
+        }
+        else {
+            foreach ($p in @($listResult.Profiles)) {
+                if ($null -eq $p) { continue }
+                $pNames = @($p.PSObject.Properties.Name)
+                $isValid = $true
+                if ($pNames -contains 'Valid') {
+                    try { $isValid = [bool]$p.Valid } catch { $isValid = $true }
+                }
+                $name = ''
+                if ($pNames -contains 'Name') { $name = [string]$p.Name }
+                if ([string]::IsNullOrWhiteSpace($name) -and ($pNames -contains 'FileName')) {
+                    $name = [System.IO.Path]::GetFileNameWithoutExtension([string]$p.FileName)
+                }
+                $desc = ''
+                if ($pNames -contains 'Description') { $desc = [string]$p.Description }
+
+                if (-not $isValid) {
+                    $label = if (-not [string]::IsNullOrWhiteSpace($name)) { $name } else { '(invalid entry)' }
+                    Write-Host ("  [skip] {0} — invalid (not selectable)" -f $label) -ForegroundColor DarkYellow
+                    continue
+                }
+                if ([string]::IsNullOrWhiteSpace($name)) {
+                    continue
+                }
+
+                $validEntries += [pscustomobject]@{
+                    Number = $optNum
+                    Name   = $name
+                }
+                $descShort = $desc
+                if (-not [string]::IsNullOrWhiteSpace($descShort) -and $descShort.Length -gt 72) {
+                    $descShort = $descShort.Substring(0, 69) + '...'
+                }
+                if ([string]::IsNullOrWhiteSpace($descShort)) {
+                    Write-Host ("  [{0}] {1}" -f $optNum, $name) -ForegroundColor DarkGray
+                }
+                else {
+                    Write-Host ("  [{0}] {1} — {2}" -f $optNum, $name, $descShort) -ForegroundColor DarkGray
+                }
+                $optNum++
+            }
+            if ($validEntries.Count -eq 0) {
+                Write-Host '  (No valid profiles found under kpi-analytics\profiles\.)' -ForegroundColor Yellow
+            }
+        }
+
+        Write-Host '  [L] List all profiles (refresh)' -ForegroundColor DarkGray
+        Write-Host '  [P] Enter profile name or path' -ForegroundColor DarkGray
+        $choice = Read-Host 'Choice [1]'
+        if ([string]::IsNullOrWhiteSpace($choice)) {
+            $choice = '1'
+        }
+        $choice = $choice.Trim()
+
+        if ($choice -match '^[Ll]$') {
+            continue
+        }
+
+        if ($choice -match '^[Pp]$') {
+            $typed = Read-Host 'Profile name or path (blank cancels)'
+            if ([string]::IsNullOrWhiteSpace($typed)) {
+                continue
+            }
+            $token = $typed.Trim()
+            Write-Host ("Using scoring profile: {0}" -f $token) -ForegroundColor Cyan
+            return $token
+        }
+
+        if ($choice -eq '1') {
+            Write-Host 'Using package default scoring (no --profile).' -ForegroundColor DarkGray
+            return $null
+        }
+
+        $asInt = 0
+        if ([int]::TryParse($choice, [ref]$asInt)) {
+            $hit = @($validEntries | Where-Object { $_.Number -eq $asInt })
+            if ($hit.Count -eq 1) {
+                $token = [string]$hit[0].Name
+                Write-Host ("Using scoring profile: {0}" -f $token) -ForegroundColor Cyan
+                return $token
+            }
+        }
+
+        Write-Host 'Unrecognized choice; try again (1 = default, L = refresh, P = type name).' -ForegroundColor Yellow
+    }
+}
+
+function Show-KpiScoringProfilesHelp {
+    <#
+    .SYNOPSIS
+        Advanced: list scoring profiles via KPI CLI and print composition help.
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Host ''
+    Write-Host 'Scoring profiles (list / CLI help)' -ForegroundColor Cyan
+    Write-Host 'Metadata only — no claim rows. Menu scoring passes --profile to kpi-analytics.' -ForegroundColor DarkGray
+    Write-Host ''
+
+    $listResult = Invoke-KpiAnalyticsProfileList
+    if (-not $listResult.Success) {
+        $failMsg = $listResult.Message
+        if ([string]::IsNullOrWhiteSpace($failMsg)) {
+            $failMsg = 'profile-list failed.'
+        }
+        Write-Host ("FAIL: {0}" -f $failMsg) -ForegroundColor Red
+        Write-Host 'Try: kpi-analytics\kpi-analytics.cmd profile-list --json' -ForegroundColor Yellow
+    }
+    else {
+        if (-not [string]::IsNullOrWhiteSpace($listResult.ProfilesDir)) {
+            Write-Host ("Profiles dir: {0}" -f $listResult.ProfilesDir) -ForegroundColor DarkGray
+        }
+        $count = @($listResult.Profiles).Count
+        Write-Host ("Found {0} profile file(s):" -f $count) -ForegroundColor Cyan
+        if ($count -eq 0) {
+            Write-Host '  (none)' -ForegroundColor DarkGray
+        }
+        else {
+            foreach ($p in @($listResult.Profiles)) {
+                if ($null -eq $p) { continue }
+                $pNames = @($p.PSObject.Properties.Name)
+                $name = if ($pNames -contains 'Name') { [string]$p.Name } else { '?' }
+                $desc = if ($pNames -contains 'Description') { [string]$p.Description } else { '' }
+                $valid = $true
+                if ($pNames -contains 'Valid') {
+                    try { $valid = [bool]$p.Valid } catch { $valid = $true }
+                }
+                $flag = if ($valid) { 'ok' } else { 'INVALID' }
+                if ([string]::IsNullOrWhiteSpace($desc)) {
+                    Write-Host ("  - {0} [{1}]" -f $name, $flag) -ForegroundColor DarkGray
+                }
+                else {
+                    Write-Host ("  - {0} [{1}] — {2}" -f $name, $flag, $desc) -ForegroundColor DarkGray
+                }
+            }
+        }
+    }
+
+    Write-Host ''
+    Write-Host 'CLI tips (from repo root or kpi-analytics\):' -ForegroundColor Cyan
+    Write-Host '  kpi-analytics.cmd profile-list --json' -ForegroundColor DarkGray
+    Write-Host '  kpi-analytics.cmd profile-show maximize_cash --json' -ForegroundColor DarkGray
+    Write-Host '  kpi-analytics.cmd score --profile maximize_cash --json' -ForegroundColor DarkGray
+    Write-Host '  Package default = omit --profile (Balanced).' -ForegroundColor DarkGray
+    Write-Host '  Do not put claim rows in profile JSON. Prefer user_*.json for local saves.' -ForegroundColor DarkGray
+    Write-Host '  Full contract: kpi-analytics\CLI-GUIDE.md (Scoring profiles).' -ForegroundColor DarkGray
+    Write-Host '  Process my data (Full pipeline / Score only) can pick a profile interactively.' -ForegroundColor DarkGray
 }
 
 function Select-KpiScoreInvokeResult {
@@ -839,6 +1132,9 @@ function Invoke-KpiAnalyticsScore {
         [string]$MappingPath,
 
         [Parameter(Mandatory = $false)]
+        [string]$Profile,
+
+        [Parameter(Mandatory = $false)]
         [switch]$DryRun,
 
         [Parameter(Mandatory = $false)]
@@ -860,6 +1156,10 @@ function Invoke-KpiAnalyticsScore {
     if (-not [string]::IsNullOrWhiteSpace($MappingPath)) {
         $scoreArgs.Add('--mapping')
         $scoreArgs.Add($MappingPath)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Profile)) {
+        $scoreArgs.Add('--profile')
+        $scoreArgs.Add($Profile)
     }
     if ($DryRun) {
         $scoreArgs.Add('--dry-run')
@@ -945,6 +1245,9 @@ function Invoke-KpiAnalyticsScore {
                         DryRun             = $true
                         InteractiveMapping = $false
                     }
+                    if (-not [string]::IsNullOrWhiteSpace($Profile)) {
+                        $enrichParams['Profile'] = $Profile
+                    }
                     $enrichRaw = Invoke-KpiAnalyticsScore @enrichParams
                     $enrich = Select-KpiScoreInvokeResult -Raw $enrichRaw
                     if ($null -ne $enrich -and $null -ne $enrich.Json) {
@@ -1014,13 +1317,14 @@ function Invoke-KpiAnalyticsScore {
 function Invoke-KpiAnalyticsScoreWithMapping {
     <#
     .SYNOPSIS
-        Score with mapping preflight: auto-load sibling profile; guided mapping on TTY when needed.
+        Score with mapping preflight: auto-load sibling mapping; guided mapping on TTY when needed.
     .DESCRIPTION
         1) Optional sibling <stem>_mapping.json next to the CSV.
         2) Dry-run score (JSON, redirected) to inspect mapping health.
         3) If problems and host is interactive → full score with --interactive-mapping (console TTY).
         4) If problems and host is non-interactive → fail with clear guidance (no hang).
         5) If clean → full score with redirects + JSON (unchanged automation-friendly path).
+        Optional -Profile is passed through to every score invoke as --profile (no merge in PS).
     #>
     [CmdletBinding()]
     param(
@@ -1031,12 +1335,18 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         [string]$OutputPath,
 
         [Parameter(Mandatory = $true)]
-        [string]$SummaryPath
+        [string]$SummaryPath,
+
+        [Parameter(Mandatory = $false)]
+        [string]$Profile
     )
 
     $mappingPath = Get-KpiSiblingMappingPath -CsvPath $CsvPath
     if (-not [string]::IsNullOrWhiteSpace($mappingPath)) {
         Write-Host ("  Using mapping profile: {0}" -f $mappingPath) -ForegroundColor DarkGray
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Profile)) {
+        Write-Host ("  Scoring profile: {0}" -f $Profile) -ForegroundColor DarkGray
     }
 
     Write-Host '  Mapping preflight (dry-run)...' -ForegroundColor DarkGray
@@ -1048,6 +1358,9 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     }
     if (-not [string]::IsNullOrWhiteSpace($mappingPath)) {
         $preParams['MappingPath'] = $mappingPath
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Profile)) {
+        $preParams['Profile'] = $Profile
     }
     $preflight = Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @preParams)
 
@@ -1087,6 +1400,9 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         }
         if (-not [string]::IsNullOrWhiteSpace($mappingPath)) {
             $runParams['MappingPath'] = $mappingPath
+        }
+        if (-not [string]::IsNullOrWhiteSpace($Profile)) {
+            $runParams['Profile'] = $Profile
         }
         return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @runParams))
     }
@@ -1150,6 +1466,9 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     }
     if (-not [string]::IsNullOrWhiteSpace($mappingPath)) {
         $guideParams['MappingPath'] = $mappingPath
+    }
+    if (-not [string]::IsNullOrWhiteSpace($Profile)) {
+        $guideParams['Profile'] = $Profile
     }
     return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @guideParams))
 }
@@ -1566,6 +1885,11 @@ function Invoke-KpiScoreExportMenu {
         Optional workbook open password for Excel exports (SecureString).
     .PARAMETER SkipPasswordPrompt
         When set with Excel export, do not prompt; use -Password as-is (may be $null).
+    .PARAMETER Profile
+        Optional scoring profile name or path for score --profile. When omitted on an
+        interactive host, prompts once per batch (package default = no --profile).
+    .PARAMETER SkipProfilePrompt
+        When set, do not prompt for a scoring profile (use -Profile as-is, may be empty).
     #>
     [CmdletBinding()]
     param(
@@ -1575,7 +1899,11 @@ function Invoke-KpiScoreExportMenu {
 
         [SecureString]$Password,
 
-        [switch]$SkipPasswordPrompt
+        [switch]$SkipPasswordPrompt,
+
+        [string]$Profile,
+
+        [switch]$SkipProfilePrompt
     )
 
     Write-Host ''
@@ -1626,6 +1954,19 @@ function Invoke-KpiScoreExportMenu {
     }
     Write-Host ''
 
+    # One scoring profile for the whole batch (composition only; no merge in PowerShell).
+    $resolvedProfile = $null
+    if ($PSBoundParameters.ContainsKey('Profile') -and -not [string]::IsNullOrWhiteSpace($Profile)) {
+        $resolvedProfile = $Profile.Trim()
+        Write-Host ("Scoring profile (provided): {0}" -f $resolvedProfile) -ForegroundColor Cyan
+    }
+    elseif ($SkipProfilePrompt) {
+        $resolvedProfile = $null
+    }
+    else {
+        $resolvedProfile = Select-KpiScoringProfile
+    }
+
     # Excel COM gate only when this action will export workbooks
     if (-not $ScoreOnly) {
         if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
@@ -1671,11 +2012,16 @@ function Invoke-KpiScoreExportMenu {
             }
 
             Write-Host '  Scoring (kpi-analytics)...' -ForegroundColor Cyan
+            $scoreMapParams = @{
+                CsvPath     = $csvPath
+                OutputPath  = $scoredCsvInfo.Path
+                SummaryPath = $summaryCsvInfo.Path
+            }
+            if (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
+                $scoreMapParams['Profile'] = $resolvedProfile
+            }
             $scoreResult = Select-KpiScoreInvokeResult -Raw (
-                Invoke-KpiAnalyticsScoreWithMapping `
-                    -CsvPath $csvPath `
-                    -OutputPath $scoredCsvInfo.Path `
-                    -SummaryPath $summaryCsvInfo.Path
+                Invoke-KpiAnalyticsScoreWithMapping @scoreMapParams
             )
 
             if ($null -eq $scoreResult -or $null -eq $scoreResult.PSObject.Properties['ExitCode']) {
@@ -1721,7 +2067,20 @@ function Invoke-KpiScoreExportMenu {
             if ($null -ne $scoreJson -and $scoreJson.PSObject.Properties.Name -contains 'RowCount') {
                 $rowNote = (" rows={0}" -f $scoreJson.RowCount)
             }
-            Write-Host ("  Score OK.{0}" -f $rowNote) -ForegroundColor Green
+            $profileNote = ''
+            if ($null -ne $scoreJson) {
+                $sjNames = @($scoreJson.PSObject.Properties.Name)
+                if ($sjNames -contains 'ProfileName' -and -not [string]::IsNullOrWhiteSpace([string]$scoreJson.ProfileName)) {
+                    $profileNote = (" profile={0}" -f $scoreJson.ProfileName)
+                }
+                elseif (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
+                    $profileNote = (" profile={0}" -f $resolvedProfile)
+                }
+            }
+            elseif (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
+                $profileNote = (" profile={0}" -f $resolvedProfile)
+            }
+            Write-Host ("  Score OK.{0}{1}" -f $rowNote, $profileNote) -ForegroundColor Green
 
             # H2: surface partial ranks; require confirm before keeping / Excel export.
             $rankIsFull = Test-KpiScoreRankIsFull -ScoreJson $scoreJson
@@ -2232,6 +2591,7 @@ function Invoke-AdvancedMenu {
         Write-Host '  4) Show environment / policy info'
         Write-Host '  5) Schema: show source, preview, change JSON/CSV'
         Write-Host '  6) Diagnostics (readiness / self-test)'
+        Write-Host '  7) Scoring profiles (list / CLI help)'
         Write-Host '  0) Back to main menu'
         Write-Host '================================================' -ForegroundColor Cyan
         Write-Host ''
@@ -2307,6 +2667,15 @@ function Invoke-AdvancedMenu {
                     Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
                     Wait-ForEnter
                 }
+            }
+            '7' {
+                try {
+                    Show-KpiScoringProfilesHelp
+                }
+                catch {
+                    Write-Host ("Error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+                }
+                Wait-ForEnter
             }
             '0' {
                 $inAdvanced = $false

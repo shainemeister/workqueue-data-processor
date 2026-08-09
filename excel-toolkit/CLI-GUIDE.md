@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.8.1"
+version: "1.9.0"
 status: current
 audience:
   - developers
@@ -11,14 +11,14 @@ related:
   - README.md
   - ENTERPRISE-SECURITY.md
   - diagnostics/README.md
-last_updated: "2026-07-25"
+last_updated: "2026-08-09"
 ---
 
 # Excel Toolkit — CLI Reference
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.8.1 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.9.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -79,7 +79,7 @@ ExcelToolkit.ps1 (CLI)  →  ExcelToolkit.psm1  →  ExcelCom.psm1
 |--------|-----------------|
 | Another **PowerShell** script (same process) | `Import-Module .\ExcelToolkit.psm1` and call `Export-ExcelFromCsv` / `Get-ExcelToolkitVersion` |
 | **Python**, cmd, Task Scheduler, CI | **CLI** (`ExcelToolkit.ps1` or `excel-toolkit.cmd`) |
-| Interactive user | `Start-ExcelMenu.cmd` — **Process my data** lists `import\` CSV/Excel; multi-select accepts `1`, `1,2`, `1-3`, `1,3-5,8`, or a full path; score path runs mapping preflight + guided column mapping when headers need attention; optional workbook password on Excel export |
+| Interactive user | `Start-ExcelMenu.cmd` — **Process my data** lists `import\` CSV/Excel; multi-select accepts `1`, `1,2`, `1-3`, `1,3-5,8`, or a full path; Full pipeline / Score only pick an optional **scoring profile** (subprocess `score --profile`); score path runs mapping preflight + guided column mapping when headers need attention; optional workbook password on Excel export. Advanced → scoring profiles list/help. CLI verbs unchanged. |
 
 The CLI is a thin wrapper around the same module functions. It does not replace `Import-Module` for in-process PowerShell work.
 
@@ -621,7 +621,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.8.1** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.9.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.9.0 notes:** interactive `Start-ExcelMenu` Full pipeline / Score only offer a **scoring profile** picker (package default = omit `--profile`; listed POI presets or typed name/path). Choice is applied once per batch and passed to every `kpi-analytics.cmd score` invoke (preflight dry-run, full score, guided mapping, rank-enrich dry-run). Advanced tools → **Scoring profiles (list / CLI help)** runs `profile-list` only. No new Excel CLI verbs; no scoring math in PowerShell. See [README.md](./README.md) and [kpi-analytics CLI — Scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
 
 **1.8.0 notes:** after score, partial ranks (`RankCompleteness` ≠ full) show a banner and require confirm to keep CSVs / export Excel.
 
