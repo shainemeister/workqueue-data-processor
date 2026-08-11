@@ -13,6 +13,21 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.14.0] - 2026-08-10
+
+#### Changed
+
+- Upgraded repo-kit baseline to **2.3.1** (Operator enforcement, Instructed-by cascade, AI docs workspace policy, Agent Instruct)
+  - Merged domain modules / UPGRADE / MARKDOWN-STANDARD / templates into project `kit/`
+  - Adopted **Agent Instruct** (`kit/agents/`); root `PLAN.md` owns Agent models; generated packs under `kit/agents/generated/`
+  - Scaffolded AI docs workspace (`docs/README.md`, `research/`, `plan/`, `project_build/`, `resources/`) without clobbering product `docs/PLAN.md`, FILE-CATALOG, or concept doc
+  - Product authority map, language inventory, and certification verify commands preserved
+- **Plan dual-surface compliance** ([kit/RULES.md](./kit/RULES.md) / [ai-docs-workspace](./kit/rules/ai-docs-workspace.md))
+  - Root `PLAN.md` **1.1.0**: mission, stages, non-goals, plan map, stage gates + Agent models
+  - `docs/PLAN.md` **0.5.0**: product backlog only; links freezes under `docs/plan/`
+  - Execution plans: Cluster 2 / Cluster 3 / B1.1-retune checklists; repo-kit upgrade note marked complete
+  - `docs/README.md` + `docs/resources/` curated plan map; FILE-CATALOG **1.10.1**
+
 ### [1.13.0] - 2026-08-09
 
 #### Added

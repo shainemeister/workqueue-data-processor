@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.9.0"
+version: "1.10.1"
 status: current
 audience:
   - developers
@@ -11,28 +11,30 @@ doc_type: other
 related:
   - ../README.md
   - ../CHANGELOG.md
+  - ../PLAN.md
   - ../kit/MARKDOWN-STANDARD.md
   - ../kit/RULES.md
   - ../LICENSE
   - ../certification/README.md
   - PLAN.md
-last_updated: "2026-07-30"
+  - README.md
+last_updated: "2026-08-10"
 ---
 
 # File Catalog
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.9.0  
-**Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards + `docs/`  
+**Document version:** 1.10.1  
+**Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
-**Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [PLAN.md](./PLAN.md)
+**Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
 
 ---
 
 ## Summary
 
-This repository holds a **Work Queue (WQ) data contract** under **`wq_schema/`**, two local toolkits (**excel-toolkit**: PowerShell 5.1 + Excel COM; **kpi-analytics**: Python 3.13 stdlib only), standards under **`kit/`**, and maintainer/design docs under **`docs/`**.
+This repository holds a **Work Queue (WQ) data contract** under **`wq_schema/`**, two local toolkits (**excel-toolkit**: PowerShell 5.1 + Excel COM; **kpi-analytics**: Python 3.13 stdlib only), standards under **`kit/`** (including Agent Instruct), and an AI docs workspace plus maintainer design docs under **`docs/`**.
 
 Each row below states **what the file is for** in one sentence. Runtime contracts live in toolkit READMEs and CLI guides; this catalog does not restate flags or formulas.
 
@@ -43,8 +45,10 @@ Each row below states **what the file is for** in one sentence. Runtime contract
 | KPI score / generate / validate / diagnostics | `kpi-analytics\kpi-analytics.cmd` |
 | Markdown conventions | [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) |
 | Maintenance policy | [kit/RULES.md](../kit/RULES.md) |
+| Agent Instruct | [kit/agents/OPS.md](../kit/agents/OPS.md) · root [PLAN.md](../PLAN.md) |
 | Project history | [CHANGELOG.md](../CHANGELOG.md) |
-| Living development plan | [PLAN.md](./PLAN.md) |
+| Product enhancement plan | [PLAN.md](./PLAN.md) |
+| AI docs workspace index | [README.md](./README.md) |
 
 Generated artifacts under `output\` and Python `__pycache__\` are intentionally **not** cataloged as source.
 
@@ -56,8 +60,8 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 2. [Repository layout](#repository-layout)
 3. [Root](#root)
 4. [wq_schema](#wq_schema)
-5. [docs](#docs)
-6. [kit](#kit)
+5. [docs](#docs) (AI workspace + design inventory)
+6. [kit](#kit) (includes agents)
 7. [import](#import)
 8. [excel-toolkit](#excel-toolkit)
 9. [excel-toolkit/sample-test](#excel-toolkitsample-test)
@@ -76,11 +80,11 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 
 ```text
 workqueue-data-processor/
-  README.md, CHANGELOG.md, LICENSE, .gitignore
+  README.md, CHANGELOG.md, LICENSE, .gitignore, PLAN.md
   Start-ExcelMenu.cmd
   wq_schema/              # shared WQ data contract (schema + sample)
-  docs/                   # maintainer inventory, plan, design concepts
-  kit/                    # repo-kit standards (RULES hub, rules modules, templates, UPGRADE)
+  docs/                   # AI workspace + product PLAN, FILE-CATALOG, concept
+  kit/                    # repo-kit standards (RULES, rules, agents, templates, UPGRADE)
   import/                 # tracked synthetic / non-PHI inputs only
   excel-toolkit/          # PowerShell Excel COM toolkit
   kpi-analytics/          # Python KPI + priority scoring
@@ -97,6 +101,7 @@ workqueue-data-processor/
 | [README.md](../README.md) | doc | Repository overview: WQ two-file data model, toolkit map, and synthetic → score → Excel flow. |
 | [LICENSE](../LICENSE) | legal | MIT license for this repository. |
 | [CHANGELOG.md](../CHANGELOG.md) | doc | Project history (Keep a Changelog); required by repo-kit. Kit version lives in kit/RULES kit baseline only. |
+| [PLAN.md](../PLAN.md) | doc | Project control surface: mission, stages, non-goals + **Agent models** (Agent Instruct). Product backlog under `docs/PLAN.md`; freezes under `docs/plan/`. |
 | [Start-ExcelMenu.cmd](../Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
 | [.gitignore](../.gitignore) | config | Excludes `output\`, local numbered `import\` copies, mapping profiles, package diagnostics certs, formal `certification/last_certification.*` + logs, Python caches, env dirs, editor noise. |
 
@@ -116,34 +121,49 @@ Shared **data contract** for both toolkits (not package-local). Product defaults
 
 ## docs
 
-Maintainer and design documentation (not end-user product entry points).
+AI resource workspace plus maintainer/design documentation (not end-user product entry points). Policy: [kit/rules/ai-docs-workspace.md](../kit/rules/ai-docs-workspace.md).
 
 | Path | Type | Summary |
 |------|------|---------|
+| [README.md](./README.md) | doc | AI docs workspace index: dual PLAN map, modules, plan index. |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
-| [PLAN.md](./PLAN.md) | doc | Living post-V1 plan (0.3.0): Cluster 1 CLI shipped (kpi 2.6.0); residual menu profile picker + optional base retune; Clusters 2–3 multi-file / analysis still developing. |
+| [PLAN.md](./PLAN.md) | doc | Living product post-V1 backlog (0.5.0): Cluster 1 complete; freezes link to `docs/plan/`; Agent models in root PLAN only. |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
+| [research/README.md](./research/README.md) | doc | Scaffold: investigations and spikes. |
+| [plan/README.md](./plan/README.md) | doc | Execution plans index (kit dual surface). |
+| [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | doc | Completed execution record for repo-kit 2.3.1 upgrade. |
+| [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 design-freeze checklist (developing). |
+| [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) | doc | Cluster 3 design-freeze checklist (developing; V2 boundary). |
+| [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) | doc | Optional B1.1 base-weight retune checklist (pending). |
+| [project_build/README.md](./project_build/README.md) | doc | Scaffold: implementation build notes. |
+| [resources/README.md](./resources/README.md) | doc | Curated in-repo and external pointers for AI/maintainers. |
 
 ---
 
 ## kit
 
-Standards from [repo-kit](https://github.com/shainemeister/repo-kit) **2.0.1** (project-filled). Product code stays outside this tree.
+Standards from [repo-kit](https://github.com/shainemeister/repo-kit) **2.3.1** (project-filled). Product code stays outside this tree.
 
 | Path | Type | Summary |
 |------|------|---------|
-| [RULES.md](../kit/RULES.md) | doc | Maintenance hub: authority map, kit baseline (**2.0.1**), Must/Must not, domain module index |
-| [UPGRADE.md](../kit/UPGRADE.md) | doc | Durable upgrade procedure and 1.x → 2.x layout migration |
+| [RULES.md](../kit/RULES.md) | doc | Maintenance hub: authority map, kit baseline (**2.3.1**), Operator enforcement, Must/Must not, domain module index |
+| [UPGRADE.md](../kit/UPGRADE.md) | doc | Durable upgrade procedure, 1.x → 2.x layout migration, Agent Instruct preserve/regen |
 | [MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) | doc | Markdown structure, frontmatter, platform-aware examples, author checklist |
 | [rules/hygiene.md](../kit/rules/hygiene.md) | doc | Packaging: standards under `kit/`; product outside |
 | [rules/authoring-and-style.md](../kit/rules/authoring-and-style.md) | doc | Docs rules; pylint; PowerShell style gates |
 | [rules/architecture.md](../kit/rules/architecture.md) | doc | Runtime separation, entry points, composition |
 | [rules/contracts.md](../kit/rules/contracts.md) | doc | Contract ownership, co-updates, data/schema rules |
 | [rules/security.md](../kit/rules/security.md) | doc | Inventory, SAST, certification renewal enforcement |
-| [rules/versioning-and-git.md](../kit/rules/versioning-and-git.md) | doc | Version surfaces, CHANGELOG, commits, AI disclosure |
+| [rules/versioning-and-git.md](../kit/rules/versioning-and-git.md) | doc | Version surfaces, CHANGELOG, commits, AI disclosure (Instructed-by cascade) |
 | [rules/verification-and-ops.md](../kit/rules/verification-and-ops.md) | doc | Verification table, completion, checklist, anti-patterns |
+| [rules/ai-docs-workspace.md](../kit/rules/ai-docs-workspace.md) | doc | Root `docs/` AI resource workspace policy |
+| [agents/README.md](../kit/agents/README.md) | doc | Agent Instruct index (packs as views over L4) |
+| [agents/OPS.md](../kit/agents/OPS.md) | doc | Utilization order of operations (O3) when Instruct is in use |
+| [agents/BUILD.md](../kit/agents/BUILD.md) | doc | Emit/regen procedure for generated packs |
+| [agents/PLAN-HOOK.md](../kit/agents/PLAN-HOOK.md) | doc | PLAN Agent models control-surface contract |
+| [agents/generated/](../kit/agents/generated/) | pack | Thin project-filled expert packs (maintainer, implementer, docs-author, security, plan-author, reviewer) |
 | [configs/pylintrc](../kit/configs/pylintrc) | config | Kit starter pylint config (product gate uses `kpi-analytics/.pylintrc`) |
-| [templates/](../kit/templates/) | template | Document skeletons (README, CLI, methodology, security, certification, concept, generic) |
+| [templates/](../kit/templates/) | template | Document skeletons (README, CLI, methodology, security, certification, concept, generic, docs workspace) |
 
 ---
 
@@ -340,6 +360,8 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.1 | Plan dual-surface compliance: docs/plan freezes (cluster 2/3, B1.1, upgrade complete); root PLAN stages; docs/PLAN 0.5.0; resources index |
+| 1.10.0 | repo-kit **2.3.1**: root PLAN + agents + ai-docs-workspace; docs workspace modules; baseline/catalog refresh |
 | 1.9.0 | kpi-analytics 2.6.0: `profiles.py`, shipped `profiles/poi_*.json` focus presets; CLI profile verbs; PLAN blurb updated for 0.3.0 backlog status |
 | 1.8.6 | Data contract moved to `wq_schema/` (`wq_schema.json`, `wq_schema.csv`, `wq_data.csv`); root no longer holds schema/sample CSVs |
 | 1.8.5 | Root cleanup: `PLAN.md`, `FILE-CATALOG.md`, and concept doc under `docs/`; root keeps data contract + entry shim only among product docs |

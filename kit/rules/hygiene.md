@@ -1,7 +1,7 @@
 ---
 title: Root Hygiene
 description: Unified packaging—standards under kit/, repository-specific data outside; SETUP and UPGRADE lifecycles.
-version: "1.1.2"
+version: "1.3.0"
 status: current
 audience:
   - developers
@@ -11,29 +11,32 @@ related:
   - ../RULES.md
   - ../SETUP.md
   - ../UPGRADE.md
-  - ../../CHANGELOG.md
+  - ../CHANGELOG.md
+  - ../agents/README.md
+  - ./ai-docs-workspace.md
   - ../../README.md
-last_updated: "2026-07-30"
+last_updated: "2026-08-10"
 ---
 
 # Root Hygiene
 
-Keep the repository root **scannable**: entry points and project-specific surfaces first; **standards under `kit/`**; product code in purpose directories outside `kit/`.
+Keep the repository root **scannable**: entry points and project-specific surfaces first; **standards under `kit/`**; product code and AI workspace in purpose directories outside `kit/`.
 
-**Document version:** 1.1.2  
+**Document version:** 1.3.0  
 
-**Related:** [RULES.md](../RULES.md) · [UPGRADE.md](../UPGRADE.md) · [CHANGELOG.md](../../CHANGELOG.md) · [README.md](../../README.md)
+**Related:** [RULES.md](../RULES.md) · [SETUP.md](../SETUP.md) · [UPGRADE.md](../UPGRADE.md) · [CHANGELOG.md](../CHANGELOG.md) · [agents/README.md](../agents/README.md) · [ai-docs-workspace.md](./ai-docs-workspace.md) · [README.md](../../README.md)
 
 ---
 
 ## Summary
 
-**Unified packaging:** this kit repository and **adopting product repositories** both keep standards under `kit/`. Repository-specific data (product code, project CHANGELOG, PLAN) stays **outside** `kit/`.
+**Unified packaging:** this kit repository and **adopting product repositories** both keep standards under `kit/`. Repository-specific data (product code, project CHANGELOG, PLAN, **`docs/` AI workspace**) stays **outside** `kit/`.
 
 | Must | Must not |
 |------|----------|
 | Keep adopted standards under `kit/` | Dump RULES / MARKDOWN-STANDARD / rules modules onto product root as the default |
 | Keep product code outside `kit/` | Put packages, services, or app source under `kit/` |
+| Keep AI resource workspace at root **`docs/`** when used ([ai-docs-workspace](./ai-docs-workspace.md)) | Put project research/build notes under `kit/` or as root-file sprawl |
 | Prefer purpose directories over extra root files | Accumulate ephemeral SETUP after initiation |
 | Update the authority map when listed paths change | Force-add regenerable artifacts |
 | Keep UPGRADE durable (or re-fetch from Kit source) | Mix kit release history into project CHANGELOG |
@@ -59,7 +62,7 @@ Keep the repository root **scannable**: entry points and project-specific surfac
 | Context | Standards | Repository-specific |
 |---------|-----------|---------------------|
 | **This repository (repo-kit)** | Entire payload under [`kit/`](../) | Root README (kit landing), LICENSE, `.gitignore`; kit history in `kit/CHANGELOG.md` under `## repo-kit` |
-| **Adopting product repo** | Same: standards under **`kit/`** (copy/merge from upstream `kit/`, or link/submodule) | Root product README, **project** `CHANGELOG.md`, optional `PLAN.md`, packages/src, certification |
+| **Adopting product repo** | Same: standards under **`kit/`** (copy/merge from upstream `kit/`, or link/submodule) | Root product README, **project** `CHANGELOG.md`, optional `PLAN.md`, optional/dynamic **`docs/`**, packages/src, certification |
 
 **Default for new implementations:** `kit/RULES.md` (filled hub) + `kit/rules/*` — not root-level `RULES.md`.
 
@@ -75,18 +78,12 @@ Keep the repository root **scannable**: entry points and project-specific surfac
 | `LICENSE` | License |
 | `.gitignore` | Ignore rules |
 | `CHANGELOG.md` | **Project** history (**required**) — repository H2 → version H3 → categories; **not** kit release notes |
-| `Start-ExcelMenu.cmd` | Natural top-level entry shim |
-| Data contract files | `wq_schema/` (`wq_schema.json`, `wq_schema.csv`, `wq_data.csv`) |
+| `PLAN.md` | Project plan control surface. **Required when using Agent Instruct** (Agent models section). Product backlog detail: `docs/PLAN.md` |
+| `docs/` | **AI resource workspace** + maintainer design docs (outside `kit/`) — see [ai-docs-workspace](./ai-docs-workspace.md) |
+| `Start-ExcelMenu.cmd` | Natural top-level entry shim → `excel-toolkit\` |
+| Data contract | `wq_schema/` (`wq_schema.json`, `wq_schema.csv`, `wq_data.csv`) |
 | Package or product entry files | Only when they are the natural top-level surface |
-| `.pylintrc` | Optional Python style gate (this repo: package-local `kpi-analytics/.pylintrc`) |
-
-**This repository** keeps maintainer/design docs under **`docs/`** (not root):
-
-| Path | Role |
-|------|------|
-| `docs/PLAN.md` | Living product plan |
-| `docs/FILE-CATALOG.md` | Path-level inventory |
-| `docs/WQ_Priority_Matrix_Concept.md` | Priority design concept (V1–V3) |
+| `.pylintrc` | Optional; this repo uses package-local `kpi-analytics/.pylintrc` |
 
 ---
 
@@ -102,6 +99,7 @@ Keep the repository root **scannable**: entry points and project-specific surfac
 | `configs/` | Optional local style configs (e.g. pylintrc) |
 | `templates/` | Optional local document skeletons |
 | `examples/` | Optional reference only (usually not required in product repos) |
+| `agents/` | Agent Instruct law, templates, examples; project-filled packs under `agents/generated/` (views, not product code) |
 
 **Do not** treat upstream kit `CHANGELOG.md` as the product’s project history. Read Kit source `kit/CHANGELOG.md` under `## repo-kit` when upgrading.
 
@@ -112,15 +110,16 @@ Keep the repository root **scannable**: entry points and project-specific surfac
 | Concern | Preferred home |
 |---------|----------------|
 | Product packages / services | `excel-toolkit/`, `kpi-analytics/` (**outside** `kit/`) |
-| Package-level contracts (CLI, SECURITY, methodology) | Inside the package |
+| Package-level contracts (CLI, SECURITY, methodology) | Inside each toolkit (`CLI-GUIDE.md`, `ENTERPRISE-SECURITY.md`, `SCORE-METHODOLOGY.md`, …) |
+| Shared WQ data contract | `wq_schema/` |
 | Formal security + code-validation certificates | `certification/` at repo root; regenerable outputs gitignored — **not** package diagnostics |
-| Maintainer / design docs (this repo) | `docs/` (PLAN, FILE-CATALOG, concept) |
-| Tracked demo inputs | `import/` |
-| Regenerable output | `output/` — never committed |
+| Package diagnostics (machine readiness) | `kpi-analytics/diagnostics/`, `excel-toolkit/diagnostics/` |
+| AI research / detailed plans / build notes | Root **`docs/`** modules (`research/`, `plan/`, `project_build/`, `resources/`) |
+| Product backlog plan | `docs/PLAN.md` (complements root `PLAN.md` Agent models) |
+| Path inventory / design concepts | `docs/FILE-CATALOG.md`, `docs/WQ_Priority_Matrix_Concept.md` |
+| Regenerable score/export output | `output\` (never committed) |
 | Style configs | Package-local (e.g. `kpi-analytics/.pylintrc`) or `kit/configs/` starter |
-| Ephemeral adoption guide | Do not re-add `SETUP.md` after initiation |
-| Scripts / helpers | `scripts/` or `tooling/` (keep minimal) |
-| CI workflows | `.github/` (or equivalent) |
+| CI workflows | `.github/` (or equivalent) if added |
 
 ---
 
@@ -129,9 +128,10 @@ Keep the repository root **scannable**: entry points and project-specific surfac
 1. **Do not** put product code under `kit/`.  
 2. **Do not** put kit release history into project root `CHANGELOG.md`.  
 3. **Do not** use the project root as a dump of all standards files; keep standards under `kit/`.  
-4. Authority map lists **owners**: standards paths under `kit/`, product paths outside (e.g. `packages/my-service/CLI-GUIDE.md`).  
-5. Relative links from files under `kit/` to root or product use `../` (e.g. `../README.md`, `../CHANGELOG.md`, `../packages/…`).  
-6. Existing 1.x adoptions may gradually move root-level standards into `kit/`; greenfield **must** use this layout — see [UPGRADE.md](../UPGRADE.md).
+4. **Do not** put project AI research or build notes under `kit/`; use root `docs/` ([ai-docs-workspace](./ai-docs-workspace.md)).  
+5. Authority map lists **owners**: standards paths under `kit/`, product and `docs/` paths outside (e.g. `packages/my-service/CLI-GUIDE.md`, `docs/plan/…`).  
+6. Relative links from files under `kit/` to root or product use `../` (e.g. `../README.md`, `../CHANGELOG.md`, `../docs/…`, `../packages/…`).  
+7. Existing 1.x adoptions may gradually move root-level standards into `kit/`; greenfield **must** use this layout — see [UPGRADE.md](../UPGRADE.md).
 
 ---
 
@@ -161,7 +161,7 @@ First adopt: [SETUP.md](../SETUP.md). Later kit bumps: [UPGRADE.md](../UPGRADE.m
 
 | Version | Notes |
 |---------|--------|
-| 1.1.2 | Project fill: maintainer docs under `docs/`; root keeps data contract + entry shim |
-| 1.1.1 | Project fill: FILE-CATALOG, Start-ExcelMenu, data contract, toolkit paths |
+| 1.3.0 | Root `docs/` AI workspace outside kit; separation rules (kit 2.3.0) |
+| 1.2.0 | Agent Instruct: `kit/agents/`; PLAN required when using agents; generated packs are project-filled views under `kit/` |
 | 1.1.0 | Unified packaging: adopters keep standards under `kit/`; product and project CHANGELOG outside; remove “flatten to root” default |
 | 1.0.0 | Extracted from RULES 1.4.1 for kit 2.0; dual layout (later superseded) |

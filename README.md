@@ -140,10 +140,14 @@ Policy and inventory (not required for day-to-day scoring or export):
 
 | Document | Purpose |
 |----------|---------|
-| [kit/RULES.md](./kit/RULES.md) | Maintenance policy hub; **kit baseline** (adopted repo-kit version lives only there); domain modules under `kit/rules/` |
+| [kit/RULES.md](./kit/RULES.md) | Maintenance policy hub; **kit baseline** (adopted repo-kit version lives only there); Operator enforcement; domain modules under `kit/rules/` |
 | [kit/UPGRADE.md](./kit/UPGRADE.md) | Durable repo-kit upgrade / 1.x→2.x migration guide |
+| [PLAN.md](./PLAN.md) | Project control surface: mission, stages, **Agent models** (Agent Instruct) |
+| [kit/agents/](./kit/agents/) | Agent Instruct (OPS, BUILD, generated packs) — views over L4 law |
 | [CHANGELOG.md](./CHANGELOG.md) | Project history (Keep a Changelog); kit upgrades get a short note only—not kit release history |
-| [docs/PLAN.md](./docs/PLAN.md) | Post-V1 product roadmap; **Cluster 1** (config presets / profiles) design-frozen for implementation |
+| [docs/PLAN.md](./docs/PLAN.md) | Post-V1 product enhancement backlog (Clusters 1–3) |
+| [docs/plan/](./docs/plan/) | Execution / design-freeze plans (Cluster 2–3, B1.1, kit upgrade) |
+| [docs/README.md](./docs/README.md) | AI docs workspace index (`research/`, `plan/`, `project_build/`, `resources/`) |
 | [LICENSE](./LICENSE) | MIT license |
 | [docs/FILE-CATALOG.md](./docs/FILE-CATALOG.md) | Purpose of every intentional source file |
 | [kit/MARKDOWN-STANDARD.md](./kit/MARKDOWN-STANDARD.md) | How we structure documentation |
