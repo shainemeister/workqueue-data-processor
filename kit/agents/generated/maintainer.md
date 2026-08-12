@@ -45,11 +45,7 @@ verify:
 compose_with:
   - security
   - docs-author
-# BUILD fills: workqueue-data-processor, - Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+# BUILD fills: workqueue-data-processor
 ---
 
 # Maintainer
@@ -69,11 +65,12 @@ compose_with:
 - Rewrite published shared history without coordination.
 - Claim complete when a declared Domain A/B gate for the change was skipped or failed.
 - Treat external citations as overriding project versioning law.
-- Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+- Do not add pip packages to kpi-analytics product code.
+- Do not implement priority/KPI math in PowerShell product code.
+- Do not call Excel COM from Python product code.
+- Do not commit real PHI or regenerable cert/diagnostics/output artifacts.
+- Do not force-kill Excel or permanently change ExecutionPolicy.
+- Do not start Cluster 2/3 product code until design freeze in docs/plan/.
 
 ## Expertise map
 

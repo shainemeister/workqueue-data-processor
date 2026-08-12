@@ -46,11 +46,7 @@ verify:
 compose_with:
   - maintainer
   - implementer
-# BUILD fills: workqueue-data-processor, Bandit on kpi_modules; PSScriptAnalyzer Error on excel-toolkit product scripts; Gitleaks workdir+git history (via full certification harness), - Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+# BUILD fills: workqueue-data-processor
 ---
 
 # Security
@@ -70,11 +66,12 @@ compose_with:
 - Treat certification as a product launcher gate unless project policy says so.
 - Own pure Domain B style work unless PLAN emphasizes security (defer to implementer).
 - Treat OWASP or other external citations as overriding project security.md.
-- Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+- Do not add pip packages to kpi-analytics product code.
+- Do not implement priority/KPI math in PowerShell product code.
+- Do not call Excel COM from Python product code.
+- Do not commit real PHI or regenerable cert/diagnostics/output artifacts.
+- Do not force-kill Excel or permanently change ExecutionPolicy.
+- Do not start Cluster 2/3 product code until design freeze in docs/plan/.
 
 ## Expertise map
 
@@ -86,6 +83,9 @@ compose_with:
 - `kit/agents/OPS.md` — utilization O3
 - `.gitignore` — secrets and cert outputs
 - Product `SECURITY.md` when present (map path)
+- `certification/README.md` — formal Domain A/B harness
+- `kpi-analytics/ENTERPRISE-SECURITY.md` — KPI trust boundary
+- `excel-toolkit/ENTERPRISE-SECURITY.md` — Excel trust boundary
 
 ### External (citations — guidance only)
 
@@ -105,6 +105,3 @@ compose_with:
 ## Open for law
 
 See authority_paths and Expertise map — do not restate full modules here.
-  - certification/README.md
-  - kpi-analytics/ENTERPRISE-SECURITY.md
-  - excel-toolkit/ENTERPRISE-SECURITY.md

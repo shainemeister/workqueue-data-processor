@@ -182,7 +182,7 @@ Canonical detail: [kit/rules/architecture.md](./kit/rules/architecture.md) · to
 
 ### Last generated
 
-- 2026-08-10 (repo-kit 2.3.1 first Instruct adopt)
+- 2026-08-12 (pack YAML repair; PLAN must_not_extra including Cluster 2/3 freeze)
 
 ---
 

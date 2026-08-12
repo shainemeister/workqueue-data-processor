@@ -46,11 +46,7 @@ verify:
   - multi-step execution detail in docs/plan/ when used (not only chat)
 compose_with:
   - docs-author
-# BUILD fills: workqueue-data-processor, - Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+# BUILD fills: workqueue-data-processor
 ---
 
 # PLAN author
@@ -69,11 +65,12 @@ compose_with:
 - Duplicate full kit Instruct docs inside PLAN.
 - Require Agent models for bare kit adopt (no Instruct).
 - Move Agent models exclusively under `docs/` (control surface stays PLAN.md).
-- Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+- Do not add pip packages to kpi-analytics product code.
+- Do not implement priority/KPI math in PowerShell product code.
+- Do not call Excel COM from Python product code.
+- Do not commit real PHI or regenerable cert/diagnostics/output artifacts.
+- Do not force-kill Excel or permanently change ExecutionPolicy.
+- Do not start Cluster 2/3 product code until design freeze in docs/plan/.
 
 ## Expertise map
 

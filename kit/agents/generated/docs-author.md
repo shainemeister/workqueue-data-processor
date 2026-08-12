@@ -46,11 +46,7 @@ verify:
 compose_with:
   - maintainer
   - plan-author
-# BUILD fills: workqueue-data-processor, - Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+# BUILD fills: workqueue-data-processor
 ---
 
 # Docs author
@@ -70,11 +66,12 @@ compose_with:
 - Create a second canonical home for the same contract.
 - Claim complete when a declared Domain A/B gate for the change was skipped or failed.
 - Treat `docs/` as the only home for public CLI/API/SECURITY contracts.
-- Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+- Do not add pip packages to kpi-analytics product code.
+- Do not implement priority/KPI math in PowerShell product code.
+- Do not call Excel COM from Python product code.
+- Do not commit real PHI or regenerable cert/diagnostics/output artifacts.
+- Do not force-kill Excel or permanently change ExecutionPolicy.
+- Do not start Cluster 2/3 product code until design freeze in docs/plan/.
 
 ## Expertise map
 
@@ -87,6 +84,9 @@ compose_with:
 - `kit/templates/` — document skeletons (including `templates/docs/`)
 - `kit/agents/OPS.md` — utilization when Instruct is in use
 - `docs/` — AI workspace when used
+- `docs/FILE-CATALOG.md` — path inventory
+- `kpi-analytics/README.md` — KPI product landing
+- `excel-toolkit/README.md` — Excel product landing
 
 ### External (citations — guidance only)
 
@@ -105,6 +105,3 @@ compose_with:
 ## Open for law
 
 See authority_paths and Expertise map — do not restate full modules here.
-  - docs/FILE-CATALOG.md
-  - kpi-analytics/README.md
-  - excel-toolkit/README.md

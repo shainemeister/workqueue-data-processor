@@ -45,16 +45,12 @@ references:
 verify:
   - declared Domain A/B gates for touched languages (from inventory)
   - contracts updated if behavior changed
-  - ".\certification\Invoke-Certification.ps1 (full suite; OverallPass); kpi-analytics validate-score / probe as needed; excel-toolkit probe/diagnostics as needed"
+  - '.\certification\Invoke-Certification.ps1 (full suite; OverallPass); kpi-analytics validate-score / probe as needed; excel-toolkit probe/diagnostics as needed'
 compose_with:
   - reviewer
   - docs-author
   - security
-# BUILD fills: workqueue-data-processor, .\certification\Invoke-Certification.ps1 (full suite; OverallPass); kpi-analytics validate-score / probe as needed; excel-toolkit probe/diagnostics as needed, - Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+# BUILD fills: workqueue-data-processor
 ---
 
 # Implementer
@@ -75,11 +71,12 @@ compose_with:
 - Claim complete when a declared gate failed or was skipped.
 - Skip primary-pack match when Instruct is in use.
 - Leave public contract changes only under `docs/` without promoting to L4.
-- Do not add pip packages to kpi-analytics product code
-- Do not implement priority/KPI math in PowerShell product code
-- Do not call Excel COM from Python product code
-- Do not commit real PHI or regenerable cert/diagnostics/output artifacts
-- Do not force-kill Excel or permanently change ExecutionPolicy
+- Do not add pip packages to kpi-analytics product code.
+- Do not implement priority/KPI math in PowerShell product code.
+- Do not call Excel COM from Python product code.
+- Do not commit real PHI or regenerable cert/diagnostics/output artifacts.
+- Do not force-kill Excel or permanently change ExecutionPolicy.
+- Do not start Cluster 2/3 product code until design freeze in docs/plan/.
 
 ## Expertise map
 
@@ -94,6 +91,9 @@ compose_with:
 - `kit/agents/OPS.md` — order of operations + lifecycle
 - `docs/project_build/` — build context when used
 - `PLAN.md` — mission, non-goals, Agent models
+- `kpi-analytics/CLI-GUIDE.md` — KPI CLI contract
+- `kpi-analytics/SCORE-METHODOLOGY.md` — score / kpi_q implementation
+- `excel-toolkit/CLI-GUIDE.md` — Excel CLI contract
 
 ### External (citations — guidance only)
 
@@ -114,7 +114,3 @@ compose_with:
 ## Open for law
 
 See authority_paths and Expertise map — do not restate full modules here.
-  - kpi-analytics/CLI-GUIDE.md
-  - kpi-analytics/SCORE-METHODOLOGY.md
-  - excel-toolkit/CLI-GUIDE.md
-  - kit/rules/architecture.md
