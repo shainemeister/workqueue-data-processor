@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.1"
+version: "1.10.2"
 status: current
 audience:
   - developers
@@ -18,14 +18,14 @@ related:
   - ../certification/README.md
   - PLAN.md
   - README.md
-last_updated: "2026-08-10"
+last_updated: "2026-08-12"
 ---
 
 # File Catalog
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.1  
+**Document version:** 1.10.2  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -129,7 +129,8 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
 | [PLAN.md](./PLAN.md) | doc | Living product post-V1 backlog (0.5.0): Cluster 1 complete; freezes link to `docs/plan/`; Agent models in root PLAN only. |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
-| [research/README.md](./research/README.md) | doc | Scaffold: investigations and spikes. |
+| [research/README.md](./research/README.md) | doc | Research index: investigations and spikes. |
+| [research/2026-08-12-rules-compliance-gaps.md](./research/2026-08-12-rules-compliance-gaps.md) | doc | RULES.md gap audit; P1 + local P2 applied 2026-08-12 (see CHANGELOG 1.14.1). |
 | [plan/README.md](./plan/README.md) | doc | Execution plans index (kit dual surface). |
 | [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | doc | Completed execution record for repo-kit 2.3.1 upgrade. |
 | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 design-freeze checklist (developing). |
@@ -234,7 +235,7 @@ Minimal probes for locked-down corporate PCs: can `.cmd`, `.ps1`, and `.psm1` ex
 | [ENTERPRISE-SECURITY.md](../kpi-analytics/ENTERPRISE-SECURITY.md) | doc | Offline stdlib-only trust model; no Office automation, network, or third-party deps. |
 | [SCORE-METHODOLOGY.md](../kpi-analytics/SCORE-METHODOLOGY.md) | doc | Implementation methodology: V1 priority columns, `kpi_q_*` impacts, and summary CSV. |
 | [RCM_KPI_Claim_Impact_Methodology.md](../kpi-analytics/RCM_KPI_Claim_Impact_Methodology.md) | doc | Dual-attribution theory for Days in AR and aging-percentage claim impacts. |
-| [kpi-analytics.cmd](../kpi-analytics/kpi_analytics.cmd) | launcher | Shim: prefer `py -3.13 -m kpi_modules`, else `python -m kpi_modules`. |
+| [kpi-analytics.cmd](../kpi-analytics/kpi-analytics.cmd) | launcher | Shim: prefer `py -3.13 -m kpi_modules`, else `python -m kpi_modules`. |
 | [.pylintrc](../kpi-analytics/.pylintrc) | config | **Dev tooling only** — PEP-8 style gate for `kpi_modules` (not a product runtime dependency). |
 
 ---
@@ -245,7 +246,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.6.0). |
+| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.7.0). |
 | [__main__.py](../kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](../kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--profile`, `--interactive-mapping`, `--strict`), `generate`, `validate-score`, `profile-list` / `profile-show` / `profile-save`; diagnostics gate on operational score/generate/validate. |
 | [column_map.py](../kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
@@ -360,6 +361,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.2 | Research note for RULES gap audit; fix kpi-analytics.cmd catalog link; `__version__` row 2.7.0 |
 | 1.10.1 | Plan dual-surface compliance: docs/plan freezes (cluster 2/3, B1.1, upgrade complete); root PLAN stages; docs/PLAN 0.5.0; resources index |
 | 1.10.0 | repo-kit **2.3.1**: root PLAN + agents + ai-docs-workspace; docs workspace modules; baseline/catalog refresh |
 | 1.9.0 | kpi-analytics 2.6.0: `profiles.py`, shipped `profiles/poi_*.json` focus presets; CLI profile verbs; PLAN blurb updated for 0.3.0 backlog status |

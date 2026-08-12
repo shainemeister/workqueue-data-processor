@@ -38,7 +38,7 @@ Standards and portable law remain under **`kit/`**. Product contracts stay in to
 | Module | Path | Status | Purpose |
 |--------|------|--------|---------|
 | Index | [README.md](./README.md) | active | This file |
-| Research | [research/](./research/) | scaffolded | Investigations, spikes, comparisons |
+| Research | [research/](./research/) | active | Investigations, spikes, comparisons (see [research/README.md](./research/README.md)) |
 | Plan | [plan/](./plan/) | active | Execution freezes (see [plan/README.md](./plan/README.md)) |
 | Project build | [project_build/](./project_build/) | scaffolded | Implementation notes while shipping changes |
 | Resources | [resources/](./resources/) | active | Curated pointers (see [resources/README.md](./resources/README.md)) |
@@ -51,6 +51,12 @@ Standards and portable law remain under **`kit/`**. Product contracts stay in to
 | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | developing |
 | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) | developing |
 | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) | pending |
+
+### Research index (quick)
+
+| Note | Status |
+|------|--------|
+| [research/2026-08-12-rules-compliance-gaps.md](./research/2026-08-12-rules-compliance-gaps.md) | current — RULES gaps; P1/P2 applied 2026-08-12 |
 
 ---
 
