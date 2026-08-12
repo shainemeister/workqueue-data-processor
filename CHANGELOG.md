@@ -13,6 +13,18 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.14.1] - 2026-08-12
+
+#### Changed
+
+- **kpi-analytics ENTERPRISE-SECURITY 2.7.0:** align toolkit version with package (default unique output paths unless `--force`; diagnostics import-smoke note)
+- **Agent Instruct packs:** repair generated YAML frontmatter (BUILD `must_not_extra` leak); fold extras into Must not, including Cluster 2/3 freeze
+- **FILE-CATALOG 1.10.2:** research note for RULES gap audit; fix `kpi-analytics.cmd` catalog link; `__version__` row 2.7.0
+
+#### Removed
+
+- Empty untracked local trees `vendor/` and `excel-toolkit/menus/` (not source)
+
 ### [1.14.0] - 2026-08-10
 
 #### Changed
