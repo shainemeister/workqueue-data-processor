@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Enterprise Security
 description: Security review notes and execution restrictions for KPI Analytics on controlled corporate PCs.
-version: "2.6.0"
+version: "2.7.0"
 status: current
 audience:
   - security
@@ -13,14 +13,14 @@ related:
   - CLI-GUIDE.md
   - diagnostics/README.md
   - ../certification/README.md
-last_updated: "2026-07-30"
+last_updated: "2026-08-12"
 ---
 
 # KPI Analytics — Enterprise Security & Execution Notes
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate desktops.
 
-**Toolkit version:** 2.6.0  
+**Toolkit version:** 2.7.0  
 **Toolkit folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\`  
 **Runtime:** Python **3.13** standard library only (no third-party packages)
@@ -75,7 +75,7 @@ This is a design audit, not a penetration-test report. It mirrors the trust mode
 | **Policy** | Does **not** change execution policy, GPO, or registry policy. |
 | **Network** | No downloads, HTTP clients, remote modules, or package index access. |
 | **Identity** | Does not read credentials, tokens, or browser stores. |
-| **Scope of files** | Reads user-supplied CSV/config/schema (default score input: repo `import\wq_synthetic_data.csv`); may read scoring profiles under `kpi-analytics\profiles\` (local JSON only; no network); writes scored/summary under chosen paths (default repo `output\`); default `generate` refreshes `import\wq_synthetic_data.csv`; may write operator profiles under `profiles\`; writes diagnostics certificates under `kpi-analytics\diagnostics\`; may use `%TEMP%` for probe checks. By default, **scored** CSV masks `patient` and blanks `dob` (config `privacy`); input files are not modified by `score`. This is operational masking, not Safe Harbor de-identification. Profiles must not embed claim rows (deny-listed keys rejected). |
+| **Scope of files** | Reads user-supplied CSV/config/schema (default score input: repo `import\wq_synthetic_data.csv`); may read scoring profiles under `kpi-analytics\profiles\` (local JSON only; no network); writes scored/summary under chosen paths (default repo `output\`). **Existing destinations are not overwritten by default** — a unique `name_N` suffix is used unless the caller passes `--force` (same collision policy as excel-toolkit). Default `generate` targets `import\wq_synthetic_data.csv` under the same rule; may write operator profiles under `profiles\`; writes diagnostics certificates under `kpi-analytics\diagnostics\`; may use `%TEMP%` for probe checks. By default, **scored** CSV masks `patient` and blanks `dob` (config `privacy`); input files are not modified by `score`. This is operational masking, not Safe Harbor de-identification. Profiles must not embed claim rows (deny-listed keys rejected). |
 | **Office** | **Does not** automate Microsoft Excel or other Office apps. |
 | **Dependencies** | **Standard library only** for Python 3.13. |
 | **Surfaces** | CLI (`kpi-analytics.cmd` / `python -m kpi_modules`), importable package, fixtures under `fixtures\`, profiles under `profiles\`, diagnostics under `diagnostics\`. |
@@ -186,6 +186,7 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | Full priority audit columns | Reconstructable scores |
 | Exit codes 0 / 1 / 2 | Aligns with `excel-toolkit` automation style |
 | Enterprise diagnostics + gate | First-run proof of runtime/imports; durable IT-friendly PASS/FAIL report |
+| Default unique output paths (`--force` to replace) | Avoids silent overwrite of scored or synthetic files |
 
 ---
 
@@ -231,3 +232,4 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | 2.1.0 | Align toolkit version with package (guided mapping); diagnostics remain machine-readiness only — distinct from repo `certification/`; no trust-boundary change |
 | 2.2.0 | Excel serial date parse (no trust-boundary change) |
 | 2.6.0 | Local scoring profiles under `profiles\` (JSON only; no claim rows; no network) |
+| 2.7.0 | Align toolkit version: default unique output paths unless `--force`; diagnostics import-smoke includes `profiles` and stdlib `re` (no network/privilege change) |
