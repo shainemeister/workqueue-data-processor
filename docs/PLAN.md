@@ -438,9 +438,9 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 
 **Next recommended product slice**
 
-- Prefer a **Cluster 2 design freeze** if multi-file delivery is the priority.  
-- Prefer **B1.1-retune** only with analyst evidence.  
-- Do **not** start Cluster 2/3 code without freezes.
+- Live order of operations: [WORKBOARD.md](./WORKBOARD.md) program **`post-v1-enhancement`** · annex [plan/post-v1-enhancement/](./plan/post-v1-enhancement/).  
+- Next board phase is **P1 Cluster 3 freeze** (worklists). Do **not** start Cluster 2/3 product code without that freeze.  
+- Prefer **B1.1-retune** only with analyst evidence (deferred on the board).
 
 ---
 

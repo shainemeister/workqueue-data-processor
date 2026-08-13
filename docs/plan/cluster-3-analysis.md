@@ -25,7 +25,8 @@ last_updated: "2026-08-12"
 **Product backlog owner:** [docs/PLAN.md](../PLAN.md) § Cluster 3.  
 **Root stage:** [PLAN.md](../../PLAN.md) **S4**.  
 **V2 design (not this cluster):** [WQ_Priority_Matrix_Concept.md](../WQ_Priority_Matrix_Concept.md).  
-**Column / industry / worklist options (not a freeze):** [research/2026-08-12-worklist-grouping-and-industry-metrics.md](../research/2026-08-12-worklist-grouping-and-industry-metrics.md).
+**Column / industry / worklist options (not a freeze):** [research/2026-08-12-worklist-grouping-and-industry-metrics.md](../research/2026-08-12-worklist-grouping-and-industry-metrics.md).  
+**Live OOO:** [WORKBOARD](../WORKBOARD.md) · annex [post-v1-enhancement](./post-v1-enhancement/).
 
 ---
 
