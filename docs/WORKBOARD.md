@@ -86,13 +86,13 @@ last_updated: "2026-08-13"
 | P37 | Freeze Express Summary + date format | `done` | `f6b8bde` | slim-poi-output 1.6.0 |
 | P38 | -SummaryCsv + date NumberFormat | `done` | `f6b8bde` | Copy only |
 | P39 | Menu + L4 + CHANGELOG + cert | `done` | `f6b8bde` | excel 1.19.0 |
-| P40 | Freeze Express open sheet + width 12 | `done` | — | slim-poi-output 1.7.0 |
-| P41 | Activate POI_Scores; ColumnWidth 12 | `done` | — | Express only |
-| P42 | L4 + CHANGELOG + cert | `done` | — | excel 1.20.0 |
+| P40 | Freeze Express open sheet + width 12 | `done` | `29dde6e` | slim-poi-output 1.7.0 |
+| P41 | Activate POI_Scores; ColumnWidth 12 | `done` | `29dde6e` | Express only |
+| P42 | L4 + CHANGELOG + cert | `done` | `29dde6e` | excel 1.20.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
-- 2026-08-13 Shipped P40–P42 Express open on POI_Scores + column width 12 (excel 1.20.0).  
+- 2026-08-13 Shipped P40–P42 Express open on POI_Scores + column width 12 (`29dde6e`; excel 1.20.0).  
 - 2026-08-13 Opened P40–P42 Express open on POI_Scores + column width 12.  
 - 2026-08-13 Shipped P37–P39 Express Summary sheet + date format (`f6b8bde`; excel 1.19.0).  
 - 2026-08-13 Opened P37–P39 Express Summary sheet + date format.  
