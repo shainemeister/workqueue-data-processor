@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.20.1] - 2026-08-12
+
+#### Added
+
+- **`Remove-MaintainerDocs.cmd`:** optional post-clone working-copy slim. Deletes maintainer trees (`kit\`, `docs\`, `certification\`, `PLAN.md`, CHANGELOG, kpi fixtures, excel sample-test). Does not rewrite git; restore with `git checkout -- .`. Toolkit user guides stay.
+
 ### [1.20.0] - 2026-08-12
 
 #### Added

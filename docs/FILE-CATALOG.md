@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.15"
+version: "1.10.16"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.15  
+**Document version:** 1.10.16  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -71,8 +71,9 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 13. [kpi-analytics/diagnostics](#kpi-analyticsdiagnostics)
 14. [kpi-analytics/fixtures](#kpi-analyticsfixtures)
 15. [certification](#certification)
-16. [Generated and ignored paths](#generated-and-ignored-paths)
-17. [Document history](#document-history)
+16. [scripts](#scripts)
+17. [Generated and ignored paths](#generated-and-ignored-paths)
+18. [Document history](#document-history)
 
 ---
 
@@ -89,6 +90,7 @@ workqueue-data-processor/
   excel-toolkit/          # PowerShell Excel COM toolkit
   kpi-analytics/          # Python KPI + priority scoring
   certification/          # formal Domain A/B self-attestation (outputs gitignored)
+  scripts/                # optional operator utilities
   output/                 # generated only (gitignored)
 ```
 
@@ -103,6 +105,7 @@ workqueue-data-processor/
 | [CHANGELOG.md](../CHANGELOG.md) | doc | Project history (Keep a Changelog); required by repo-kit. Kit version lives in kit/RULES kit baseline only. |
 | [PLAN.md](../PLAN.md) | doc | Project control surface: mission, stages, non-goals + **Agent models** (Agent Instruct). Product backlog under `docs/PLAN.md`; freezes under `docs/plan/`. |
 | [Start-ExcelMenu.cmd](../Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
+| [Remove-MaintainerDocs.cmd](../Remove-MaintainerDocs.cmd) | launcher | Optional post-clone working-copy slim (calls `scripts\Remove-MaintainerDocs.ps1`). |
 | [.gitignore](../.gitignore) | config | Excludes `output\`, local numbered `import\` copies, mapping profiles, package diagnostics certs, formal `certification/last_certification.*` + logs, Python caches, env dirs, editor noise. |
 
 ---
@@ -336,6 +339,16 @@ Formal **security + code-validation** self-attestation package (developer-only).
 
 ---
 
+## scripts
+
+Optional operator utilities (not a product toolkit).
+
+| Path | Type | Summary |
+|------|------|---------|
+| [Remove-MaintainerDocs.ps1](../scripts/Remove-MaintainerDocs.ps1) | script | Deletes maintainer-only trees from the working copy after clone; restore with `git checkout -- .`. |
+
+---
+
 ## Generated and ignored paths
 
 These paths are produced at runtime or by the interpreter. They are listed for orientation only and are excluded from git via `.gitignore`.
@@ -373,6 +386,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.16 | `scripts/Remove-MaintainerDocs.ps1` + root cmd |
 | 1.10.15 | kpi 2.10.0 slim output; `slim_poi_expected.json`; `__version__` 2.10.0 |
 | 1.10.14 | Freeze `plan/slim-poi-output.md` |
 | 1.10.13 | excel-toolkit 1.12.1 Worklist case-sensitive match |

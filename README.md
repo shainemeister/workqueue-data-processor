@@ -61,6 +61,17 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | Run outputs | `output\` | Scored CSVs and Excel files (regenerable; not versioned) |
 | Design (optional) | `docs\WQ_Priority_Matrix_Concept.md` | Priority matrix roadmap (V1–V3); **V1 is implemented** |
 
+### Operator working copy (optional)
+
+After a clone, you can drop maintainer-only trees (`kit\`, `docs\`, `certification\`, `PLAN.md`, fixtures, sample-test) from **this folder** so only the runtime toolkits remain. Toolkit README / CLI-GUIDE / methodology stay.
+
+```bat
+Remove-MaintainerDocs.cmd -WhatIf
+Remove-MaintainerDocs.cmd
+```
+
+Restore with `git checkout -- .`. Do **not** commit those deletions. This is not `git clean` and does not rewrite history. Optional `-GitCleanUntracked` also removes untracked files (`git clean -fd`; ignored `output\` and local `import\` copies stay).
+
 ---
 
 ## Prerequisites
