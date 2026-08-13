@@ -22,7 +22,7 @@
     Build worklist also picks a --group-preset and exports Data + Groups +
     Worklist sheets (no scoring math in PowerShell). Express score skips
     profile / password / Full-Slim picks, scores --output-mode slim, and
-    writes one POI_Scores sheet (identity + score-input source + four scores; copy only).
+    writes one POI_Scores sheet (identity + score-input + context source + four scores; copy only).
     Multi-file preview (2+ files) shows name, WQ stem, row count, max
     out_ins_amt without scoring. Excel deliverable names use
     [WQ]_MM-DD-YYYY.xlsx. File-level Totals sheet copies existing scored
@@ -2417,7 +2417,7 @@ function Invoke-KpiScoreExportMenu {
     .PARAMETER Worklist
         Score with --group-preset and export Data + Groups + Worklist sheets.
     .PARAMETER Express
-        Score --output-mode slim; export one POI_Scores sheet (identity + score-input source + four scores).
+        Score --output-mode slim; export one POI_Scores sheet (identity + score-input + context source + four scores).
         Skips profile, password, and Full/Slim picks. No summary xlsx.
     #>
     [CmdletBinding()]
@@ -2457,7 +2457,7 @@ function Invoke-KpiScoreExportMenu {
     }
     elseif ($Express) {
         Write-Host 'Express score (all POI -> one POI_Scores sheet)' -ForegroundColor Cyan
-        Write-Host 'kpi-analytics scores --output-mode slim; Excel COM copies identity, score-input source columns, and four scores.' -ForegroundColor DarkGray
+        Write-Host 'kpi-analytics scores --output-mode slim; Excel COM copies identity, score-input and context source columns, and four scores.' -ForegroundColor DarkGray
         Write-Host 'No profile pick, password, or Full/Slim pick. Summary CSV is kept; no summary Excel.' -ForegroundColor DarkGray
         Write-Host 'Excel is the human deliverable ([WQ]_MM-DD-YYYY.xlsx). No scoring math in PowerShell.' -ForegroundColor DarkGray
     }

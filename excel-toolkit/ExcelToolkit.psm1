@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.15.0'
+$script:ExcelToolkitVersion = '1.16.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -411,6 +411,25 @@ function Get-ExcelToolkitPoiScoreSourceColumns {
     )
 }
 
+function Get-ExcelToolkitPoiScoreContextColumns {
+    <#
+    .SYNOPSIS
+        Original WQ follow-up context headers (include if present; skip if already listed).
+    #>
+    return @(
+        'plan',
+        'reason_code_list',
+        'remittance_code',
+        'cpt_codes',
+        'modifiers',
+        'diagnosis_codes',
+        'billing_provider',
+        'department',
+        'billing_provider_tax_id',
+        'billing_provider_npi'
+    )
+}
+
 function Get-ExcelToolkitPoiScoreValueColumns {
     <#
     .SYNOPSIS
@@ -427,7 +446,7 @@ function Get-ExcelToolkitPoiScoreValueColumns {
 function New-ExcelToolkitPoiScoreRows {
     <#
     .SYNOPSIS
-        Project identity + score-input source columns + four POI scores (copy only; no math).
+        Project identity + score-input + context source columns + four POI scores (copy only; no math).
     #>
     [CmdletBinding()]
     param(
@@ -447,12 +466,19 @@ function New-ExcelToolkitPoiScoreRows {
     $identityCols = @(
         Get-ExcelToolkitPoiScoreIdentityColumns | Where-Object { $DetailHeaders -contains $_ }
     )
+    $listed = @($identityCols)
     $sourceCols = @(
         Get-ExcelToolkitPoiScoreSourceColumns | Where-Object {
-            ($DetailHeaders -contains $_) -and ($identityCols -notcontains $_)
+            ($DetailHeaders -contains $_) -and ($listed -notcontains $_)
         }
     )
-    $outHeaders = @($identityCols + $sourceCols + $scoreCols)
+    $listed = @($listed + $sourceCols)
+    $contextCols = @(
+        Get-ExcelToolkitPoiScoreContextColumns | Where-Object {
+            ($DetailHeaders -contains $_) -and ($listed -notcontains $_)
+        }
+    )
+    $outHeaders = @($identityCols + $sourceCols + $contextCols + $scoreCols)
     $keep = @($outHeaders)
 
     $out = New-Object System.Collections.Generic.List[object]
@@ -565,7 +591,7 @@ function Export-ExcelFromCsv {
         Tab name for -TotalsCsv. Default: Totals
 
     .PARAMETER PoiScoreSheetOnly
-        Write only a POI_Scores sheet (identity + score-input source columns + four slim scores). Copy only; no math.
+        Write only a POI_Scores sheet (identity + score-input + context source columns + four slim scores). Copy only; no math.
         Cannot be combined with -GroupsCsv, -Worklist, or -TotalsCsv.
 
     .PARAMETER PoiScoreSheetName

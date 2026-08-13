@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.23.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.16.0:** Express / `-PoiScoreSheetOnly` also copies context source columns when present: `plan`, `reason_code_list`, `remittance_code`, `cpt_codes`, `modifiers`, `diagnosis_codes`, `billing_provider`, `department`, `billing_provider_tax_id`, `billing_provider_npi`. Schema name is `cpt_codes`. Copy only.
+
 ### [1.22.0] - 2026-08-13
 
 #### Changed
