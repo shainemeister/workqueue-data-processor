@@ -83,13 +83,13 @@ last_updated: "2026-08-13"
 | P34 | Freeze patient-after-invoice + CSV cleanup | `done` | `68ef883` | slim-poi-output 1.5.0 |
 | P35 | Column order + menu delete generated CSVs | `done` | `68ef883` | After Excel success only |
 | P36 | L4 + CHANGELOG + cert | `done` | `68ef883` | excel 1.18.0 |
-| P37 | Freeze Express Summary + date format | `done` | — | slim-poi-output 1.6.0 |
-| P38 | -SummaryCsv + date NumberFormat | `done` | — | Copy only |
-| P39 | Menu + L4 + CHANGELOG + cert | `done` | — | excel 1.19.0 |
+| P37 | Freeze Express Summary + date format | `done` | `f6b8bde` | slim-poi-output 1.6.0 |
+| P38 | -SummaryCsv + date NumberFormat | `done` | `f6b8bde` | Copy only |
+| P39 | Menu + L4 + CHANGELOG + cert | `done` | `f6b8bde` | excel 1.19.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
-- 2026-08-13 Shipped P37–P39 Express Summary sheet + date format (excel 1.19.0).  
+- 2026-08-13 Shipped P37–P39 Express Summary sheet + date format (`f6b8bde`; excel 1.19.0).  
 - 2026-08-13 Opened P37–P39 Express Summary sheet + date format.  
 - 2026-08-13 Shipped P34–P36 `patient` after `invoice_num`; menu CSV cleanup (`68ef883`; excel 1.18.0).  
 - 2026-08-13 Opened P34–P36 `patient` after `invoice_num`; menu CSV cleanup after Excel.  
