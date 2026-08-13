@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.27.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.20.0:** Express workbook opens on the **POI_Scores** sheet. Express sheets use a fixed column width of **12** (not AutoFit).
+
 ### [1.26.0] - 2026-08-13
 
 #### Changed

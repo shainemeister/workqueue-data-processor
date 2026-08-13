@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.19.0'
+$script:ExcelToolkitVersion = '1.20.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -518,7 +518,9 @@ function Write-ExcelToolkitCsvSheet {
     param(
         $Worksheet,
         $Rows,
-        [string[]]$Headers
+        [string[]]$Headers,
+
+        [double]$FixedColumnWidth = 0
     )
     if ($Rows.Count -eq 0) {
         Set-ExcelRange -Worksheet $Worksheet -StartAddress 'A1' -Values @(, @($Headers))
@@ -531,7 +533,12 @@ function Write-ExcelToolkitCsvSheet {
         $rowCount = $importInfo.RowCount
     }
     Set-ExcelHeaderStyle -Worksheet $Worksheet -HeaderRow 1 -ColumnCount $colCount -Freeze
-    Set-ExcelAutoFit -Worksheet $Worksheet -ColumnCount $colCount
+    if ($FixedColumnWidth -gt 0) {
+        Set-ExcelColumnWidth -Worksheet $Worksheet -Width $FixedColumnWidth -ColumnCount $colCount
+    }
+    else {
+        Set-ExcelAutoFit -Worksheet $Worksheet -ColumnCount $colCount
+    }
     return [pscustomobject]@{ RowCount = $rowCount; ColumnCount = $colCount }
 }
 
@@ -910,15 +917,16 @@ function Export-ExcelFromCsv {
                             }
                         )
                     }
-                    $importInfo = Write-ExcelToolkitCsvSheet -Worksheet $ws -Rows $poiWriteRows -Headers $poiHeaders
+                    $importInfo = Write-ExcelToolkitCsvSheet -Worksheet $ws -Rows $poiWriteRows -Headers $poiHeaders -FixedColumnWidth 12
                 }
                 Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
-                Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
+                Set-ExcelColumnWidth -Worksheet $ws -Width 12 -ColumnCount $importInfo.ColumnCount
                 Set-ExcelToolkitDateColumnFormats -Worksheet $ws -Headers $poiHeaders -DataRowCount $importInfo.RowCount
                 if ($null -ne $summaryTable) {
                     $wsSummary = Add-ExcelWorksheet -Workbook $workbook -Name $SummarySheetName -After $ws
-                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsSummary -Rows $summaryTable.Rows -Headers $summaryTable.Headers
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsSummary -Rows $summaryTable.Rows -Headers $summaryTable.Headers -FixedColumnWidth 12
                 }
+                Invoke-ExcelWorksheetActivate -Worksheet $ws
             }
             else {
                 if ($csvRows.Count -eq 0) {
@@ -1399,6 +1407,8 @@ function Invoke-ExcelToolkitReadinessChecks {
         'Set-ExcelRange',
         'Set-ExcelHeaderStyle',
         'Set-ExcelAutoFit',
+        'Set-ExcelColumnWidth',
+        'Invoke-ExcelWorksheetActivate',
         'Import-CsvToWorksheet',
         'Export-WorksheetToCsv',
         'Test-ExcelComEnvironment'

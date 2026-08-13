@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.20"
+version: "1.1.21"
 status: current
 audience:
   - ai-agents
@@ -86,9 +86,14 @@ last_updated: "2026-08-13"
 | P37 | Freeze Express Summary + date format | `done` | `f6b8bde` | slim-poi-output 1.6.0 |
 | P38 | -SummaryCsv + date NumberFormat | `done` | `f6b8bde` | Copy only |
 | P39 | Menu + L4 + CHANGELOG + cert | `done` | `f6b8bde` | excel 1.19.0 |
+| P40 | Freeze Express open sheet + width 12 | `done` | — | slim-poi-output 1.7.0 |
+| P41 | Activate POI_Scores; ColumnWidth 12 | `done` | — | Express only |
+| P42 | L4 + CHANGELOG + cert | `done` | — | excel 1.20.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-13 Shipped P40–P42 Express open on POI_Scores + column width 12 (excel 1.20.0).  
+- 2026-08-13 Opened P40–P42 Express open on POI_Scores + column width 12.  
 - 2026-08-13 Shipped P37–P39 Express Summary sheet + date format (`f6b8bde`; excel 1.19.0).  
 - 2026-08-13 Opened P37–P39 Express Summary sheet + date format.  
 - 2026-08-13 Shipped P34–P36 `patient` after `invoice_num`; menu CSV cleanup (`68ef883`; excel 1.18.0).  
@@ -153,4 +158,4 @@ last_updated: "2026-08-13"
 
 ---
 
-*Agents: P37–P39 shipped (Express Summary + dates). Next: P1 filters remain blocked; P9 deferred.*
+*Agents: P40–P42 shipped (Express open sheet + width 12). Next: P1 filters remain blocked; P9 deferred.*

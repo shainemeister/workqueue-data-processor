@@ -1196,6 +1196,58 @@ function Set-ExcelAutoFit {
     }
 }
 
+function Set-ExcelColumnWidth {
+    <#
+    .SYNOPSIS
+        Set a fixed column width for the first N columns (or UsedRange columns).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $Worksheet,
+
+        [Parameter(Mandatory = $true)]
+        [double]$Width,
+
+        [int]$ColumnCount
+    )
+
+    if ($ColumnCount -and $ColumnCount -gt 0) {
+        $endLetter = ConvertTo-ExcelColumnLetter -Column $ColumnCount
+        $addr = ('A:{0}' -f $endLetter)
+        $cols = $Worksheet.Range($addr).EntireColumn
+        try {
+            $cols.ColumnWidth = $Width
+        }
+        finally {
+            Release-ComObjectSafe -ComObject $cols
+        }
+        return
+    }
+
+    $used = $Worksheet.UsedRange
+    try {
+        $used.Columns.ColumnWidth = $Width
+    }
+    finally {
+        Release-ComObjectSafe -ComObject $used
+    }
+}
+
+function Invoke-ExcelWorksheetActivate {
+    <#
+    .SYNOPSIS
+        Activate a worksheet so it is the sheet shown when the workbook opens.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $Worksheet
+    )
+
+    $Worksheet.Activate() | Out-Null
+}
+
 #endregion Formatting
 
 #region CSV import / export
@@ -1597,6 +1649,8 @@ Export-ModuleMember -Function @(
     'Set-ExcelRange',
     'Set-ExcelHeaderStyle',
     'Set-ExcelAutoFit',
+    'Set-ExcelColumnWidth',
+    'Invoke-ExcelWorksheetActivate',
     'Import-CsvToWorksheet',
     'Export-WorksheetToCsv',
     'Test-ExcelComEnvironment',

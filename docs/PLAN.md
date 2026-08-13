@@ -1,7 +1,7 @@
 ---
 title: "Development Plan — Post-V1 Enhancement Concepts"
 description: "Living product backlog: Cluster 1 complete; Cluster 2 freeze signed; Cluster 3 partial; optional base retune. Control surface in root PLAN.md; live multi-phase on docs/WORKBOARD.md; execution freezes in docs/plan/."
-version: "0.5.12"
+version: "0.5.13"
 status: current
 audience:
   - developers
@@ -27,7 +27,7 @@ last_updated: "2026-08-13"
 
 Living **product enhancement backlog** after V1 priority matrix, dynamic mapping, guided menu, gap-safety, scoring profiles, quality audit, certification Phase 2, and menu scoring-profile picker.
 
-**Document version:** 0.5.12  
+**Document version:** 0.5.13  
 **Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Cluster **2 shipped** (excel 1.12.0). Cluster **3** partial (sort/groups/menu shipped; 3.1 filters still open).  
 
 | Kit triple surface | Path |
@@ -495,6 +495,7 @@ When a concept moves from “developing” to “ready for implementation”, fr
 
 | Version | Notes |
 |---------|--------|
+| 0.5.13 | Express opens on POI_Scores; column width 12 (excel 1.20.0) |
 | 0.5.12 | Express Summary sheet + date format (excel 1.19.0) |
 | 0.5.11 | Express `patient` after `invoice_num`; menu CSV cleanup after Excel (excel 1.18.0) |
 | 0.5.10 | Express POI_Scores frozen column order (excel 1.17.0) |

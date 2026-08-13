@@ -1,7 +1,7 @@
 ---
 title: Slim multi-POI score output — design freeze
 description: Opt-in detail CSV with WQ columns plus one V1 score per shipped POI preset.
-version: "1.6.0"
+version: "1.7.0"
 status: current
 audience:
   - developers
@@ -19,9 +19,9 @@ last_updated: "2026-08-13"
 
 # Slim multi-POI score output
 
-**Document version:** 1.6.0  
-**Status:** **shipped** — Express `POI_Scores` + `Summary`; dates `mm/dd/yyyy` (excel 1.19.0).  
-**Board:** [WORKBOARD](../WORKBOARD.md) P15–P39.  
+**Document version:** 1.7.0  
+**Status:** **shipped** — Express opens on `POI_Scores`; column width 12 (excel 1.20.0).  
+**Board:** [WORKBOARD](../WORKBOARD.md) P15–P42.  
 **Signed:** 2026-08-12 (slim CSV); Express addenda 2026-08-13.
 
 ---
@@ -96,10 +96,13 @@ Workbook sheets: **`POI_Scores`** then **`Summary`** (copy of the kpi summary CS
 
 Date columns `service_date` and `last_worked_date` (when present) use Excel number format `mm/dd/yyyy` so they do not display as serials. `days_until_*` / `days_on_wq_tab` stay numbers.
 
+Before save, **activate `POI_Scores`** so it is the sheet shown when the workbook opens. Express sheets use a fixed **column width of 12** (not AutoFit).
+
 ## Document history
 
 | Version | Notes |
 |---------|--------|
+| 1.7.0 | P40: open on POI_Scores; Express column width 12 |
 | 1.6.0 | P37: Express Summary sheet; date format on service_date / last_worked_date |
 | 1.5.0 | P34: `patient` after `invoice_num`; menu deletes generated CSVs after Excel |
 | 1.4.0 | P31 Express: operator column order (copy if present) |
