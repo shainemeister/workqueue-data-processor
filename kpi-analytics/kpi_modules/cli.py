@@ -300,6 +300,32 @@ def build_parser() -> argparse.ArgumentParser:
             "Mutually exclusive with --sort. Does not change V1 formulas."
         ),
     )
+    p_score.add_argument(
+        "--group-by",
+        dest="group_by",
+        default=None,
+        help=(
+            "Write a group summary CSV keyed by these scored columns "
+            "(comma-separated). Mutually exclusive with --group-preset. "
+            "Default: no groups file."
+        ),
+    )
+    p_score.add_argument(
+        "--group-preset",
+        dest="group_preset",
+        default=None,
+        choices=("payer_category", "payer", "category", "location"),
+        help=(
+            "Named group keys: payer_category, payer, category, location. "
+            "Mutually exclusive with --group-by."
+        ),
+    )
+    p_score.add_argument(
+        "--groups",
+        dest="groups_path",
+        default=None,
+        help="Group summary CSV path (default: <output_stem>_groups.csv)",
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -701,6 +727,9 @@ def main(argv: list[str] | None = None) -> int:
                     force=bool(getattr(args, "force", False)),
                     sort_spec=getattr(args, "sort_spec", None),
                     sort_preset=getattr(args, "sort_preset", None),
+                    group_by=getattr(args, "group_by", None),
+                    group_preset=getattr(args, "group_preset", None),
+                    groups_path=getattr(args, "groups_path", None),
                 )
             except (FileNotFoundError, ValueError, OSError) as exc:
                 _emit(

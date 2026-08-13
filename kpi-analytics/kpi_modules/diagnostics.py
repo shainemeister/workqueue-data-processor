@@ -47,6 +47,7 @@ PACKAGE_MODULES: tuple[str, ...] = (
     "kpi_modules.completeness",
     "kpi_modules.config",
     "kpi_modules.diagnostics",
+    "kpi_modules.group_summary",
     "kpi_modules.io_csv",
     "kpi_modules.kpi_quantifiers",
     "kpi_modules.metrics",

@@ -25,6 +25,11 @@ from .completeness import (
 )
 from .config import METRIC_KEYS, effective_weights, load_config, validate_config
 from .io_csv import read_csv_rows, resolve_unique_path, write_csv_rows
+from .group_summary import (
+    build_group_rows,
+    default_groups_path,
+    resolve_group_by,
+)
 from .output_sort import (
     apply_output_sort,
     resolve_sort_spec,
@@ -260,6 +265,9 @@ def score_csv(
     force: bool = False,
     sort_spec: str | None = None,
     sort_preset: str | None = None,
+    group_by: str | None = None,
+    group_preset: str | None = None,
+    groups_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """
     Score a data CSV and write an enriched CSV.
@@ -286,6 +294,9 @@ def score_csv(
 
     sort_spec / sort_preset: optional post-score detail-row order (Cluster 3.2).
     Default (both omitted) keeps input order. Mutually exclusive.
+
+    group_by / group_preset / groups_path: optional group summary CSV
+    (Cluster 3.1 reporting). Omitted means no groups file.
 
     force: when False (default), if the output path already exists, write to a
     unique sibling path with a numerical suffix (``name_1.ext``). When True,
@@ -396,6 +407,12 @@ def score_csv(
         sort_spec=sort_spec,
         sort_preset=sort_preset,
     )
+    group_keys, group_preset_name = resolve_group_by(
+        group_by=group_by,
+        group_preset=group_preset,
+    )
+    if groups_path is not None and not group_keys:
+        raise ValueError("--groups requires --group-by or --group-preset")
 
     out_fields, out_rows, summary = score_rows(
         fieldnames,
@@ -405,6 +422,12 @@ def score_csv(
     )
     if sort_pairs:
         out_rows = apply_output_sort(out_rows, sort_pairs, out_fields)
+    group_fields: list[str] = []
+    group_rows: list[dict[str, Any]] = []
+    if group_keys:
+        group_fields, group_rows = build_group_rows(
+            out_rows, group_keys, out_fields
+        )
 
     completeness = evaluate_rank_completeness(
         active_metrics=summary.get("active_metrics"),
@@ -444,6 +467,26 @@ def score_csv(
         sum_requested_resolved = None
         sum_adjusted = False
 
+    write_groups = bool(group_keys)
+    if write_groups:
+        groups_explicit = groups_path is not None
+        if groups_explicit:
+            grp_write, grp_requested, grp_adjusted = resolve_unique_path(
+                Path(groups_path), force=bool(force)
+            )
+            grp_path = grp_write.resolve()
+            grp_requested_resolved = grp_requested.resolve()
+        else:
+            grp_path = default_groups_path(out_resolved)
+            grp_requested_resolved = default_groups_path(
+                out_requested_resolved
+            )
+            grp_adjusted = out_adjusted
+    else:
+        grp_path = None
+        grp_requested_resolved = None
+        grp_adjusted = False
+
     strict_mode = None
     if strict is not None and str(strict).strip():
         strict_mode = str(strict).strip().lower()
@@ -476,6 +519,14 @@ def score_csv(
         "SortSpec": sort_text,
         "SortPreset": preset_name,
         "SortApplied": sort_applied_payload(sort_pairs),
+        "GroupBy": list(group_keys),
+        "GroupPreset": group_preset_name,
+        "GroupCount": len(group_rows),
+        "GroupsPath": str(grp_path) if write_groups else None,
+        "RequestedGroupsPath": (
+            str(grp_requested_resolved) if write_groups else None
+        ),
+        "GroupsPathAdjusted": bool(grp_adjusted) if write_groups else False,
         "RowCount": summary["row_count"],
         "ColumnCount": summary["column_count"],
         "DryRun": dry_run,
@@ -542,6 +593,8 @@ def score_csv(
     # Fail-before-write when strict mode rejects partial ranks.
     if not dry_run and success:
         write_csv_rows(out_resolved, out_fields, out_rows)
+        if write_groups and grp_path is not None:
+            write_csv_rows(grp_path, group_fields, group_rows)
         if write_summary and sum_path is not None:
             write_summary_csv(
                 sum_path,
@@ -550,21 +603,29 @@ def score_csv(
                 output_path=out_resolved,
                 config_path=config_path,
             )
+            extras = ["detail", "summary"]
+            if write_groups:
+                extras.append("groups")
+            extra_s = " + ".join(extras)
             if out_adjusted:
                 result["Message"] = (
-                    "Score complete (detail + summary; avoided overwrite of "
+                    f"Score complete ({extra_s}; avoided overwrite of "
                     f"{out_requested_resolved})."
                 )
             else:
-                result["Message"] = "Score complete (detail + summary)."
+                result["Message"] = f"Score complete ({extra_s})."
         else:
+            extras = ["detail"]
+            if write_groups:
+                extras.append("groups")
+            extra_s = " + ".join(extras)
             if out_adjusted:
                 result["Message"] = (
-                    "Score complete (avoided overwrite of "
+                    f"Score complete ({extra_s}; avoided overwrite of "
                     f"{out_requested_resolved})."
                 )
             else:
-                result["Message"] = "Score complete."
+                result["Message"] = f"Score complete ({extra_s})."
     elif dry_run and success:
         if out_adjusted:
             result["Message"] = (
@@ -577,6 +638,7 @@ def score_csv(
     elif not success:
         result["OutputPath"] = None
         result["SummaryPath"] = None
+        result["GroupsPath"] = None
         result["RequestedSummaryPath"] = None
 
     return result
