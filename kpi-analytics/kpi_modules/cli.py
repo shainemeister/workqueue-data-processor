@@ -281,6 +281,25 @@ def build_parser() -> argparse.ArgumentParser:
             "(default: write to a free path with a numerical suffix)"
         ),
     )
+    p_score.add_argument(
+        "--sort",
+        dest="sort_spec",
+        default=None,
+        help=(
+            "Post-score detail row order: col[:asc|:desc],col... "
+            "(default: input order). Mutually exclusive with --sort-preset."
+        ),
+    )
+    p_score.add_argument(
+        "--sort-preset",
+        dest="sort_preset",
+        default=None,
+        choices=("priority", "deadline", "cash"),
+        help=(
+            "Named detail sort: priority, deadline, or cash. "
+            "Mutually exclusive with --sort. Does not change V1 formulas."
+        ),
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -680,6 +699,8 @@ def main(argv: list[str] | None = None) -> int:
                     ),
                     strict=getattr(args, "strict_mode", None),
                     force=bool(getattr(args, "force", False)),
+                    sort_spec=getattr(args, "sort_spec", None),
+                    sort_preset=getattr(args, "sort_preset", None),
                 )
             except (FileNotFoundError, ValueError, OSError) as exc:
                 _emit(

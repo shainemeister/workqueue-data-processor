@@ -25,6 +25,11 @@ from .completeness import (
 )
 from .config import METRIC_KEYS, effective_weights, load_config, validate_config
 from .io_csv import read_csv_rows, resolve_unique_path, write_csv_rows
+from .output_sort import (
+    apply_output_sort,
+    resolve_sort_spec,
+    sort_applied_payload,
+)
 from .kpi_quantifiers import apply_quantifiers_to_rows
 from .metrics import compute_raw_metrics, detect_chaos_mode, resolve_as_of
 from .normalize import normalize_all
@@ -253,6 +258,8 @@ def score_csv(
     interactive_mapping: bool = False,
     strict: str | None = None,
     force: bool = False,
+    sort_spec: str | None = None,
+    sort_preset: str | None = None,
 ) -> dict[str, Any]:
     """
     Score a data CSV and write an enriched CSV.
@@ -276,6 +283,9 @@ def score_csv(
 
     strict: None (default), \"roles\", or \"full\". When set, fail without writing
     files if rank completeness does not meet that tier (see completeness module).
+
+    sort_spec / sort_preset: optional post-score detail-row order (Cluster 3.2).
+    Default (both omitted) keeps input order. Mutually exclusive.
 
     force: when False (default), if the output path already exists, write to a
     unique sibling path with a numerical suffix (``name_1.ext``). When True,
@@ -382,12 +392,19 @@ def score_csv(
             "or re-run with --interactive-mapping on a TTY."
         )
 
+    sort_text, preset_name, sort_pairs = resolve_sort_spec(
+        sort_spec=sort_spec,
+        sort_preset=sort_preset,
+    )
+
     out_fields, out_rows, summary = score_rows(
         fieldnames,
         rows,
         cfg,
         mapping_report=mapping_report,
     )
+    if sort_pairs:
+        out_rows = apply_output_sort(out_rows, sort_pairs, out_fields)
 
     completeness = evaluate_rank_completeness(
         active_metrics=summary.get("active_metrics"),
@@ -456,6 +473,9 @@ def score_csv(
         ),
         "SummaryPathAdjusted": bool(sum_adjusted) if write_summary else False,
         "Force": bool(force),
+        "SortSpec": sort_text,
+        "SortPreset": preset_name,
+        "SortApplied": sort_applied_payload(sort_pairs),
         "RowCount": summary["row_count"],
         "ColumnCount": summary["column_count"],
         "DryRun": dry_run,
