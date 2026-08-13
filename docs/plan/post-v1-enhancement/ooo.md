@@ -1,7 +1,7 @@
 ---
 title: post-v1-enhancement — order of operations
 description: Goals, constraints, phased OOO, verification, and risks for grouped POI worklists and later Cluster 2 / B1.1.
-version: "1.0.3"
+version: "1.0.4"
 status: draft
 audience:
   - ai-agents
@@ -132,6 +132,18 @@ P9  B1.1 retune (analyst-gated; optional)
         │
         ▼
 P10 V2/V3 — not this program
+        │
+        ▼
+P11 Register audit-fix OOO
+        │
+        ▼
+P12 Worklist case-sensitive key match
+        │
+        ▼
+P13 Cluster 3 PLAN wording
+        │
+        ▼
+P14 Preview comment + kpi ENTERPRISE 2.9.0
 ```
 
 | Phase | Theme | Why this order |
@@ -146,6 +158,7 @@ P10 V2/V3 — not this program
 | **P7–P8** | Cluster 2 | WQ identity only if cross-file |
 | **P9** | B1.1 | Independent; fixtures |
 | **P10** | V2 | Out of program |
+| **P11–P14** | Audit-fix | After P8 review: Worklist `-cne`, PLAN wording, kpi security version |
 
 Defer per-phase implementation detail until that phase is `active` on the board.
 
@@ -211,6 +224,7 @@ Do not invent gates outside the inventory / verification table.
 
 | Version | Notes |
 |---------|--------|
+| 1.0.4 | P11–P14 audit-fix OOO |
 | 1.0.3 | P8 Cluster 2 implement shipped |
 | 1.0.2 | P7 Cluster 2 freeze signed; groups do not span files |
 | 1.0.1 | P3–P6 shipped; P1 filters still blocked |

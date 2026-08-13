@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.8"
+version: "1.1.9"
 status: current
 audience:
   - ai-agents
@@ -57,9 +57,14 @@ last_updated: "2026-08-12"
 | P8 | Cluster 2 implement | `done` | `322b6c6` | excel 1.12.0 preview / naming / Totals |
 | P9 | B1.1 base-weight retune | `deferred` | — | Analyst-gated |
 | P10 | V2/V3 in-score category metrics | `cancelled` | — | Not this program (S5) |
+| P11 | Register audit-fix OOO | `active` | — | Surgical P12–P14 from P3–P8 review |
+| P12 | Worklist case-sensitive key match | `open` | — | excel 1.12.1; `-cne`; local smoke + full cert |
+| P13 | Cluster 3 PLAN wording | `open` | — | Partial vs remaining 3.1 filters |
+| P14 | Preview comment + kpi ENTERPRISE 2.9.0 | `open` | — | No trust-boundary change |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-12 Opened P11–P14 audit-fix stack (Worklist `-cne`, PLAN Cluster 3 wording, kpi security version).  
 - 2026-08-12 P8 shipped excel-toolkit 1.12.0 preview, `[WQ]_MM-DD-YYYY.xlsx`, Totals sheet.  
 - 2026-08-12 P7 signed Cluster 2 freeze (per-file score; groups do not span files).  
 - 2026-08-12 P6 shipped excel-toolkit 1.11.0 menu Build worklist; P1 filters still `blocked`.  
@@ -105,4 +110,4 @@ last_updated: "2026-08-12"
 
 ---
 
-*Agents: P8 done. Next open leftover is P1 (filters / patient-group policy). P9 B1.1 remains deferred.*
+*Agents: P11 active (audit-fix). Next product is P12 Worklist case-sensitive match. P1 filters remain blocked. P9 deferred.*
