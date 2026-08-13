@@ -1,7 +1,7 @@
 ---
 title: post-v1-enhancement — order of operations
 description: Goals, constraints, phased OOO, verification, and risks for grouped POI worklists and later Cluster 2 / B1.1.
-version: "1.0.2"
+version: "1.0.3"
 status: draft
 audience:
   - ai-agents
@@ -211,6 +211,7 @@ Do not invent gates outside the inventory / verification table.
 
 | Version | Notes |
 |---------|--------|
+| 1.0.3 | P8 Cluster 2 implement shipped |
 | 1.0.2 | P7 Cluster 2 freeze signed; groups do not span files |
 | 1.0.1 | P3–P6 shipped; P1 filters still blocked |
 | 1.0.0 | Initial master OOO at program open |

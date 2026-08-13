@@ -1,7 +1,7 @@
 ---
 title: Project control surface — Work Queue Data Processor
 description: Durable mission, stages, non-goals, and Agent Instruct control surface; product backlog and execution plans live under docs/.
-version: "1.2.1"
+version: "1.2.2"
 status: current
 audience:
   - developers
@@ -28,7 +28,7 @@ Product enhancement backlog: [docs/PLAN.md](./docs/PLAN.md).
 Live multi-phase execution: [docs/WORKBOARD.md](./docs/WORKBOARD.md).  
 Detailed execution plans: [docs/plan/](./docs/plan/).
 
-**Document version:** 1.2.1  
+**Document version:** 1.2.2  
 
 **Related:** [README.md](./README.md) · [docs/PLAN.md](./docs/PLAN.md) · [docs/WORKBOARD.md](./docs/WORKBOARD.md) · [docs/plan/](./docs/plan/) · [kit/RULES.md](./kit/RULES.md) · [kit/agents/OPS.md](./kit/agents/OPS.md) · [ai-docs-workspace](./kit/rules/ai-docs-workspace.md) · [workboard](./kit/rules/workboard.md)
 
@@ -79,7 +79,7 @@ Provide **offline, explainable** work-queue prioritization and RCM claim-impact 
 | **S0** Kit + dual toolkit baseline | **Done** | Standards under `kit/`; kpi-analytics + excel-toolkit; certification |
 | **S1** V1 priority + RCM + mapping + gap-safety | **Done** | See SCORE-METHODOLOGY; gap-safety closed |
 | **S2** Scoring profiles + menu profile pick (Cluster 1) | **Done** | kpi **2.6.0+**, excel **1.9.0**, residual **1f** |
-| **S3** Multi-file / delivery UX (Cluster 2) | **Freeze signed** | P7 signed — [docs/plan/cluster-2-multi-file.md](./docs/plan/cluster-2-multi-file.md); product code is P8 |
+| **S3** Multi-file / delivery UX (Cluster 2) | **Done** | excel-toolkit **1.12.0** — [docs/plan/cluster-2-multi-file.md](./docs/plan/cluster-2-multi-file.md) |
 | **S4** Grouping / sort / denial analysis sheet (Cluster 3) | **Developing** | Reporting-only vs V2 boundary — [docs/plan/cluster-3-analysis.md](./docs/plan/cluster-3-analysis.md) |
 | **S5** Priority Matrix V2/V3 | **Design only** | [docs/WQ_Priority_Matrix_Concept.md](./docs/WQ_Priority_Matrix_Concept.md); not product PLAN implementation |
 
@@ -200,6 +200,7 @@ Canonical detail: [kit/rules/architecture.md](./kit/rules/architecture.md) · to
 
 | Version | Notes |
 |---------|--------|
+| 1.2.2 | S3 Cluster 2 shipped (excel 1.12.0) |
 | 1.2.1 | S3 Cluster 2 freeze signed (P7); product code remains P8 |
 | 1.2.0 | Triple surface: pointer to docs/WORKBOARD.md; no live phase tables (kit 2.4.0) |
 | 1.1.0 | Kit dual-surface compliance: mission, stages, non-goals, plan map, stage gates; links to docs/plan execution plans |

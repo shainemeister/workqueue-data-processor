@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.11.0'
+$script:ExcelToolkitVersion = '1.12.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -448,6 +448,12 @@ function Export-ExcelFromCsv {
     .PARAMETER WorklistSheetName
         Tab name for -Worklist. Default: Worklist
 
+    .PARAMETER TotalsCsv
+        Optional file-level totals CSV (metric/value). Written as a Totals sheet (copy only).
+
+    .PARAMETER TotalsSheetName
+        Tab name for -TotalsCsv. Default: Totals
+
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -SchemaPath .\schema.json -UseDisplayNames -OutputPath .\out.xlsx -DryRun
     #>
@@ -486,7 +492,11 @@ function Export-ExcelFromCsv {
 
         [switch]$Worklist,
 
-        [string]$WorklistSheetName = 'Worklist'
+        [string]$WorklistSheetName = 'Worklist',
+
+        [string]$TotalsCsv = '',
+
+        [string]$TotalsSheetName = 'Totals'
     )
 
     $result = [pscustomobject]@{
@@ -507,6 +517,9 @@ function Export-ExcelFromCsv {
         Worklist           = [bool]$Worklist
         WorklistSheetName  = $null
         WorklistRowCount   = 0
+        TotalsCsv          = $null
+        TotalsSheetName    = $null
+        TotalsRowCount     = 0
     }
 
     try {
@@ -579,6 +592,21 @@ function Export-ExcelFromCsv {
             throw '-WorklistSheetName must differ from Data and Groups sheet names'
         }
 
+        $totalsTable = $null
+        if (-not [string]::IsNullOrWhiteSpace($TotalsCsv)) {
+            $TotalsCsv = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TotalsCsv)
+            $totalsTable = Read-ExcelToolkitCsvTable -Path $TotalsCsv
+            $result.TotalsCsv = $TotalsCsv
+            $result.TotalsSheetName = $TotalsSheetName
+            $result.TotalsRowCount = @($totalsTable.Rows).Count
+        }
+        if ($null -ne $totalsTable) {
+            $reserved = @($SheetName, $GroupsSheetName, $WorklistSheetName)
+            if ($reserved -contains $TotalsSheetName) {
+                throw '-TotalsSheetName must differ from Data, Groups, and Worklist sheet names'
+            }
+        }
+
         $worklistTable = $null
         if ($Worklist -and $null -ne $groupsTable) {
             $worklistTable = New-ExcelToolkitWorklistRows `
@@ -649,8 +677,14 @@ function Export-ExcelFromCsv {
             Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
             Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
 
+            $afterSheet = $ws
+            if ($null -ne $totalsTable) {
+                $wsTotals = Add-ExcelWorksheet -Workbook $workbook -Name $TotalsSheetName -After $afterSheet
+                $null = Write-ExcelToolkitCsvSheet -Worksheet $wsTotals -Rows $totalsTable.Rows -Headers $totalsTable.Headers
+                $afterSheet = $wsTotals
+            }
             if ($null -ne $groupsTable) {
-                $wsGroups = Add-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName -After $ws
+                $wsGroups = Add-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName -After $afterSheet
                 $null = Write-ExcelToolkitCsvSheet -Worksheet $wsGroups -Rows $groupsTable.Rows -Headers $groupsTable.Headers
             }
             if ($null -ne $worklistTable) {

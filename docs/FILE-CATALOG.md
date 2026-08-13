@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.11"
+version: "1.10.12"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.11  
+**Document version:** 1.10.12  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -128,7 +128,7 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 | [README.md](./README.md) | doc | AI docs workspace index: triple PLAN map, workboard, modules, plan index. |
 | [WORKBOARD.md](./WORKBOARD.md) | doc | Live multi-phase board (open / next / SHA). |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
-| [PLAN.md](./PLAN.md) | doc | Living product post-V1 backlog (0.5.3): Cluster 1 complete; Cluster 2 freeze signed; freezes link to `docs/plan/`; Agent models in root PLAN only. |
+| [PLAN.md](./PLAN.md) | doc | Living product post-V1 backlog (0.5.4): Cluster 1 complete; Cluster 2 shipped; freezes link to `docs/plan/`; Agent models in root PLAN only. |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
 | [research/README.md](./research/README.md) | doc | Research index: investigations and spikes. |
 | [research/2026-08-12-rules-compliance-gaps.md](./research/2026-08-12-rules-compliance-gaps.md) | doc | RULES.md gap audit; P1 + local P2 applied 2026-08-12 (see CHANGELOG 1.14.1). |
@@ -136,7 +136,7 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 | [plan/README.md](./plan/README.md) | doc | Execution plans index (kit triple surface; live work on WORKBOARD). |
 | [plan/repo-kit-upgrade-2.4.0.md](./plan/repo-kit-upgrade-2.4.0.md) | doc | Completed execution record for repo-kit 2.4.0 upgrade. |
 | [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | doc | Completed execution record for repo-kit 2.3.1 upgrade. |
-| [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 design freeze (signed): per-file score, filename/`wq_label` identity, no cross-file groups. |
+| [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 freeze + P8 ship notes: per-file score, filename/`wq_label` identity, preview/naming/Totals. |
 | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) | doc | Cluster 3 design-freeze checklist (developing; V2 boundary). |
 | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) | doc | Optional B1.1 base-weight retune checklist (pending). |
 | [plan/post-v1-enhancement/README.md](./plan/post-v1-enhancement/README.md) | doc | Open annex index; active only while WORKBOARD Optional annex points here. |
@@ -199,12 +199,12 @@ Tracked **input** files for scoring demos and local runs. Prefer synthetic or de
 | [CLI-GUIDE.md](../excel-toolkit/CLI-GUIDE.md) | doc | CLI contract: verbs, exit codes, JSON shapes, and automation examples. |
 | [ENTERPRISE-SECURITY.md](../excel-toolkit/ENTERPRISE-SECURITY.md) | doc | Trust boundary, disallowed patterns, and execution-policy guidance for COM automation. |
 | [ExcelCom.psm1](../excel-toolkit/ExcelCom.psm1) | module | Low-level Excel COM lifecycle, range I/O, CSV sheet import/export, optional workbook passwords, and safe Quit (no force-kill). |
-| [ExcelToolkit.psm1](../excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, unique paths, export/import, Groups/Worklist sheets, and enterprise diagnostics gate. |
+| [ExcelToolkit.psm1](../excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, unique paths, export/import, Groups/Worklist/Totals sheets, and enterprise diagnostics gate. |
 | [ExcelToolkit.ps1](../excel-toolkit/ExcelToolkit.ps1) | script | CLI entry: `version` / `probe` / `diagnostics` / `export-csv` / `import-excel` / `help` over `ExcelToolkit.psm1`. |
 | [diagnostics/README.md](../excel-toolkit/diagnostics/README.md) | doc | Pass certificate + first-run gate; distinct from root `certification/` (json/txt gitignored). |
 | [excel-toolkit.cmd](../excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](../excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
-| [Start-ExcelMenu.ps1](../excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export/build worklist, mapping preflight + guided column mapping via kpi-analytics TTY, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
+| [Start-ExcelMenu.ps1](../excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export/build worklist, multi-file preview, `[WQ]_MM-DD-YYYY.xlsx` deliverable, mapping preflight + guided column mapping via kpi-analytics TTY, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
 | [Export-CsvToExcel.ps1](../excel-toolkit/Export-CsvToExcel.ps1) | script | Thin menu/legacy wrapper around `Export-ExcelFromCsv` in the high-level module. |
 | [Export-WqDataToExcel.ps1](../excel-toolkit/Export-WqDataToExcel.ps1) | script | Compatibility forwarder to `Export-CsvToExcel.ps1` (legacy entry name). |
 | [Test-ExcelCom.ps1](../excel-toolkit/Test-ExcelCom.ps1) | script | Dry-run and full smoke tests for COM readiness and workbook operations. |
@@ -371,6 +371,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.12 | excel-toolkit 1.12.0 Cluster 2 menu preview / naming / Totals |
 | 1.10.11 | Cluster 2 freeze signed (cluster-2-multi-file 1.1.0) |
 | 1.10.10 | excel-toolkit 1.11.0 menu Build worklist notes |
 | 1.10.9 | excel-toolkit 1.10.0 Groups/Worklist export notes |

@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.19.0] - 2026-08-12
+
+#### Added
+
+- **excel-toolkit 1.12.0 (Cluster 2 / P8):** Process my data multi-file preview (name, WQ stem, row count, max `out_ins_amt`; no `score`). Excel deliverable names `[WQ]_MM-DD-YYYY.xlsx`. File-level **Totals** sheet via `export-csv -TotalsCsv` (copy of existing scored columns; no new score). Per-file only; groups do not span files.
+
 ### [1.18.1] - 2026-08-12
 
 #### Changed

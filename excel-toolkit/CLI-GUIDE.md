@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.11.0"
+version: "1.12.0"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-08-12"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.11.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.12.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -79,7 +79,7 @@ ExcelToolkit.ps1 (CLI)  →  ExcelToolkit.psm1  →  ExcelCom.psm1
 |--------|-----------------|
 | Another **PowerShell** script (same process) | `Import-Module .\ExcelToolkit.psm1` and call `Export-ExcelFromCsv` / `Get-ExcelToolkitVersion` |
 | **Python**, cmd, Task Scheduler, CI | **CLI** (`ExcelToolkit.ps1` or `excel-toolkit.cmd`) |
-| Interactive user | `Start-ExcelMenu.cmd` — **Process my data** lists `import\` CSV/Excel; multi-select accepts `1`, `1,2`, `1-3`, `1,3-5,8`, or a full path; Full pipeline / Score only / **Build worklist** pick an optional **scoring profile** (subprocess `score --profile`); Build worklist also picks `--group-preset` and exports Data + Groups + Worklist sheets. Score path runs mapping preflight + guided column mapping when headers need attention; optional workbook password on Excel export. Advanced → scoring profiles list/help. CLI verbs unchanged (Groups/Worklist stay `export-csv` flags from 1.10.0). |
+| Interactive user | `Start-ExcelMenu.cmd` — **Process my data** lists `import\` CSV/Excel; multi-select accepts `1`, `1,2`, `1-3`, `1,3-5,8`, or a full path; 2+ files show a **preview** (name, WQ stem, row count, max `out_ins_amt`) without scoring. Full pipeline / Score only / **Build worklist** pick an optional **scoring profile** (subprocess `score --profile`); Build worklist also picks `--group-preset`. Excel deliverable names `[WQ]_MM-DD-YYYY.xlsx`. Score path runs mapping preflight + guided column mapping when headers need attention; optional workbook password on Excel export. Advanced → scoring profiles list/help. CLI: `export-csv -TotalsCsv` (1.12.0) plus Groups/Worklist (1.10.0). |
 
 The CLI is a thin wrapper around the same module functions. It does not replace `Import-Module` for in-process PowerShell work.
 
@@ -298,6 +298,7 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
     [-UseDisplayNames] [-DisplayNameProperty <name>]
     [-SheetName <name>] [-GroupsCsv <path>] [-GroupsSheetName <name>]
     [-Worklist] [-WorklistSheetName <name>]
+    [-TotalsCsv <path>] [-TotalsSheetName <name>]
     [-Visible] [-DryRun]
     [-Json] [-Quiet]
 ```
@@ -315,6 +316,8 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
 | `-GroupsSheetName` | No | `Groups` | Groups tab name (must differ from `-SheetName`) |
 | `-Worklist` | No | off | Also write a two-level **Worklist** sheet (GROUP then matching CLAIM rows). Requires `-GroupsCsv`. |
 | `-WorklistSheetName` | No | `Worklist` | Worklist tab name |
+| `-TotalsCsv` | No | — | Optional file-level totals CSV (`metric`,`value`). Adds a **Totals** sheet (copy only; no scoring math). |
+| `-TotalsSheetName` | No | `Totals` | Totals tab name (must differ from Data / Groups / Worklist) |
 | `-Visible` | No | off | Show Excel UI (debug) |
 | `-Password` | No | — | Optional workbook **open** password when saving `.xlsx` (not logged; not in JSON) |
 | `-Force` | No | off | Replace the **exact** `-OutputPath` if it exists. Default: **do not overwrite** — write to a free sibling path with a numerical suffix (`export_1.xlsx`, …) |
@@ -627,7 +630,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.11.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.12.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.12.0 notes:** Cluster 2 menu: multi-file preview (no `score`); Excel names `[WQ]_MM-DD-YYYY.xlsx` (WQ = filename stem or profile `wq_label`); `export-csv -TotalsCsv` copies a file-level totals CSV to a **Totals** sheet. Per-file scoring unchanged. See [README.md](./README.md).
 
 **1.11.0 notes:** interactive `Start-ExcelMenu` **Process my data → Build worklist** composes `kpi-analytics.cmd score --group-preset` / `--groups` then `Export-ExcelFromCsv -GroupsCsv -Worklist`. Group picker: `payer_category` (default) / `payer` / `category` / `location`. Same scoring-profile pick as Full pipeline. No new Excel CLI verbs; no scoring math in PowerShell. See [README.md](./README.md).
 

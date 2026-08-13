@@ -57,6 +57,8 @@ param(
     [string]$GroupsSheetName = 'Groups',
     [switch]$Worklist,
     [string]$WorklistSheetName = 'Worklist',
+    [string]$TotalsCsv = '',
+    [string]$TotalsSheetName = 'Totals',
     [string]$Password = '',
     [switch]$Visible,
     [switch]$DryRun,
@@ -136,6 +138,8 @@ export-csv options:
   -GroupsSheetName <name> Groups tab (default Groups)
   -Worklist               Two-level GROUP/CLAIM sheet (requires -GroupsCsv)
   -WorklistSheetName <name> Worklist tab (default Worklist)
+  -TotalsCsv <path>       Optional file-level totals CSV (Totals sheet)
+  -TotalsSheetName <name> Totals tab (default Totals)
   -Password <text>        Optional workbook open password (not logged)
   -Visible                Show Excel UI
   -DryRun                 Validate only; do not write
@@ -355,12 +359,16 @@ try {
                 Force             = $Force
                 GroupsSheetName   = $GroupsSheetName
                 WorklistSheetName = $WorklistSheetName
+                TotalsSheetName   = $TotalsSheetName
             }
             if (-not [string]::IsNullOrWhiteSpace($GroupsCsv)) {
                 $exportParams['GroupsCsv'] = $GroupsCsv
             }
             if ($Worklist) {
                 $exportParams['Worklist'] = $true
+            }
+            if (-not [string]::IsNullOrWhiteSpace($TotalsCsv)) {
+                $exportParams['TotalsCsv'] = $TotalsCsv
             }
             if (-not [string]::IsNullOrWhiteSpace($SchemaPath)) {
                 $exportParams['SchemaPath'] = $SchemaPath
@@ -395,6 +403,9 @@ try {
                 Worklist            = [bool]$r.Worklist
                 WorklistSheetName   = $r.WorklistSheetName
                 WorklistRowCount    = $r.WorklistRowCount
+                TotalsCsv           = $r.TotalsCsv
+                TotalsSheetName     = $r.TotalsSheetName
+                TotalsRowCount      = $r.TotalsRowCount
             }
             $null = Add-ExcelToolkitGateFields -Target $payloadHt -Gate $gate
             $payload = [pscustomobject]$payloadHt

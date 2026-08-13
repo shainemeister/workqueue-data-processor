@@ -48,7 +48,7 @@ When a freeze becomes product law, promote to toolkit contracts / schema / CHANG
 | [repo-kit-upgrade-2.4.0.md](./repo-kit-upgrade-2.4.0.md) | **complete** | Standards upgrade 2.3.1 → 2.4.0 (workboard + continuity policy) |
 | [repo-kit-upgrade-2.3.1.md](./repo-kit-upgrade-2.3.1.md) | **complete** | Standards upgrade 2.0.1 → 2.3.1 (Agent Instruct + docs workspace) |
 | [post-v1-enhancement/](./post-v1-enhancement/) | **open annex** | Linked from WORKBOARD; master OOO for worklists then optional Cluster 2 |
-| [cluster-2-multi-file.md](./cluster-2-multi-file.md) | **freeze signed** | Multi-file / naming / preview / file-level totals; product code is P8 |
+| [cluster-2-multi-file.md](./cluster-2-multi-file.md) | **shipped** | Multi-file preview / naming / file-level totals (excel 1.12.0) |
 | [cluster-3-analysis.md](./cluster-3-analysis.md) | **developing** | Design freeze checklist for group/sort/denial analysis (reporting-only). Options: [research/worklist grouping](../research/2026-08-12-worklist-grouping-and-industry-metrics.md) |
 | [b1.1-base-weight-retune.md](./b1.1-base-weight-retune.md) | **pending** | Optional evidence-based base weight / chaos retune |
 

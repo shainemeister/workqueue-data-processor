@@ -1,7 +1,7 @@
 ---
 title: "Development Plan — Post-V1 Enhancement Concepts"
 description: "Living product backlog: Cluster 1 complete; Cluster 2 freeze signed; Cluster 3 partial; optional base retune. Control surface in root PLAN.md; live multi-phase on docs/WORKBOARD.md; execution freezes in docs/plan/."
-version: "0.5.3"
+version: "0.5.4"
 status: current
 audience:
   - developers
@@ -27,8 +27,8 @@ last_updated: "2026-08-12"
 
 Living **product enhancement backlog** after V1 priority matrix, dynamic mapping, guided menu, gap-safety, scoring profiles, quality audit, certification Phase 2, and menu scoring-profile picker.
 
-**Document version:** 0.5.3  
-**Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Cluster **2 freeze signed** (P8 implement). Cluster **3** partial (sort/groups/menu shipped; 3.1 filters still open).  
+**Document version:** 0.5.4  
+**Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Cluster **2 shipped** (excel 1.12.0). Cluster **3** partial (sort/groups/menu shipped; 3.1 filters still open).  
 
 | Kit triple surface | Path |
 |--------------------|------|
@@ -66,7 +66,7 @@ Living **product enhancement backlog** after V1 priority matrix, dynamic mapping
 | Tier | Items | Execution plan |
 |------|--------|----------------|
 | **Pending (optional)** | Evidence-based base-weight retune (**B1.1-retune**) | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) |
-| **Ready (P8)** | **Cluster 2** multi-file / naming / default xlsx / preview / file-level totals | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) **freeze signed** |
+| **Shipped (excel 1.12.0)** | **Cluster 2** multi-file preview / naming / Excel deliverable / file-level totals | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) |
 | **Developing (partial freeze)** | **Cluster 3** grouping / multi-sort / denial analysis sheet (reporting-only vs V2) | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) |
 
 Do not start Cluster 2 **product** code until this freeze is signed (it is). Do not start remaining Cluster 3 product (filters) until that slice is frozen.
@@ -79,7 +79,7 @@ Do not start Cluster 2 **product** code until this freeze is signed (it is). Do 
 2. [Background and current baseline](#background-and-current-baseline)
 3. [Shared principles and hard constraints](#shared-principles-and-hard-constraints)
 4. [Cluster 1 — KPI config optimization and saved profiles](#cluster-1--kpi-config-optimization-and-saved-profiles) (**complete; optional retune only**)
-5. [Cluster 2 — Multi-file ingest, aggregation, and output conventions](#cluster-2--multi-file-ingest-aggregation-and-output-conventions) (**freeze signed**)
+5. [Cluster 2 — Multi-file ingest, aggregation, and output conventions](#cluster-2--multi-file-ingest-aggregation-and-output-conventions) (**shipped**)
 6. [Cluster 3 — Grouping, sorting, and denial analysis sheet](#cluster-3--grouping-sorting-and-denial-analysis-sheet) (**developing**)
 7. [Recommended sequencing](#recommended-sequencing)
 8. [Compliance, versioning, and change control](#compliance-versioning-and-change-control)
@@ -322,14 +322,14 @@ Menu calls the same `kpi-analytics.cmd score --profile …` (no scoring math in 
 
 ## Cluster 2 — Multi-file ingest, aggregation, and output conventions
 
-**Status:** **Freeze signed (P7, 2026-08-12)** — implementation is **P8**.  
+**Status:** **Shipped (excel-toolkit 1.12.0 / repo 1.19.0)** — preview, `[WQ]_MM-DD-YYYY.xlsx`, Totals sheet.  
 **Execution freeze:** [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md)  
 **Primary surface:** excel-toolkit menu / workflow (kpi-analytics only if a later rollup verb is required)  
 **Risk to existing contracts:** medium (naming / preview / presentation totals; per-file score semantics must stay)
 
 | Gate | State |
 |------|--------|
-| Implementation-ready? | **Yes** for P8 slices in the freeze (preview → naming → wording → file-level totals) |
+| Implementation-ready? | **Shipped** (P8) |
 | Role in backlog | Delivery UX after Cluster 1; **not** a new score |
 
 ### 2.1 Ingest multiple files and parse / total by WQ
@@ -432,8 +432,8 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 |-------|------|--------|-----------|
 | 1 | **1f** Menu profile picker | **Shipped** | Low risk; uses shipped CLI |
 | 2 | **B1.1-retune** Base weights | **Pending** (optional) | Data / analyst gated |
-| 3 | Cluster **2.2–2.4** Naming, default xlsx, multi-file preview | **Freeze signed** (P8) | Preview first |
-| 4 | Cluster **2.1** File-level / by-WQ totals | **Freeze signed** (P8 last) | Per-file; no combined score |
+| 3 | Cluster **2.2–2.4** Naming, default xlsx, multi-file preview | **Shipped** (excel 1.12.0) | Preview first |
+| 4 | Cluster **2.1** File-level / by-WQ totals | **Shipped** (excel 1.12.0) | Per-file Totals sheet; no combined score |
 | 5 | Cluster **3.2** Multi-sort | **Shipped** (kpi 2.8.0) | Low-risk post-score |
 | 6 | Cluster **3.1** Group qualifier | Partial (CSV 2.9.0; filters open) | Privacy care |
 | 7 | Cluster **3.3** Denial analysis sheet | Partial (Excel 1.10.0 + menu 1.11.0; extra metrics open) | Reporting-only until V2 |
@@ -441,7 +441,7 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 **Next recommended product slice**
 
 - Live order of operations: [WORKBOARD.md](./WORKBOARD.md) program **`post-v1-enhancement`** · annex [plan/post-v1-enhancement/](./plan/post-v1-enhancement/).  
-- P3–P7 shipped (sort, groups, sheets, menu, **Cluster 2 freeze**). Next product: **P8** Cluster 2 implement. **P1** filters / patient-group policy remain `blocked`.  
+- P3–P8 shipped (sort, groups, sheets, menu, Cluster 2 freeze + implement). Remaining: **P1** filters / patient-group policy (`blocked`).  
 - Prefer **B1.1-retune** only with analyst evidence (deferred on the board).
 
 ---
@@ -496,6 +496,7 @@ When a concept moves from “developing” to “ready for implementation”, fr
 
 | Version | Notes |
 |---------|--------|
+| 0.5.4 | Cluster 2 **shipped** (excel 1.12.0 / P8) |
 | 0.5.3 | Cluster 2 **freeze signed** (P7); P8 implement |
 | 0.5.2 | P6 menu Build worklist (excel 1.11.0); Cluster 3.2/3.3/3.1 CSV statuses |
 | 0.5.1 | Kit triple surface (repo-kit **2.4.0**): `docs/WORKBOARD.md` for live multi-phase; Clusters 2–3 still developing |

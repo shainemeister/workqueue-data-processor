@@ -20,7 +20,10 @@
     Full pipeline, Score only, and Build worklist optionally pick a scoring
     profile (POI focus) and pass it as kpi-analytics score --profile.
     Build worklist also picks a --group-preset and exports Data + Groups +
-    Worklist sheets (no scoring math in PowerShell).
+    Worklist sheets (no scoring math in PowerShell). Multi-file preview
+    (2+ files) shows name, WQ stem, row count, max out_ins_amt without scoring.
+    Excel deliverable names use [WQ]_MM-DD-YYYY.xlsx. File-level Totals sheet
+    copies existing scored columns (count / dollar sums / max priority / min appeal).
 
     Column layout always comes from your data CSV. An optional schema (JSON or
     CSV) supplies display labels only. Nothing domain-specific is hard-coded.
@@ -430,13 +433,16 @@ function Invoke-ProcessMyData {
         Write-Host ("  - {0}" -f $c) -ForegroundColor DarkGray
     }
 
+    Show-ExcelMenuMultiFilePreview -CsvPaths @($csvPaths.ToArray())
+
     # Defaults: full pipeline for CSV work; if selection was pure Excel, still offer pipeline first after import
     $defaultAction = '1'
     Write-Host ''
     Write-Host 'What should I do with the selected file(s)?' -ForegroundColor Cyan
-    Write-Host '  [1] Full pipeline (Score -> Excel)     <- recommended' -ForegroundColor DarkGray
-    Write-Host '  [2] Score only (CSV results)' -ForegroundColor DarkGray
-    Write-Host '  [3] Export only (CSV -> Excel, no scoring)' -ForegroundColor DarkGray
+    Write-Host 'Excel is the human deliverable; scored CSV is still written under output\.' -ForegroundColor DarkGray
+    Write-Host '  [1] Full pipeline (Score -> Excel deliverable)     <- recommended' -ForegroundColor DarkGray
+    Write-Host '  [2] Score only (CSV artifacts)' -ForegroundColor DarkGray
+    Write-Host '  [3] Export only (CSV -> Excel deliverable, no scoring)' -ForegroundColor DarkGray
     Write-Host '  [4] Build worklist (Score + Groups + Worklist Excel)' -ForegroundColor DarkGray
     $action = Read-Host ("Choice [{0}]" -f $defaultAction)
     if ([string]::IsNullOrWhiteSpace($action)) {
@@ -1555,6 +1561,371 @@ function Select-KpiGroupPreset {
     }
 }
 
+function ConvertTo-ExcelMenuWqFileToken {
+    <#
+    .SYNOPSIS
+        Sanitize a WQ label for [WQ]_MM-DD-YYYY.xlsx names (freeze: letters, digits, _ , -).
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return 'wq'
+    }
+    $chars = $Text.ToCharArray()
+    $buf = New-Object System.Text.StringBuilder
+    foreach ($ch in $chars) {
+        if ([char]::IsLetterOrDigit($ch) -or $ch -eq '_' -or $ch -eq '-') {
+            [void]$buf.Append($ch)
+        }
+        else {
+            [void]$buf.Append('_')
+        }
+    }
+    $out = $buf.ToString().Trim('_')
+    if ([string]::IsNullOrWhiteSpace($out)) {
+        return 'wq'
+    }
+    return $out
+}
+
+function ConvertTo-ExcelMenuOptionalDouble {
+    <#
+    .SYNOPSIS
+        Parse a CSV cell as a number (invariant). Returns $null when blank or not numeric.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return $null
+    }
+    $t = $Text.Trim()
+    if ($t.Length -eq 0) {
+        return $null
+    }
+    $t = $t.Replace('$', '').Replace(',', '')
+    $n = 0.0
+    if ([double]::TryParse($t, [System.Globalization.NumberStyles]::Float,
+            [System.Globalization.CultureInfo]::InvariantCulture, [ref]$n)) {
+        return $n
+    }
+    return $null
+}
+
+function Get-ExcelMenuCsvHeaderMatch {
+    param(
+        [string[]]$Headers,
+        [string]$Name
+    )
+
+    $want = $Name.ToLowerInvariant()
+    foreach ($h in @($Headers)) {
+        if ([string]::IsNullOrWhiteSpace($h)) { continue }
+        if ($h.ToLowerInvariant() -eq $want) {
+            return $h
+        }
+    }
+    return $null
+}
+
+function Get-KpiProfileWqLabel {
+    <#
+    .SYNOPSIS
+        Read optional profile JSON wq_label. No config merge and no score.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$ProfileToken
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ProfileToken)) {
+        return $null
+    }
+    $path = $null
+    $token = $ProfileToken.Trim()
+    if ($token.IndexOfAny([char[]]@('\', '/')) -ge 0 -or $token.EndsWith('.json', [StringComparison]::OrdinalIgnoreCase)) {
+        if (Test-Path -LiteralPath $token) {
+            $path = $token
+        }
+    }
+    else {
+        $dir = Join-Path $kpiAnalyticsDir 'profiles'
+        foreach ($cand in @(($token + '.json'), ('poi_' + $token + '.json'))) {
+            $tryPath = Join-Path $dir $cand
+            if (Test-Path -LiteralPath $tryPath) {
+                $path = $tryPath
+                break
+            }
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($path)) {
+        return $null
+    }
+    try {
+        $raw = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+        $obj = $raw | ConvertFrom-Json
+        if ($null -eq $obj) { return $null }
+        if (@($obj.PSObject.Properties.Name) -contains 'wq_label') {
+            $v = [string]$obj.wq_label
+            if (-not [string]::IsNullOrWhiteSpace($v)) {
+                return $v.Trim()
+            }
+        }
+    }
+    catch {
+        return $null
+    }
+    return $null
+}
+
+function Get-ExcelMenuWqLabelForFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CsvPath,
+
+        [string]$BatchProfileLabel
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($BatchProfileLabel)) {
+        return (ConvertTo-ExcelMenuWqFileToken -Text $BatchProfileLabel)
+    }
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($CsvPath)
+    return (ConvertTo-ExcelMenuWqFileToken -Text $stem)
+}
+
+function Get-ExcelMenuDeliverableXlsxPath {
+    <#
+    .SYNOPSIS
+        Planned Excel deliverable path: [WQ]_MM-DD-YYYY.xlsx (or _summary).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$OutputDir,
+
+        [Parameter(Mandatory = $true)]
+        [string]$WqLabel,
+
+        [ValidateSet('data', 'summary')]
+        [string]$Kind = 'data'
+    )
+
+    $datePart = Get-Date -Format 'MM-dd-yyyy'
+    $base = '{0}_{1}' -f $WqLabel, $datePart
+    if ($Kind -eq 'summary') {
+        $base = '{0}_summary' -f $base
+    }
+    return (Join-Path $OutputDir ($base + '.xlsx'))
+}
+
+function Get-ExcelMenuCsvPreview {
+    <#
+    .SYNOPSIS
+        File name, WQ stem, row count, max out_ins_amt. Does not call score. No PHI columns printed.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CsvPath
+    )
+
+    $name = [System.IO.Path]::GetFileName($CsvPath)
+    $label = ConvertTo-ExcelMenuWqFileToken -Text ([System.IO.Path]::GetFileNameWithoutExtension($CsvPath))
+    $rowCount = 0
+    $hasAmt = $false
+    $maxAmt = $null
+    if (Test-Path -LiteralPath $CsvPath) {
+        $rows = @(Import-Csv -LiteralPath $CsvPath)
+        $rowCount = $rows.Count
+        if ($rowCount -gt 0) {
+            $headers = @($rows[0].PSObject.Properties | ForEach-Object { $_.Name })
+            $amtCol = Get-ExcelMenuCsvHeaderMatch -Headers $headers -Name 'out_ins_amt'
+            if (-not [string]::IsNullOrWhiteSpace($amtCol)) {
+                $hasAmt = $true
+                foreach ($r in $rows) {
+                    $cell = [string]$r.PSObject.Properties[$amtCol].Value
+                    $v = ConvertTo-ExcelMenuOptionalDouble -Text $cell
+                    if ($null -ne $v) {
+                        if ($null -eq $maxAmt -or $v -gt $maxAmt) {
+                            $maxAmt = $v
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return [pscustomobject]@{
+        FileName      = $name
+        WqLabel       = $label
+        RowCount      = $rowCount
+        HasOutInsAmt  = $hasAmt
+        MaxOutInsAmt  = $maxAmt
+    }
+}
+
+function Show-ExcelMenuMultiFilePreview {
+    <#
+    .SYNOPSIS
+        Print preview for 2+ selected CSVs. Skipped for a single file (P7 freeze).
+    #>
+    [CmdletBinding()]
+    param(
+        [string[]]$CsvPaths
+    )
+
+    $paths = @($CsvPaths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($paths.Count -lt 2) {
+        return
+    }
+
+    Write-Host ''
+    Write-Host 'Multi-file preview (no score):' -ForegroundColor Cyan
+    foreach ($p in $paths) {
+        try {
+            $info = Get-ExcelMenuCsvPreview -CsvPath $p
+            $line = ('  {0}  wq={1}  rows={2}' -f $info.FileName, $info.WqLabel, $info.RowCount)
+            if ($info.HasOutInsAmt) {
+                if ($null -ne $info.MaxOutInsAmt) {
+                    $line = $line + ('  max_out_ins_amt={0}' -f $info.MaxOutInsAmt)
+                }
+                else {
+                    $line = $line + '  max_out_ins_amt=(none numeric)'
+                }
+            }
+            Write-Host $line -ForegroundColor DarkGray
+        }
+        catch {
+            Write-Host ("  {0}  (preview failed: {1})" -f $p, $_.Exception.Message) -ForegroundColor Yellow
+        }
+    }
+    Write-Host 'Each file is scored separately. Groups and worklists do not span files.' -ForegroundColor DarkGray
+}
+
+function Get-ExcelMenuFileTotals {
+    <#
+    .SYNOPSIS
+        File-level totals from already-scored columns (count / sum / max / min). Not a new score.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScoredCsv,
+
+        [Parameter(Mandatory = $true)]
+        [string]$WqLabel,
+
+        [string]$SourceFile
+    )
+
+    $inv = [System.Globalization.CultureInfo]::InvariantCulture
+    $list = New-Object System.Collections.Generic.List[object]
+    $list.Add([pscustomobject]@{ metric = 'wq_label'; value = $WqLabel })
+    $srcName = ''
+    if (-not [string]::IsNullOrWhiteSpace($SourceFile)) {
+        $srcName = [System.IO.Path]::GetFileName($SourceFile)
+    }
+    $list.Add([pscustomobject]@{ metric = 'source_file'; value = $srcName })
+
+    $rows = @()
+    if (Test-Path -LiteralPath $ScoredCsv) {
+        $rows = @(Import-Csv -LiteralPath $ScoredCsv)
+    }
+    $list.Add([pscustomobject]@{ metric = 'claim_count'; value = [string]$rows.Count })
+
+    $headers = @()
+    if ($rows.Count -gt 0) {
+        $headers = @($rows[0].PSObject.Properties | ForEach-Object { $_.Name })
+    }
+
+    $sumCols = @(
+        @{ Metric = 'sum_out_ins_amt'; Column = 'out_ins_amt' },
+        @{ Metric = 'sum_billed_amount'; Column = 'billed_amount' }
+    )
+    foreach ($spec in $sumCols) {
+        $col = Get-ExcelMenuCsvHeaderMatch -Headers $headers -Name $spec.Column
+        if ([string]::IsNullOrWhiteSpace($col)) {
+            continue
+        }
+        $sum = 0.0
+        $any = $false
+        foreach ($r in $rows) {
+            $v = ConvertTo-ExcelMenuOptionalDouble -Text ([string]$r.PSObject.Properties[$col].Value)
+            if ($null -ne $v) {
+                $sum += $v
+                $any = $true
+            }
+        }
+        if ($any) {
+            $list.Add([pscustomobject]@{ metric = $spec.Metric; value = $sum.ToString($inv) })
+        }
+    }
+
+    $maxCol = Get-ExcelMenuCsvHeaderMatch -Headers $headers -Name 'v1_priority_score'
+    if (-not [string]::IsNullOrWhiteSpace($maxCol)) {
+        $mx = $null
+        foreach ($r in $rows) {
+            $v = ConvertTo-ExcelMenuOptionalDouble -Text ([string]$r.PSObject.Properties[$maxCol].Value)
+            if ($null -ne $v) {
+                if ($null -eq $mx -or $v -gt $mx) { $mx = $v }
+            }
+        }
+        if ($null -ne $mx) {
+            $list.Add([pscustomobject]@{ metric = 'max_v1_priority_score'; value = $mx.ToString($inv) })
+        }
+    }
+
+    $minCol = Get-ExcelMenuCsvHeaderMatch -Headers $headers -Name 'days_until_appeal_deadline'
+    if (-not [string]::IsNullOrWhiteSpace($minCol)) {
+        $mn = $null
+        foreach ($r in $rows) {
+            $v = ConvertTo-ExcelMenuOptionalDouble -Text ([string]$r.PSObject.Properties[$minCol].Value)
+            if ($null -ne $v) {
+                if ($null -eq $mn -or $v -lt $mn) { $mn = $v }
+            }
+        }
+        if ($null -ne $mn) {
+            $list.Add([pscustomobject]@{ metric = 'min_days_until_appeal_deadline'; value = $mn.ToString($inv) })
+        }
+    }
+
+    return @($list.ToArray())
+}
+
+function Show-ExcelMenuFileTotals {
+    param(
+        [object[]]$Totals
+    )
+
+    if ($null -eq $Totals -or @($Totals).Count -eq 0) {
+        return
+    }
+    Write-Host '  File totals (existing columns; not a new score):' -ForegroundColor DarkGray
+    foreach ($t in @($Totals)) {
+        Write-Host ("    {0}={1}" -f $t.metric, $t.value) -ForegroundColor DarkGray
+    }
+}
+
+function Write-ExcelMenuFileTotalsCsv {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]]$Totals,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $dir = [System.IO.Path]::GetDirectoryName($Path)
+    if (-not [string]::IsNullOrWhiteSpace($dir) -and -not (Test-Path -LiteralPath $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+    @($Totals) | Export-Csv -LiteralPath $Path -NoTypeInformation -Encoding UTF8
+}
+
 function Get-ImportProcessableFiles {
     <#
     .SYNOPSIS
@@ -1906,9 +2277,8 @@ function Invoke-MenuExportCsv {
             continue
         }
 
-        $stem = [System.IO.Path]::GetFileNameWithoutExtension($csvPath)
-        if ([string]::IsNullOrWhiteSpace($stem)) { $stem = 'export' }
-        $plannedXlsx = Join-Path $outputDir ('{0}.xlsx' -f $stem)
+        $wqLabel = Get-ExcelMenuWqLabelForFile -CsvPath $csvPath
+        $plannedXlsx = Get-ExcelMenuDeliverableXlsxPath -OutputDir $outputDir -WqLabel $wqLabel -Kind data
 
         $exportParams = @{
             CsvPath    = $csvPath
@@ -2004,12 +2374,13 @@ function Invoke-KpiScoreExportMenu {
     }
     elseif ($Worklist) {
         Write-Host 'Build worklist (Score -> Groups + Worklist Excel)' -ForegroundColor Cyan
-        Write-Host 'kpi-analytics scores and writes *_groups.csv; Excel COM adds Groups + Worklist sheets.' -ForegroundColor DarkGray
-        Write-Host 'No scoring math in PowerShell.' -ForegroundColor DarkGray
+        Write-Host 'kpi-analytics scores and writes *_groups.csv; Excel COM adds Groups + Worklist + Totals sheets.' -ForegroundColor DarkGray
+        Write-Host 'Excel is the human deliverable ([WQ]_MM-DD-YYYY.xlsx). No scoring math in PowerShell.' -ForegroundColor DarkGray
     }
     else {
-        Write-Host 'Run full pipeline (Score CSV -> Excel)' -ForegroundColor Cyan
+        Write-Host 'Run full pipeline (Score CSV -> Excel deliverable)' -ForegroundColor Cyan
         Write-Host 'Runs kpi-analytics score, then exports scored + summary CSVs to Excel.' -ForegroundColor DarkGray
+        Write-Host 'Excel is the human deliverable ([WQ]_MM-DD-YYYY.xlsx); CSV artifacts stay under output\.' -ForegroundColor DarkGray
         Write-Host 'Engines stay separate: Python scores; Excel COM formats workbooks.' -ForegroundColor DarkGray
     }
     Write-Host 'Existing outputs are kept; new files use a free numerical suffix when needed.' -ForegroundColor DarkGray
@@ -2070,6 +2441,14 @@ function Invoke-KpiScoreExportMenu {
             return
         }
         Write-Host ("Group preset: {0}" -f $resolvedGroupPreset) -ForegroundColor Cyan
+    }
+
+    $batchProfileWqLabel = $null
+    if (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
+        $batchProfileWqLabel = Get-KpiProfileWqLabel -ProfileToken $resolvedProfile
+        if (-not [string]::IsNullOrWhiteSpace($batchProfileWqLabel)) {
+            Write-Host ("WQ label (profile wq_label): {0}" -f $batchProfileWqLabel) -ForegroundColor Cyan
+        }
     }
 
     # Excel COM gate only when this action will export workbooks
@@ -2232,6 +2611,17 @@ function Invoke-KpiScoreExportMenu {
                 Write-Host '  Continuing with PARTIAL rank outputs.' -ForegroundColor Yellow
             }
 
+            $fileWqLabel = Get-ExcelMenuWqLabelForFile -CsvPath $csvPath -BatchProfileLabel $batchProfileWqLabel
+            $fileTotals = @()
+            try {
+                $fileTotals = @(Get-ExcelMenuFileTotals -ScoredCsv $actualScoredCsv -WqLabel $fileWqLabel -SourceFile $csvPath)
+                Show-ExcelMenuFileTotals -Totals $fileTotals
+            }
+            catch {
+                Write-Host ("  File totals skipped: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+                $fileTotals = @()
+            }
+
             if ($ScoreOnly) {
                 Write-Host ("  Scored CSV  : {0}" -f $actualScoredCsv) -ForegroundColor Green
                 Write-Host ("  Summary CSV : {0}" -f $actualSummaryCsv) -ForegroundColor Green
@@ -2240,8 +2630,8 @@ function Invoke-KpiScoreExportMenu {
                 continue
             }
 
-            $plannedScoredXlsx  = [System.IO.Path]::ChangeExtension($actualScoredCsv, '.xlsx')
-            $plannedSummaryXlsx = [System.IO.Path]::ChangeExtension($actualSummaryCsv, '.xlsx')
+            $plannedScoredXlsx  = Get-ExcelMenuDeliverableXlsxPath -OutputDir $outputDir -WqLabel $fileWqLabel -Kind data
+            $plannedSummaryXlsx = Get-ExcelMenuDeliverableXlsxPath -OutputDir $outputDir -WqLabel $fileWqLabel -Kind summary
 
             if (-not $rankIsFull) {
                 Write-Host '  Exporting PARTIAL-rank workbooks...' -ForegroundColor Yellow
@@ -2250,6 +2640,18 @@ function Invoke-KpiScoreExportMenu {
             $ex1Params = @{
                 CsvPath    = $actualScoredCsv
                 OutputPath = $plannedScoredXlsx
+            }
+            if (@($fileTotals).Count -gt 0) {
+                $plannedTotalsCsv = Join-Path $outputDir ('{0}_scored_totals.csv' -f $stem)
+                $totalsCsvInfo = Resolve-ExcelToolkitUniquePath -Path $plannedTotalsCsv
+                try {
+                    Write-ExcelMenuFileTotalsCsv -Totals $fileTotals -Path $totalsCsvInfo.Path
+                    $ex1Params['TotalsCsv'] = $totalsCsvInfo.Path
+                    Write-Host ("  Totals CSV  : {0}" -f $totalsCsvInfo.Path) -ForegroundColor DarkGray
+                }
+                catch {
+                    Write-Host ("  Totals sheet skipped: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+                }
             }
             if ($Worklist) {
                 $actualGroupsCsv = $groupsCsvInfo.Path
@@ -2276,8 +2678,11 @@ function Invoke-KpiScoreExportMenu {
                 continue
             }
             Write-Host ("  Scored XLSX : {0}" -f $ex1.OutputPath) -ForegroundColor Green
+            $exNames = @($ex1.PSObject.Properties.Name)
+            if ($exNames -contains 'TotalsRowCount' -and $ex1.TotalsRowCount -gt 0) {
+                Write-Host ("  Totals rows : {0}" -f $ex1.TotalsRowCount) -ForegroundColor DarkGray
+            }
             if ($Worklist) {
-                $exNames = @($ex1.PSObject.Properties.Name)
                 if ($exNames -contains 'WorklistRowCount') {
                     Write-Host ("  Worklist rows: {0}" -f $ex1.WorklistRowCount) -ForegroundColor DarkGray
                 }

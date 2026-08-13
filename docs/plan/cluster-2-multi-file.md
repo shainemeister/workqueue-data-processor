@@ -1,7 +1,7 @@
 ---
 title: Cluster 2 — multi-file, aggregation, and output conventions
 description: Design freeze for multi-file / naming / default-xlsx / preview; per-file scores; groups do not span files.
-version: "1.1.0"
+version: "1.1.1"
 status: current
 audience:
   - developers
@@ -23,8 +23,8 @@ last_updated: "2026-08-12"
 
 # Cluster 2 — multi-file, aggregation, and output conventions
 
-**Document version:** 1.1.0  
-**Status:** **freeze signed** (P7). Product code is **P8** — do not start it in this file.  
+**Document version:** 1.1.1  
+**Status:** **shipped** (P8, excel-toolkit 1.12.0).  
 **Primary surface:** excel-toolkit menu / workflow (kpi-analytics only if a later rollup verb is required).  
 **Product backlog owner:** [docs/PLAN.md](../PLAN.md) § Cluster 2.  
 **Root stage:** [PLAN.md](../../PLAN.md) **S3**.  
@@ -140,8 +140,8 @@ Do **not** expand this into a phase novel until P8 is `active` on the board.
 - [x] Cross-file groups: **no** (per-file worklists)  
 - [x] docs/PLAN.md Cluster 2 status → freeze signed / P8 ready (same change set)  
 - [x] Root PLAN stage S3 note updated (same change set)  
-- [ ] P8 product: dual toolkit boundaries; full certification  
-- [ ] P8 must not alter V1 metric keys or combine files for `score`  
+- [x] P8 product: dual toolkit boundaries; full certification  
+- [x] P8 must not alter V1 metric keys or combine files for `score`  
 
 ---
 
@@ -149,5 +149,6 @@ Do **not** expand this into a phase novel until P8 is `active` on the board.
 
 | Version | Notes |
 |---------|--------|
+| 1.1.1 | P8 shipped: menu preview, `[WQ]_MM-DD-YYYY.xlsx`, `-TotalsCsv` / Totals sheet |
 | 1.1.0 | P7 freeze: per-file score; filename / `wq_label` identity; no schema WQ field; groups do not span files; preview/naming/xlsx-as-deliverable signed |
 | 1.0.0 | Extracted freeze checklist from docs/PLAN Cluster 2 for kit docs/plan surface |
