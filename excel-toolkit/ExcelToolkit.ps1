@@ -142,7 +142,7 @@ export-csv options:
   -WorklistSheetName <name> Worklist tab (default Worklist)
   -TotalsCsv <path>       Optional file-level totals CSV (Totals sheet)
   -TotalsSheetName <name> Totals tab (default Totals)
-  -PoiScoreSheetOnly      Write only POI_Scores (identity + four slim scores)
+  -PoiScoreSheetOnly      Write only POI_Scores (identity + score-input source + four scores)
   -PoiScoreSheetName <name> POI sheet tab (default POI_Scores)
   -Password <text>        Optional workbook open password (not logged)
   -Visible                Show Excel UI

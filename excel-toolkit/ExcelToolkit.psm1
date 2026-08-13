@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.14.2'
+$script:ExcelToolkitVersion = '1.15.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -395,6 +395,22 @@ function Get-ExcelToolkitPoiScoreIdentityColumns {
     )
 }
 
+function Get-ExcelToolkitPoiScoreSourceColumns {
+    <#
+    .SYNOPSIS
+        Original WQ headers that feed V1 metrics (include if present; skip if already listed).
+    #>
+    return @(
+        'out_ins_amt',
+        'billed_amount',
+        'days_until_appeal_deadline',
+        'days_until_replacement_deadline',
+        'days_on_wq_tab',
+        'denial_count',
+        'last_worked_date'
+    )
+}
+
 function Get-ExcelToolkitPoiScoreValueColumns {
     <#
     .SYNOPSIS
@@ -411,7 +427,7 @@ function Get-ExcelToolkitPoiScoreValueColumns {
 function New-ExcelToolkitPoiScoreRows {
     <#
     .SYNOPSIS
-        Project identity + four POI scores from a slim scored CSV (copy only; no math).
+        Project identity + score-input source columns + four POI scores (copy only; no math).
     #>
     [CmdletBinding()]
     param(
@@ -431,7 +447,12 @@ function New-ExcelToolkitPoiScoreRows {
     $identityCols = @(
         Get-ExcelToolkitPoiScoreIdentityColumns | Where-Object { $DetailHeaders -contains $_ }
     )
-    $outHeaders = @($identityCols + $scoreCols)
+    $sourceCols = @(
+        Get-ExcelToolkitPoiScoreSourceColumns | Where-Object {
+            ($DetailHeaders -contains $_) -and ($identityCols -notcontains $_)
+        }
+    )
+    $outHeaders = @($identityCols + $sourceCols + $scoreCols)
     $keep = @($outHeaders)
 
     $out = New-Object System.Collections.Generic.List[object]
@@ -544,7 +565,7 @@ function Export-ExcelFromCsv {
         Tab name for -TotalsCsv. Default: Totals
 
     .PARAMETER PoiScoreSheetOnly
-        Write only a POI_Scores sheet (identity + four slim scores). Copy only; no math.
+        Write only a POI_Scores sheet (identity + score-input source columns + four slim scores). Copy only; no math.
         Cannot be combined with -GroupsCsv, -Worklist, or -TotalsCsv.
 
     .PARAMETER PoiScoreSheetName

@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.14.2"
+version: "1.15.0"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-08-13"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.14.2 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.15.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -319,7 +319,7 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
 | `-WorklistSheetName` | No | `Worklist` | Worklist tab name |
 | `-TotalsCsv` | No | — | Optional file-level totals CSV (`metric`,`value`). Adds a **Totals** sheet (copy only; no scoring math). |
 | `-TotalsSheetName` | No | `Totals` | Totals tab name (must differ from Data / Groups / Worklist) |
-| `-PoiScoreSheetOnly` | No | off | Write **only** a `POI_Scores` sheet: identity columns (if present) + four slim scores. Copy only; no scoring math. Cannot combine with `-GroupsCsv` / `-Worklist` / `-TotalsCsv`. Requires slim score columns. |
+| `-PoiScoreSheetOnly` | No | off | Write **only** a `POI_Scores` sheet: identity + V1 score-input **source** columns (if present) + four slim scores. Copy only; no scoring math. Cannot combine with `-GroupsCsv` / `-Worklist` / `-TotalsCsv`. Requires slim score columns. |
 | `-PoiScoreSheetName` | No | `POI_Scores` | Tab name when `-PoiScoreSheetOnly` is set |
 | `-Visible` | No | off | Show Excel UI (debug) |
 | `-Password` | No | — | Optional workbook **open** password when saving `.xlsx` (not logged; not in JSON) |
@@ -357,7 +357,7 @@ excel-toolkit.cmd export-csv ^
   -Json
 ```
 
-Express POI score sheet from a slim scored CSV (identity + four scores only):
+Express POI score sheet from a slim scored CSV (identity + score-input source + four scores):
 
 ```bat
 excel-toolkit.cmd export-csv ^
@@ -643,7 +643,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.14.2** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.15.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.15.0 notes:** `-PoiScoreSheetOnly` / Express `POI_Scores` also copies score-input **source** columns when present (`out_ins_amt`, `billed_amount`, deadline days, `days_on_wq_tab`, `denial_count`, `last_worked_date`). Still no `v1_raw_*`. Copy only.
 
 **1.14.2 notes:** Action **[5]** label is **Express score** (same DarkGray as [1]–[4]; no extra Express hint line).
 

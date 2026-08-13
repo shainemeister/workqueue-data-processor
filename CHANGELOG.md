@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.22.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.15.0:** Express / `-PoiScoreSheetOnly` copies original score-input source columns when present (`out_ins_amt`, `billed_amount`, deadline days, `days_on_wq_tab`, `denial_count`, `last_worked_date`) plus identity and the four scores. Still no `v1_raw_*`. Copy only; no scoring math.
+
 ### [1.21.2] - 2026-08-13
 
 #### Changed

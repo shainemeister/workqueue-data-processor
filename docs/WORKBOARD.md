@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.15"
+version: "1.1.16"
 status: current
 audience:
   - ai-agents
@@ -71,9 +71,14 @@ last_updated: "2026-08-13"
 | P22 | export-csv -PoiScoreSheetOnly | `done` | `cb20bb0` | Copy columns; no math |
 | P23 | L4 + CHANGELOG + cert | `done` | `cb20bb0` | excel 1.14.0 |
 | P24 | Menu [5] Express visibility | `done` | `dcd1d1e` | Cyan + version stamp; lock in Test-SelectionRange |
+| P25 | Freeze Express score-input source columns | `done` | — | slim-poi-output 1.2.0 |
+| P26 | Copy source-input columns on POI_Scores | `done` | — | Present if present; no math |
+| P27 | L4 + CHANGELOG + cert | `done` | — | excel 1.15.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-13 Shipped P25–P27 Express score-input source columns (excel 1.15.0).  
+- 2026-08-13 Opened P25–P27 Express score-input source columns on `POI_Scores`.  
 - 2026-08-13 Menu [5] label simplified to Express score (same highlight as [1]–[4]).  
 - 2026-08-13 Shipped P24 Express action-list visibility (`dcd1d1e`; excel 1.14.1).  
 - 2026-08-13 Opened P24 Express action-list visibility (operator could not see [5]).  
@@ -128,4 +133,4 @@ last_updated: "2026-08-13"
 
 ---
 
-*Agents: P24 shipped (Express [5] visibility). Next: P1 filters remain blocked; P9 deferred.*
+*Agents: P25–P27 shipped (Express source-input columns). Next: P1 filters remain blocked; P9 deferred.*
