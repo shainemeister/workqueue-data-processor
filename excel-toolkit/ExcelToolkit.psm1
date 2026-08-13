@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.9.0'
+$script:ExcelToolkitVersion = '1.21.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -222,6 +222,326 @@ function New-ExcelToolkitHeaderMap {
 
 #region Export
 
+function Read-ExcelToolkitCsvTable {
+    <#
+    .SYNOPSIS
+        Load a CSV into headers + row objects (header-only files allowed).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw ("CSV not found: {0}" -f $Path)
+    }
+
+    $rows = @(Import-Csv -LiteralPath $Path)
+    $headers = @()
+    if ($rows.Count -gt 0) {
+        $headers = @($rows[0].PSObject.Properties | ForEach-Object { $_.Name })
+    }
+    else {
+        $headerLine = Get-Content -LiteralPath $Path -TotalCount 1
+        if (-not [string]::IsNullOrWhiteSpace($headerLine)) {
+            $dummy = $headerLine + [Environment]::NewLine + $headerLine
+            $hdrObj = @($dummy | ConvertFrom-Csv) | Select-Object -First 1
+            if ($null -ne $hdrObj) {
+                $headers = @($hdrObj.PSObject.Properties | ForEach-Object { $_.Name })
+            }
+        }
+    }
+    if ($headers.Count -lt 1) {
+        throw ("No columns found in CSV: {0}" -f $Path)
+    }
+    return [pscustomobject]@{
+        Headers = $headers
+        Rows    = $rows
+    }
+}
+
+function Get-ExcelToolkitGroupKeyColumns {
+    param([string[]]$Headers)
+    $agg = @(
+        'claim_count',
+        'sum_out_ins_amt',
+        'sum_billed_amount',
+        'sum_kpi_q_share_total_ar_pct',
+        'max_v1_priority_score',
+        'min_days_until_appeal_deadline',
+        'max_v1_raw_claim_age_days',
+        'max_denial_count',
+        'max_v1_raw_days_since_last_worked'
+    )
+    $skip = @('group_key') + $agg
+    return @($Headers | Where-Object { $skip -notcontains $_ })
+}
+
+function Normalize-ExcelToolkitWorklistKey {
+    <#
+    .SYNOPSIS
+        Trim a group/detail key; blank becomes (blank). Matches kpi _cell_label.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowNull()]
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return '(blank)'
+    }
+    $trimmed = $Value.Trim()
+    if ([string]::IsNullOrWhiteSpace($trimmed)) {
+        return '(blank)'
+    }
+    return $trimmed
+}
+
+function New-ExcelToolkitWorklistRows {
+    <#
+    .SYNOPSIS
+        Build GROUP then CLAIM rows by matching group key columns (no scoring math).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $DetailRows,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$DetailHeaders,
+
+        [Parameter(Mandatory = $true)]
+        $GroupRows,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$GroupHeaders
+    )
+
+    $keyCols = @(Get-ExcelToolkitGroupKeyColumns -Headers $GroupHeaders)
+    if ($keyCols.Count -lt 1) {
+        throw 'Groups CSV has no key columns besides group_key and aggregates.'
+    }
+    foreach ($key in $keyCols) {
+        if ($DetailHeaders -notcontains $key) {
+            throw ("Worklist key column missing on detail CSV: {0}" -f $key)
+        }
+    }
+
+    $outHeaders = @(
+        'row_type',
+        'group_key',
+        'group_claim_count',
+        'group_sum_out_ins_amt'
+    ) + $DetailHeaders
+
+    $out = New-Object System.Collections.Generic.List[object]
+    foreach ($g in @($GroupRows)) {
+        $gKey = [string]$g.group_key
+        $header = [ordered]@{
+            row_type               = 'GROUP'
+            group_key              = $gKey
+            group_claim_count      = [string]$g.claim_count
+            group_sum_out_ins_amt  = [string]$g.sum_out_ins_amt
+        }
+        foreach ($h in $DetailHeaders) { $header[$h] = '' }
+        foreach ($key in $keyCols) {
+            $header[$key] = [string]$g.$key
+        }
+        $out.Add([pscustomobject]$header) | Out-Null
+
+        foreach ($d in @($DetailRows)) {
+            $match = $true
+            foreach ($key in $keyCols) {
+                $cell = Normalize-ExcelToolkitWorklistKey -Value ([string]$d.$key)
+                $want = Normalize-ExcelToolkitWorklistKey -Value ([string]$g.$key)
+                if ($cell -cne $want) {
+                    $match = $false
+                    break
+                }
+            }
+            if (-not $match) { continue }
+            $claim = [ordered]@{
+                row_type               = 'CLAIM'
+                group_key              = $gKey
+                group_claim_count      = ''
+                group_sum_out_ins_amt  = ''
+            }
+            foreach ($h in $DetailHeaders) {
+                $claim[$h] = [string]$d.$h
+            }
+            $out.Add([pscustomobject]$claim) | Out-Null
+        }
+    }
+    return [pscustomobject]@{
+        Headers = $outHeaders
+        Rows    = @($out.ToArray())
+    }
+}
+
+function Get-ExcelToolkitPoiScoreValueColumns {
+    <#
+    .SYNOPSIS
+        Frozen slim score headers required on the POI_Scores sheet.
+    #>
+    return @(
+        'v1_priority_score',
+        'v1_score_protect_writeoffs',
+        'v1_score_maximize_cash',
+        'v1_score_suppress_aging'
+    )
+}
+
+function Get-ExcelToolkitPoiScoreCopyColumns {
+    <#
+    .SYNOPSIS
+        Frozen POI_Scores column order (include a header when present on the slim CSV).
+    #>
+    return @(
+        'invoice_num',
+        'patient',
+        'service_date',
+        'last_worked_date',
+        'out_ins_amt',
+        'billed_amount',
+        'payer',
+        'plan',
+        'reason_code_list',
+        'remittance_code',
+        'cpt_codes',
+        'modifiers',
+        'diagnosis_codes',
+        'days_until_appeal_deadline',
+        'days_until_replacement_deadline',
+        'days_on_wq_tab',
+        'denial_count',
+        'billing_provider',
+        'department',
+        'billing_provider_tax_id',
+        'billing_provider_npi',
+        'follow_up_record_id',
+        'account',
+        'v1_priority_score',
+        'v1_score_protect_writeoffs',
+        'v1_score_maximize_cash',
+        'v1_score_suppress_aging'
+    )
+}
+
+function Get-ExcelToolkitPoiScoreDateColumns {
+    <#
+    .SYNOPSIS
+        Frozen date headers on POI_Scores (format as mm/dd/yyyy; not day-count fields).
+    #>
+    return @(
+        'service_date',
+        'last_worked_date'
+    )
+}
+
+function Set-ExcelToolkitDateColumnFormats {
+    <#
+    .SYNOPSIS
+        Apply mm/dd/yyyy to frozen date columns so Excel does not show serials.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $Worksheet,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Headers,
+
+        [int]$DataRowCount
+    )
+
+    if ($DataRowCount -lt 1 -or $Headers.Count -lt 1) {
+        return
+    }
+    $dateNames = @(Get-ExcelToolkitPoiScoreDateColumns)
+    for ($i = 0; $i -lt $Headers.Count; $i++) {
+        $name = [string]$Headers[$i]
+        if ($dateNames -notcontains $name) {
+            continue
+        }
+        $col = $i + 1
+        $lastRow = $DataRowCount + 1
+        $start = $Worksheet.Cells.Item(2, $col)
+        $end = $Worksheet.Cells.Item($lastRow, $col)
+        $rng = $Worksheet.Range($start, $end)
+        $rng.NumberFormat = 'mm/dd/yyyy'
+    }
+}
+
+function New-ExcelToolkitPoiScoreRows {
+    <#
+    .SYNOPSIS
+        Project frozen POI_Scores columns from a slim scored CSV (copy only; no math).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $DetailRows,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$DetailHeaders
+    )
+
+    $scoreCols = @(Get-ExcelToolkitPoiScoreValueColumns)
+    $missing = @($scoreCols | Where-Object { $DetailHeaders -notcontains $_ })
+    if ($missing.Count -gt 0) {
+        throw ('POI score sheet requires slim score columns ({0}). Missing: {1}' -f ($scoreCols -join ', '), ($missing -join ', '))
+    }
+
+    $outHeaders = @(
+        Get-ExcelToolkitPoiScoreCopyColumns | Where-Object { $DetailHeaders -contains $_ }
+    )
+    $keep = @($outHeaders)
+
+    $out = New-Object System.Collections.Generic.List[object]
+    foreach ($d in @($DetailRows)) {
+        $row = [ordered]@{}
+        foreach ($h in $keep) {
+            $row[$h] = [string]$d.$h
+        }
+        $out.Add([pscustomobject]$row) | Out-Null
+    }
+
+    return [pscustomobject]@{
+        Headers = $outHeaders
+        Rows    = @($out.ToArray())
+    }
+}
+
+function Write-ExcelToolkitCsvSheet {
+    param(
+        $Worksheet,
+        $Rows,
+        [string[]]$Headers,
+
+        [double]$FixedColumnWidth = 0
+    )
+    if ($Rows.Count -eq 0) {
+        Set-ExcelRange -Worksheet $Worksheet -StartAddress 'A1' -Values @(, @($Headers))
+        $colCount = $Headers.Count
+        $rowCount = 0
+    }
+    else {
+        $importInfo = Import-CsvToWorksheet -Worksheet $Worksheet -InputObject $Rows -StartAddress 'A1'
+        $colCount = $importInfo.ColumnCount
+        $rowCount = $importInfo.RowCount
+    }
+    Set-ExcelHeaderStyle -Worksheet $Worksheet -HeaderRow 1 -ColumnCount $colCount -Freeze
+    if ($FixedColumnWidth -gt 0) {
+        Set-ExcelColumnWidth -Worksheet $Worksheet -Width $FixedColumnWidth -ColumnCount $colCount
+    }
+    else {
+        Set-ExcelAutoFit -Worksheet $Worksheet -ColumnCount $colCount
+    }
+    return [pscustomobject]@{ RowCount = $rowCount; ColumnCount = $colCount }
+}
+
 function Export-ExcelFromCsv {
     <#
     .SYNOPSIS
@@ -277,6 +597,37 @@ function Export-ExcelFromCsv {
         Overwrite the exact OutputPath if it already exists. Without -Force, an
         existing path is not replaced: a free sibling path is chosen (name_1.ext, ...).
 
+    .PARAMETER GroupsCsv
+        Optional kpi-analytics groups CSV. Written as a second sheet (no scoring math).
+
+    .PARAMETER GroupsSheetName
+        Tab name for -GroupsCsv. Default: Groups
+
+    .PARAMETER Worklist
+        When -GroupsCsv is set, also write a two-level Worklist sheet (GROUP then CLAIM rows).
+
+    .PARAMETER WorklistSheetName
+        Tab name for -Worklist. Default: Worklist
+
+    .PARAMETER TotalsCsv
+        Optional file-level totals CSV (metric/value). Written as a Totals sheet (copy only).
+
+    .PARAMETER TotalsSheetName
+        Tab name for -TotalsCsv. Default: Totals
+
+    .PARAMETER PoiScoreSheetOnly
+        Write only a POI_Scores sheet (identity + score-input + context source columns + four slim scores). Copy only; no math.
+        Cannot be combined with -GroupsCsv, -Worklist, or -TotalsCsv. May be combined with -SummaryCsv.
+
+    .PARAMETER PoiScoreSheetName
+        Tab name when -PoiScoreSheetOnly is set. Default: POI_Scores
+
+    .PARAMETER SummaryCsv
+        Optional kpi-analytics summary CSV. Written as a Summary sheet (copy only).
+
+    .PARAMETER SummarySheetName
+        Tab name for -SummaryCsv. Default: Summary
+
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -SchemaPath .\schema.json -UseDisplayNames -OutputPath .\out.xlsx -DryRun
     #>
@@ -307,7 +658,27 @@ function Export-ExcelFromCsv {
 
         [switch]$Force,
 
-        [switch]$PassThru
+        [switch]$PassThru,
+
+        [string]$GroupsCsv = '',
+
+        [string]$GroupsSheetName = 'Groups',
+
+        [switch]$Worklist,
+
+        [string]$WorklistSheetName = 'Worklist',
+
+        [string]$TotalsCsv = '',
+
+        [string]$TotalsSheetName = 'Totals',
+
+        [switch]$PoiScoreSheetOnly,
+
+        [string]$PoiScoreSheetName = 'POI_Scores',
+
+        [string]$SummaryCsv = '',
+
+        [string]$SummarySheetName = 'Summary'
     )
 
     $result = [pscustomobject]@{
@@ -322,6 +693,21 @@ function Export-ExcelFromCsv {
         HeadersSample      = @()
         SchemaFormat       = $null
         SheetName          = $SheetName
+        GroupsCsv          = $null
+        GroupsSheetName    = $null
+        GroupsRowCount     = 0
+        Worklist           = [bool]$Worklist
+        WorklistSheetName  = $null
+        WorklistRowCount   = 0
+        TotalsCsv          = $null
+        TotalsSheetName    = $null
+        TotalsRowCount     = 0
+        PoiScoreSheetOnly  = [bool]$PoiScoreSheetOnly
+        PoiScoreSheet      = $null
+        PoiScoreRowCount   = 0
+        SummaryCsv         = $null
+        SummarySheetName   = $null
+        SummaryRowCount    = 0
     }
 
     try {
@@ -376,12 +762,97 @@ function Export-ExcelFromCsv {
             throw ("No columns found in CSV: {0}" -f $CsvPath)
         }
 
+        if ($PoiScoreSheetOnly) {
+            if (-not [string]::IsNullOrWhiteSpace($GroupsCsv) -or $Worklist -or -not [string]::IsNullOrWhiteSpace($TotalsCsv)) {
+                throw '-PoiScoreSheetOnly cannot be combined with -GroupsCsv, -Worklist, or -TotalsCsv'
+            }
+            if ([string]::IsNullOrWhiteSpace($PoiScoreSheetName)) {
+                throw '-PoiScoreSheetName is required when -PoiScoreSheetOnly is set'
+            }
+        }
+
+        $groupsTable = $null
+        if (-not [string]::IsNullOrWhiteSpace($GroupsCsv)) {
+            $GroupsCsv = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($GroupsCsv)
+            $groupsTable = Read-ExcelToolkitCsvTable -Path $GroupsCsv
+            $result.GroupsCsv = $GroupsCsv
+            $result.GroupsSheetName = $GroupsSheetName
+            $result.GroupsRowCount = @($groupsTable.Rows).Count
+        }
+        elseif ($Worklist) {
+            throw '-Worklist requires -GroupsCsv'
+        }
+        if (-not [string]::IsNullOrWhiteSpace($GroupsCsv) -and $GroupsSheetName -eq $SheetName) {
+            throw '-GroupsSheetName must differ from -SheetName'
+        }
+        if ($Worklist -and ($WorklistSheetName -eq $SheetName -or $WorklistSheetName -eq $GroupsSheetName)) {
+            throw '-WorklistSheetName must differ from Data and Groups sheet names'
+        }
+
+        $totalsTable = $null
+        if (-not [string]::IsNullOrWhiteSpace($TotalsCsv)) {
+            $TotalsCsv = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TotalsCsv)
+            $totalsTable = Read-ExcelToolkitCsvTable -Path $TotalsCsv
+            $result.TotalsCsv = $TotalsCsv
+            $result.TotalsSheetName = $TotalsSheetName
+            $result.TotalsRowCount = @($totalsTable.Rows).Count
+        }
+        if ($null -ne $totalsTable) {
+            $reserved = @($SheetName, $GroupsSheetName, $WorklistSheetName)
+            if ($reserved -contains $TotalsSheetName) {
+                throw '-TotalsSheetName must differ from Data, Groups, and Worklist sheet names'
+            }
+        }
+
+        $worklistTable = $null
+        if ($Worklist -and $null -ne $groupsTable) {
+            $worklistTable = New-ExcelToolkitWorklistRows `
+                -DetailRows $csvRows `
+                -DetailHeaders $propertyNames `
+                -GroupRows $groupsTable.Rows `
+                -GroupHeaders $groupsTable.Headers
+            $result.WorklistSheetName = $WorklistSheetName
+            $result.WorklistRowCount = @($worklistTable.Rows).Count
+        }
+
+        $poiScoreTable = $null
+        if ($PoiScoreSheetOnly) {
+            $poiScoreTable = New-ExcelToolkitPoiScoreRows `
+                -DetailRows $csvRows `
+                -DetailHeaders $propertyNames
+            $result.PoiScoreSheet = $PoiScoreSheetName
+            $result.PoiScoreRowCount = @($poiScoreTable.Rows).Count
+            $result.SheetName = $PoiScoreSheetName
+        }
+
+        $summaryTable = $null
+        if (-not [string]::IsNullOrWhiteSpace($SummaryCsv)) {
+            $SummaryCsv = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($SummaryCsv)
+            $summaryTable = Read-ExcelToolkitCsvTable -Path $SummaryCsv
+            $result.SummaryCsv = $SummaryCsv
+            $result.SummarySheetName = $SummarySheetName
+            $result.SummaryRowCount = @($summaryTable.Rows).Count
+            $firstName = $SheetName
+            if ($PoiScoreSheetOnly) {
+                $firstName = $PoiScoreSheetName
+            }
+            $reserved = @($firstName, $GroupsSheetName, $WorklistSheetName, $TotalsSheetName)
+            if ($reserved -contains $SummarySheetName) {
+                throw '-SummarySheetName must differ from Data, POI_Scores, Groups, Worklist, and Totals sheet names'
+            }
+        }
+
         $headerMap = $null
         $displayHeaders = @($propertyNames)
         if ($UseDisplayNames) {
             $headerMap = New-ExcelToolkitHeaderMap -Path $SchemaPath -PreferredProperty $DisplayNameProperty -Format $resolvedFormat
             $displayHeaders = foreach ($p in $propertyNames) {
                 if ($headerMap.ContainsKey($p)) { $headerMap[$p] } else { $p }
+            }
+        }
+        if ($PoiScoreSheetOnly -and $null -ne $poiScoreTable) {
+            $displayHeaders = foreach ($p in @($poiScoreTable.Headers)) {
+                if ($null -ne $headerMap -and $headerMap.ContainsKey($p)) { $headerMap[$p] } else { $p }
             }
         }
 
@@ -393,6 +864,10 @@ function Export-ExcelFromCsv {
         $result.OutputPath = $OutputPath
         $result.RowCount = $rowCount
         $result.ColumnCount = $propertyNames.Count
+        if ($PoiScoreSheetOnly -and $null -ne $poiScoreTable) {
+            $result.RowCount = @($poiScoreTable.Rows).Count
+            $result.ColumnCount = @($poiScoreTable.Headers).Count
+        }
         $result.HeadersSample = @($displayHeaders | Select-Object -First 5)
 
         if ($DryRun) {
@@ -410,30 +885,94 @@ function Export-ExcelFromCsv {
         $workbook = $null
         try {
             $app = New-ExcelApplication -Visible:$Visible
-            $workbook = New-ExcelWorkbook -Application $app -SheetName $SheetName
+            $firstSheetName = $SheetName
+            if ($PoiScoreSheetOnly) {
+                $firstSheetName = $PoiScoreSheetName
+            }
+            $workbook = New-ExcelWorkbook -Application $app -SheetName $firstSheetName
             $ws = Get-ExcelWorksheet -Workbook $workbook -Index 1
 
-            if ($csvRows.Count -eq 0) {
-                Set-ExcelRange -Worksheet $ws -StartAddress 'A1' -Values @(, @($displayHeaders))
-                $importInfo = [pscustomobject]@{
-                    RowCount    = 0
-                    ColumnCount = $propertyNames.Count
+            if ($PoiScoreSheetOnly -and $null -ne $poiScoreTable) {
+                $poiRows = @($poiScoreTable.Rows)
+                $poiHeaders = @($displayHeaders)
+                if ($poiRows.Count -eq 0) {
+                    Set-ExcelRange -Worksheet $ws -StartAddress 'A1' -Values @(, @($poiHeaders))
+                    $importInfo = [pscustomobject]@{
+                        RowCount    = 0
+                        ColumnCount = $poiHeaders.Count
+                    }
                 }
+                else {
+                    $poiWriteRows = $poiRows
+                    if ($null -ne $headerMap) {
+                        $poiWriteRows = @(
+                            foreach ($pr in $poiRows) {
+                                $mapped = [ordered]@{}
+                                foreach ($h in @($poiScoreTable.Headers)) {
+                                    $label = $h
+                                    if ($headerMap.ContainsKey($h)) { $label = $headerMap[$h] }
+                                    $mapped[$label] = [string]$pr.$h
+                                }
+                                [pscustomobject]$mapped
+                            }
+                        )
+                    }
+                    $importInfo = Write-ExcelToolkitCsvSheet -Worksheet $ws -Rows $poiWriteRows -Headers $poiHeaders -FixedColumnWidth 12
+                }
+                Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
+                Set-ExcelColumnWidth -Worksheet $ws -Width 12 -ColumnCount $importInfo.ColumnCount
+                Set-ExcelToolkitDateColumnFormats -Worksheet $ws -Headers $poiHeaders -DataRowCount $importInfo.RowCount
+                if ($importInfo.ColumnCount -gt 0) {
+                    Enable-ExcelAutoFilter -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount
+                }
+                if ($null -ne $summaryTable) {
+                    $wsSummary = Add-ExcelWorksheet -Workbook $workbook -Name $SummarySheetName -After $ws
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsSummary -Rows $summaryTable.Rows -Headers $summaryTable.Headers -FixedColumnWidth 12
+                }
+                Invoke-ExcelWorksheetActivate -Worksheet $ws
             }
             else {
-                $importParams = @{
-                    Worksheet    = $ws
-                    InputObject  = $csvRows
-                    StartAddress = 'A1'
+                if ($csvRows.Count -eq 0) {
+                    Set-ExcelRange -Worksheet $ws -StartAddress 'A1' -Values @(, @($displayHeaders))
+                    $importInfo = [pscustomobject]@{
+                        RowCount    = 0
+                        ColumnCount = $propertyNames.Count
+                    }
                 }
-                if ($null -ne $headerMap) {
-                    $importParams['HeaderMap'] = $headerMap
+                else {
+                    $importParams = @{
+                        Worksheet    = $ws
+                        InputObject  = $csvRows
+                        StartAddress = 'A1'
+                    }
+                    if ($null -ne $headerMap) {
+                        $importParams['HeaderMap'] = $headerMap
+                    }
+                    $importInfo = Import-CsvToWorksheet @importParams
                 }
-                $importInfo = Import-CsvToWorksheet @importParams
-            }
 
-            Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
-            Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
+                Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
+                Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
+
+                $afterSheet = $ws
+                if ($null -ne $totalsTable) {
+                    $wsTotals = Add-ExcelWorksheet -Workbook $workbook -Name $TotalsSheetName -After $afterSheet
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsTotals -Rows $totalsTable.Rows -Headers $totalsTable.Headers
+                    $afterSheet = $wsTotals
+                }
+                if ($null -ne $groupsTable) {
+                    $wsGroups = Add-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName -After $afterSheet
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsGroups -Rows $groupsTable.Rows -Headers $groupsTable.Headers
+                }
+                if ($null -ne $worklistTable) {
+                    $afterSheet = $ws
+                    if ($null -ne $groupsTable) {
+                        $afterSheet = Get-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName
+                    }
+                    $wsWork = Add-ExcelWorksheet -Workbook $workbook -Name $WorklistSheetName -After $afterSheet
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsWork -Rows $worklistTable.Rows -Headers $worklistTable.Headers
+                }
+            }
 
             $saveParams = @{
                 Workbook = $workbook
@@ -871,6 +1410,9 @@ function Invoke-ExcelToolkitReadinessChecks {
         'Set-ExcelRange',
         'Set-ExcelHeaderStyle',
         'Set-ExcelAutoFit',
+        'Set-ExcelColumnWidth',
+        'Enable-ExcelAutoFilter',
+        'Invoke-ExcelWorksheetActivate',
         'Import-CsvToWorksheet',
         'Export-WorksheetToCsv',
         'Test-ExcelComEnvironment'

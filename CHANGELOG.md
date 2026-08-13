@@ -13,6 +13,166 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.28.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.21.0:** Express `POI_Scores` has AutoFilter on every column. Summary is unchanged.
+
+### [1.27.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.20.0:** Express workbook opens on the **POI_Scores** sheet. Express sheets use a fixed column width of **12** (not AutoFit).
+
+### [1.26.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.19.0:** Express workbook is **POI_Scores** plus a **Summary** sheet (copy of the kpi summary CSV). `service_date` and `last_worked_date` use Excel format `mm/dd/yyyy` so they do not display as serials. CLI: `export-csv -SummaryCsv`.
+
+### [1.25.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.18.0:** Express `POI_Scores` puts `patient` immediately after `invoice_num`. After a successful menu Excel write (Full pipeline / Worklist / Express), generated `output\` CSVs for that run are deleted. Score-only and Export-only keep CSVs. `import\` inputs are never deleted.
+
+### [1.24.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.17.0:** Express / `-PoiScoreSheetOnly` writes `POI_Scores` columns in the frozen operator order (invoice / dates / amounts / payer-plan / codes / deadlines / billing / account-patient / four scores). Include if present. Row order unchanged.
+
+### [1.23.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.16.0:** Express / `-PoiScoreSheetOnly` also copies context source columns when present: `plan`, `reason_code_list`, `remittance_code`, `cpt_codes`, `modifiers`, `diagnosis_codes`, `billing_provider`, `department`, `billing_provider_tax_id`, `billing_provider_npi`. Schema name is `cpt_codes`. Copy only.
+
+### [1.22.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.15.0:** Express / `-PoiScoreSheetOnly` copies original score-input source columns when present (`out_ins_amt`, `billed_amount`, deadline days, `days_on_wq_tab`, `denial_count`, `last_worked_date`) plus identity and the four scores. Still no `v1_raw_*`. Copy only; no scoring math.
+
+### [1.21.2] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.14.2:** Process my data **[5]** label is **Express score** only, same DarkGray as [1]–[4]. Extra Express hint line removed. All five actions remain.
+
+### [1.21.1] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.14.1:** Process my data action list after file pick prints the toolkit version and highlights **[5] Express score** (Cyan). Type `5` — Enter still runs Full pipeline. Close and relaunch the menu after upgrade.
+
+### [1.21.0] - 2026-08-13
+
+#### Added
+
+- **excel-toolkit 1.14.0:** Process my data **Express score** scores `--output-mode slim` and writes one Excel sheet `POI_Scores` (identity + four POI scores). Skips profile, password, and Full/Slim picks. Summary CSV stays; no summary xlsx. CLI: `export-csv -PoiScoreSheetOnly` (copy only; no scoring math).
+
+### [1.20.1] - 2026-08-12
+
+#### Added
+
+- **`Remove-MaintainerDocs.cmd`:** optional post-clone working-copy slim. Deletes maintainer trees (`kit\`, `docs\`, `certification\`, `PLAN.md`, CHANGELOG, kpi fixtures, excel sample-test). Does not rewrite git; restore with `git checkout -- .`. Toolkit user guides stay.
+
+### [1.20.0] - 2026-08-12
+
+#### Added
+
+- **kpi-analytics 2.10.0:** `score --output-mode slim` writes WQ columns plus balanced `v1_priority_score` and one score per shipped POI (`v1_score_protect_writeoffs`, `v1_score_maximize_cash`, `v1_score_suppress_aging`). One normalize pass; not four batches. Default remains `full`. Slim cannot be combined with `--profile` / `--config`. Summary CSV still written.
+- **excel-toolkit 1.13.0:** Process my data **Score output** Full / Slim; Slim passes `--output-mode slim` (no profile pick).
+
+### [1.19.1] - 2026-08-12
+
+#### Fixed
+
+- **excel-toolkit 1.12.1:** Worklist GROUP/CLAIM match is case-sensitive (same trim / `(blank)` rule as kpi-analytics). Mixed-case keys no longer attach one claim to two groups.
+
+### [1.19.0] - 2026-08-12
+
+#### Added
+
+- **excel-toolkit 1.12.0 (Cluster 2 / P8):** Process my data multi-file preview (name, WQ stem, row count, max `out_ins_amt`; no `score`). Excel deliverable names `[WQ]_MM-DD-YYYY.xlsx`. File-level **Totals** sheet via `export-csv -TotalsCsv` (copy of existing scored columns; no new score). Per-file only; groups do not span files.
+
+### [1.18.1] - 2026-08-12
+
+#### Changed
+
+- Cluster **2** design freeze signed (P7): per-file scoring; WQ identity = filename stem / optional `wq_label`; groups do not span files; no required schema WQ field. Product code is P8.
+
+### [1.18.0] - 2026-08-12
+
+#### Added
+
+- **excel-toolkit 1.11.0:** Process my data **Build worklist** scores with `kpi-analytics --group-preset` / `--groups`, then `export-csv -GroupsCsv -Worklist`. Composition only (no scoring math in PowerShell).
+
+### [1.17.0] - 2026-08-12
+
+#### Added
+
+- **excel-toolkit 1.10.0:** `export-csv -GroupsCsv` writes a Groups sheet from kpi-analytics `*_groups.csv`. `-Worklist` adds a two-level GROUP/CLAIM sheet by matching key columns (no scoring math).
+
+### [1.16.0] - 2026-08-12
+
+#### Added
+
+- **kpi-analytics 2.9.0:** `score --group-by` / `--group-preset` / `--groups` writes a reporting `*_groups.csv` (count, sum AR / billed / `kpi_q` share, max priority, min appeal days). Default remains no groups file. V1 / `kpi_q_*` claim values unchanged.
+
+#### Changed
+
+- Cluster 3.1 **group CSV shape** frozen (post-score; `payer_category` straw man). Patient/account grouping and Excel sheets still developing.
+
+### [1.15.0] - 2026-08-12
+
+#### Added
+
+- **kpi-analytics 2.8.0:** `score --sort` and `--sort-preset` (`priority` / `deadline` / `cash`) reorder the **detail** CSV only. Default remains input order. V1 formulas and `kpi_q_*` unchanged. JSON: `SortSpec`, `SortPreset`, `SortApplied`.
+
+#### Changed
+
+- Cluster 3.2 **sort keys** frozen (post-score; stable input-index last). Grouping (3.1) and analysis sheet (3.3) still developing.
+
+### [1.14.2] - 2026-08-12
+
+#### Changed
+
+- Upgraded repo-kit baseline to **2.4.0** (workboard + optional continuity; PLAN triple surface)
+  - Portable policy: `kit/rules/workboard.md`, `kit/rules/continuity.md`; UPGRADE 1.6.0 preserve list
+  - Adopted filled `docs/WORKBOARD.md`; Agent Instruct packs regen for workboard co-maintain
+  - Root PLAN **1.2.0** points at the board; no live phase tables
+  - FILE-CATALOG **1.10.4**; product packages unchanged (kpi **2.7.0** / excel **1.9.0**)
+
+### [1.14.1] - 2026-08-12
+
+#### Changed
+
+- **kpi-analytics ENTERPRISE-SECURITY 2.7.0:** align toolkit version with package (default unique output paths unless `--force`; diagnostics import-smoke note)
+- **Agent Instruct packs:** repair generated YAML frontmatter (BUILD `must_not_extra` leak); fold extras into Must not, including Cluster 2/3 freeze
+- **FILE-CATALOG 1.10.2:** research note for RULES gap audit; fix `kpi-analytics.cmd` catalog link; `__version__` row 2.7.0
+
+#### Removed
+
+- Empty untracked local trees `vendor/` and `excel-toolkit/menus/` (not source)
+
+### [1.14.0] - 2026-08-10
+
+#### Changed
+
+- Upgraded repo-kit baseline to **2.3.1** (Operator enforcement, Instructed-by cascade, AI docs workspace policy, Agent Instruct)
+  - Merged domain modules / UPGRADE / MARKDOWN-STANDARD / templates into project `kit/`
+  - Adopted **Agent Instruct** (`kit/agents/`); root `PLAN.md` owns Agent models; generated packs under `kit/agents/generated/`
+  - Scaffolded AI docs workspace (`docs/README.md`, `research/`, `plan/`, `project_build/`, `resources/`) without clobbering product `docs/PLAN.md`, FILE-CATALOG, or concept doc
+  - Product authority map, language inventory, and certification verify commands preserved
+- **Plan dual-surface compliance** ([kit/RULES.md](./kit/RULES.md) / [ai-docs-workspace](./kit/rules/ai-docs-workspace.md))
+  - Root `PLAN.md` **1.1.0**: mission, stages, non-goals, plan map, stage gates + Agent models
+  - `docs/PLAN.md` **0.5.0**: product backlog only; links freezes under `docs/plan/`
+  - Execution plans: Cluster 2 / Cluster 3 / B1.1-retune checklists; repo-kit upgrade note marked complete
+  - `docs/README.md` + `docs/resources/` curated plan map; FILE-CATALOG **1.10.1**
+
 ### [1.13.0] - 2026-08-09
 
 #### Added

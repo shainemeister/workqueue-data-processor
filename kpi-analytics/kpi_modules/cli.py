@@ -281,6 +281,63 @@ def build_parser() -> argparse.ArgumentParser:
             "(default: write to a free path with a numerical suffix)"
         ),
     )
+    p_score.add_argument(
+        "--sort",
+        dest="sort_spec",
+        default=None,
+        help=(
+            "Post-score detail row order: col[:asc|:desc],col... "
+            "(default: input order). Mutually exclusive with --sort-preset."
+        ),
+    )
+    p_score.add_argument(
+        "--sort-preset",
+        dest="sort_preset",
+        default=None,
+        choices=("priority", "deadline", "cash"),
+        help=(
+            "Named detail sort: priority, deadline, or cash. "
+            "Mutually exclusive with --sort. Does not change V1 formulas."
+        ),
+    )
+    p_score.add_argument(
+        "--group-by",
+        dest="group_by",
+        default=None,
+        help=(
+            "Write a group summary CSV keyed by these scored columns "
+            "(comma-separated). Mutually exclusive with --group-preset. "
+            "Default: no groups file."
+        ),
+    )
+    p_score.add_argument(
+        "--group-preset",
+        dest="group_preset",
+        default=None,
+        choices=("payer_category", "payer", "category", "location"),
+        help=(
+            "Named group keys: payer_category, payer, category, location. "
+            "Mutually exclusive with --group-by."
+        ),
+    )
+    p_score.add_argument(
+        "--groups",
+        dest="groups_path",
+        default=None,
+        help="Group summary CSV path (default: <output_stem>_groups.csv)",
+    )
+    p_score.add_argument(
+        "--output-mode",
+        dest="output_mode",
+        choices=("full", "slim"),
+        default="full",
+        help=(
+            "Detail CSV shape: full (default, v1 audit + kpi_q) or slim "
+            "(WQ columns + balanced score + one score per shipped POI). "
+            "Slim cannot be combined with --profile or --config. "
+            "Summary CSV is still written."
+        ),
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -375,6 +432,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest="expected_path",
         default=None,
         help="Golden expected JSON (default: fixtures/v1_handcalc_expected.json if present)",
+    )
+    p_val.add_argument(
+        "--output-mode",
+        dest="output_mode",
+        choices=("full", "slim"),
+        default="full",
+        help="Same as score --output-mode (default full). Slim skips contrib/kpi row integrity.",
     )
     p_val.add_argument(
         "--scored-csv",
@@ -621,6 +685,23 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 return EXIT_VALIDATION
 
+            output_mode = str(getattr(args, "output_mode", None) or "full")
+            if output_mode == "slim" and (config_path or profile_ref):
+                _emit(
+                    {
+                        "Success": False,
+                        "Command": "score",
+                        "Version": __version__,
+                        "Message": (
+                            "--output-mode slim cannot be combined with "
+                            "--profile or --config."
+                        ),
+                    },
+                    as_json=as_json,
+                    quiet=quiet,
+                )
+                return EXIT_VALIDATION
+
             score_config: dict[str, Any] | None = None
             profile_path_s: str | None = None
             profile_name: str | None = None
@@ -680,6 +761,12 @@ def main(argv: list[str] | None = None) -> int:
                     ),
                     strict=getattr(args, "strict_mode", None),
                     force=bool(getattr(args, "force", False)),
+                    sort_spec=getattr(args, "sort_spec", None),
+                    sort_preset=getattr(args, "sort_preset", None),
+                    group_by=getattr(args, "group_by", None),
+                    group_preset=getattr(args, "group_preset", None),
+                    groups_path=getattr(args, "groups_path", None),
+                    output_mode=output_mode,
                 )
             except (FileNotFoundError, ValueError, OSError) as exc:
                 _emit(
@@ -848,6 +935,7 @@ def main(argv: list[str] | None = None) -> int:
                 expected_path=expected_path,
                 epsilon=float(getattr(args, "epsilon", 1e-5)),
                 scored_csv_path=scored,
+                output_mode=getattr(args, "output_mode", None) or "full",
             )
             result["Version"] = __version__
             if gate:

@@ -1,7 +1,7 @@
 ---
 title: Versioning and Git
 description: Three version surfaces, mandatory CHANGELOG, kit baseline pointer, git hygiene, commit format, and AI disclosure.
-version: "1.0.2"
+version: "1.0.3"
 status: current
 audience:
   - developers
@@ -9,19 +9,20 @@ doc_type: other
 related:
   - ../RULES.md
   - ../UPGRADE.md
-  - ../../CHANGELOG.md
+  - ../CHANGELOG.md
   - ./contracts.md
   - ./verification-and-ops.md
-last_updated: "2026-07-30"
+  - ../agents/PLAN-HOOK.md
+last_updated: "2026-08-10"
 ---
 
 # Versioning and Git
 
 Version surfaces, CHANGELOG discipline, and git / commit rules.
 
-**Document version:** 1.0.2  
+**Document version:** 1.0.3  
 
-**Related:** [RULES.md](../RULES.md) · [UPGRADE.md](../UPGRADE.md) · [CHANGELOG.md](../../CHANGELOG.md) · [contracts.md](./contracts.md) · [verification-and-ops.md](./verification-and-ops.md)
+**Related:** [RULES.md](../RULES.md) · [UPGRADE.md](../UPGRADE.md) · [CHANGELOG.md](../CHANGELOG.md) · [contracts.md](./contracts.md) · [verification-and-ops.md](./verification-and-ops.md) · [PLAN-HOOK.md](../agents/PLAN-HOOK.md)
 
 ---
 
@@ -70,14 +71,6 @@ Version surfaces, CHANGELOG discipline, and git / commit rules.
 | Methodology **Document history** table | Material formula or interpretation changes |
 | Project `CHANGELOG.md` | See [Mandatory project CHANGELOG](#mandatory-project-changelog) |
 | Kit baseline (adopted kit version) | On first adopt and every kit upgrade — see [Kit baseline](../RULES.md#kit-baseline) |
-
-### This repository — package version surfaces
-
-| Surface | When to bump |
-|---------|----------------|
-| `kpi_modules.__version__` | CLI contract, scoring behavior, or stable output column names change |
-| `ExcelToolkitVersion` (module) | CLI verbs/options/JSON shapes or export behavior change |
-| Project / package authority | Also root [CHANGELOG.md](../../CHANGELOG.md) under `## workqueue-data-processor` |
 
 ---
 
@@ -136,16 +129,12 @@ After initiation, `SETUP.md` is gone. Kit baseline + UPGRADE keep upgrades track
 
 | Track | Do not track |
 |-------|----------------|
-| Source (`.py`, `.ps1`, `.psm1`, `.cmd`) | `output\` |
-| Schema, sample data, fixtures | `__pycache__\`, `*.pyc` |
-| `import\` synthetic / non-PHI inputs | Real PHI/PII extracts under `import\` (or anywhere) |
-| Docs, `kit/`, `.gitignore`, style configs | `.venv\`, `venv\`, `.env` |
-| Diagnostics folder **README** files | Secrets, IDE-only folders already ignored |
-| | `kpi-analytics\diagnostics\last_diagnostics.*` (regenerable package diagnostics) |
-| | `excel-toolkit\diagnostics\last_diagnostics.*` (regenerable package diagnostics) |
-| | `certification\last_certification.*` (regenerable formal cert outputs) |
+| Source (language sources, modules, launchers) | Regenerable `output/`, build dirs |
+| Schema, sample data, fixtures | `__pycache__/`, `*.pyc`, `.venv/`, `venv/` |
+| Docs, templates, `.gitignore`, style configs | `.env`, secrets, IDE-only folders already ignored |
+| | Generated diagnostics or certificates meant to be local |
 
-Respect [`.gitignore`](../../.gitignore). Do not force-add ignored generated artifacts “for convenience.”
+Respect `.gitignore`. Do not force-add ignored generated artifacts “for convenience.”
 
 ### Commits and history
 
@@ -189,9 +178,11 @@ Use a **Conventional Commits–style** subject so history stays scannable.
 
 | Context | Preferred scopes | Notes |
 |---------|------------------|--------|
-| **Toolkits** | `kpi-analytics`, `excel-toolkit` | Use when the change is limited to that surface |
-| **Standards / policy** | `kit`, or omit | `kit/RULES.md`, domain modules, MARKDOWN-STANDARD, templates |
-| **Omit scope** | — | Root-wide files with no single toolkit owner (`docs/FILE-CATALOG.md`, root README, schema, CHANGELOG) |
+| **This kit** | `rules`, `markdown`, `templates`, `setup`, `upgrade`, `examples`, `kit`, `agents` | Use when the change is limited to that surface |
+| **Adopting projects** | Package folder name, `cli`, `security`, `methodology`, `agents`, `plan` | Or omit for root-wide policy/README/shared schema |
+| **Omit scope** | — | Root-wide files with no single package owner |
+
+**Agent Instruct (when used):** enablement-only PLAN edits often use `docs(plan):` or `chore(agents):`; new/updated generated packs use `docs(agents):` or `chore(agents):`. Full enablement contract: [PLAN-HOOK.md](../agents/PLAN-HOOK.md).
 
 Scopes are advisory: consistency within a repo matters more than matching this table exactly.
 
@@ -210,18 +201,20 @@ Useful when needed; **not** mandatory (except the AI disclosure block, which is 
 
 When an AI system meaningfully assists with the **change itself** (code, docs, configuration, or the commit message), the commit **must** include the following footer block. Pure human-only commits omit it.
 
+There is **no** `Directed-by` trailer. “Directed by” means **`Instructed-by`**.
+
 | Trailer | Required content |
 |---------|------------------|
 | `Assisted-by:` | AI make / model (and optional tool) that assisted **this** commit — fill at commit time |
 | `Compliance:` | Explicit reference to maintenance rules (`RULES.md` or this module set) |
-| `Instructed-by:` | Directing human — **value of** `git config user.name` for the committer |
+| `Instructed-by:` | Directing human — **resolved dynamically** (see cascade below); not a hardcoded doc username |
 
 **Template form** (copy structure; resolve fields at commit time):
 
 ```text
 Assisted-by: <AI make / model>
 Compliance: RULES.md
-Instructed-by: <git config user.name>
+Instructed-by: <resolved directing human>
 ```
 
 **How to resolve fields**
@@ -229,11 +222,22 @@ Instructed-by: <git config user.name>
 | Field | Resolution |
 |-------|------------|
 | `Assisted-by` | Name the AI make/model/tool that actually performed the work for this commit. Do not hardcode a vendor from documentation. |
-| `Instructed-by` | Run `git config user.name` and use that exact string. If unset, configure it before committing so disclosure matches Git author identity. |
+| `Compliance` | Usually `RULES.md` (or an explicit path to this module set). |
+| `Instructed-by` | Follow the [Instructed-by resolution cascade](#instructed-by-resolution-cascade) every time—do not copy a name from an old commit when Git identity is available. |
 
 ```text
 git config user.name
 ```
+
+#### Instructed-by resolution cascade
+
+Resolve **in order**. Stop at the first success.
+
+| Priority | Action |
+|----------|--------|
+| **1 — Git config** | Run `git config user.name`. If non-empty, use that **exact** string as `Instructed-by`. |
+| **2 — Ask + record** | If unset or empty: **ask the user** for the directing human’s display name. Then **record** it so future commits do not re-ask: prefer `git config user.name "<Name>"` (local or global). If Git cannot be configured in the environment, write a short project note (e.g. `docs/project_build/git-identity.md` or a line in root `PLAN.md` when PLAN exists) with the display name only—**no** secrets or personal email required for the trailer. Use that recorded name for `Instructed-by`. |
+| **3 — Last resort** | If the AI still cannot obtain a name (user unreachable or refuses): use **`User`**. Do not invent a person. Prefer fixing Git config on the next turn. |
 
 **Example values for `Assisted-by`** (use the one that actually did the work):
 
@@ -247,11 +251,12 @@ git config user.name
 
 **Rules**
 
-1. Place the three lines at the end of the commit message (after any body or other footers).  
+1. Place the three lines at the end of the commit message (after any body or other footers), preceded by a blank line.  
 2. **`Assisted-by` is dynamic:** use the real AI make/model (and tool if useful) that performed the work for **this** commit.  
-3. **`Instructed-by` is dynamic:** set it to the output of `git config user.name`.  
-4. The presence of this block asserts that the human (Git-configured committer) reviewed the result and that the change follows maintenance contracts.  
-5. Do **not** put the AI disclosure in the subject line.
+3. **`Instructed-by` is dynamic:** resolve via the cascade above on every AI-assisted commit.  
+4. The presence of this block asserts that the directing human reviewed the result and that the change follows maintenance contracts.  
+5. Do **not** put the AI disclosure in the subject line.  
+6. Do **not** use a trailer named `Directed-by`.
 
 **When it is required**
 
@@ -262,7 +267,7 @@ git config user.name
 | AI only suggested a one-line fix that the human rewrote | Optional (prefer to include) |
 | Pure human work | Omit |
 
-**Good example** (illustrative; `Instructed-by` must match `git config user.name`):
+**Good example** (illustrative; `Instructed-by` resolved from `git config user.name` when set):
 
 ```text
 docs(rules): require AI disclosure footer on assisted commits
@@ -280,22 +285,30 @@ Instructed-by: Jane Developer
 **Good:**
 
 ```text
-feat(kpi-analytics): add enterprise diagnostics module and gate helpers
-chore(kpi-analytics): bump package version to 1.6.0
-docs(kpi-analytics): document diagnostics command, gate flags, and CLI contract
-docs: catalog diagnostics module and diagnostics folder
-fix(excel-toolkit): retry Excel Quit before warning the user
-docs: upgrade repo-kit baseline to 2.0.1 with kit/ layout
+feat(my-service): add validate command and exit-code contract
+chore(my-service): bump package version to 1.2.0
+docs(my-service): document validate command and CLI contract
+docs: catalog new package layout
+fix(cli): retry failed remote call with backoff
+docs(rules): clarify non-Python style gate expectations
 ```
 
 **Bad → good:**
 
 | Avoid | Prefer |
 |-------|--------|
-| `update stuff` | `docs(kpi-analytics): document validate-score exit codes` |
+| `update stuff` | `docs(my-cli): document validate exit codes` |
 | `wip` | Finish, then commit a clear subject |
-| `fix bugs` | `fix(excel-toolkit): handle missing CSV path without crash` |
+| `fix bugs` | `fix(my-cli): handle missing config path without traceback` |
 | `feat: updates` (docs-only staged) | `docs: …` — do not use `feat` for documentation-only changes |
+
+**Multi-commit stack example:**
+
+```text
+feat(my-cli): add validate command and exit-code contract
+chore(my-cli): bump package version to 1.2.0
+docs(my-cli): document validate command and CLI contract
+```
 
 ---
 
@@ -319,12 +332,11 @@ Commit messages and **what is staged** must stay consistent with the documentati
 3. If CLI/API shapes changed, is the matching guide updated?  
 4. If trust/execution model changed, is the matching security doc updated?  
 5. If formulas or public output fields changed, are methodology + fixtures updated?  
-6. If product code or gate config changed: will the **full** certification harness pass (pylint + security + Gitleaks)?  
-7. Is partial recert avoided (no security-only or pylint-only cert rewrite)?  
-8. If release-worthy: is [CHANGELOG.md](../../CHANGELOG.md) updated?  
-9. Would a reviewer find the subject by searching the feature name used in the README?  
-10. Would this subject still make sense **two years** from now without the PR description?  
-11. If AI assisted: are `Assisted-by` / `Compliance` / `Instructed-by` present? Does `Assisted-by` name the AI that did the work? Does `Instructed-by` match `git config user.name`?
+6. If product Python changed, will the pylint gate pass? Bandit if Python is in inventory?  
+7. Were **declared** Domain A/B gates for other touched language surfaces run?  
+8. Would a reviewer find the subject by searching the feature name used in the README?  
+9. Would this subject still make sense **two years** from now?  
+10. If AI assisted: are `Assisted-by` / `Compliance` / `Instructed-by` present with `Instructed-by` resolved via the cascade (git user.name → ask+record → `User`)?
 
 ---
 
@@ -354,6 +366,7 @@ A remote is optional. When one exists, do not assume write access to `main`/`mas
 
 | Version | Notes |
 |---------|--------|
-| 1.0.2 | Project fill: package version surfaces, track table, scopes, pre-commit checks |
+| 1.0.3 | Instructed-by resolution cascade (git user.name → ask+record → `User`); no Directed-by trailer; blank line before trailers |
+| 1.0.2 | Agent Instruct scopes (`agents`, `plan`); pointer to PLAN-HOOK commit guidance |
 | 1.0.1 | Kit baseline path `kit/RULES.md`; standards under kit/; project CHANGELOG at root |
 | 1.0.0 | Extracted from RULES 1.4.1 for kit 2.0; upgrade playbook deferred to UPGRADE.md; kit CHANGELOG path under kit/ |

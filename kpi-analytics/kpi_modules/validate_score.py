@@ -85,6 +85,25 @@ def check_against_expected(
     eps = float(expected.get("epsilon", 1e-5) if epsilon is None else epsilon)
     failures: list[dict[str, Any]] = []
 
+    if expected.get("output_mode") == "slim" and scored_rows:
+        forbidden = []
+        sample = scored_rows[0]
+        for key in sample:
+            k = str(key)
+            if k.startswith("kpi_q_") or k.startswith("v1_raw_") or k.startswith(
+                "v1_norm_"
+            ) or k.startswith("v1_weight_") or k.startswith("v1_contrib_"):
+                forbidden.append(k)
+        if "v1_poi_name" in sample:
+            forbidden.append("v1_poi_name")
+        if forbidden:
+            failures.append(
+                {
+                    "Issue": "slim_forbidden_columns",
+                    "Actual": forbidden[:12],
+                }
+            )
+
     exp_mode = expected.get("queue_mode")
     if exp_mode is not None:
         actual_mode = None
@@ -126,10 +145,15 @@ def check_against_expected(
         return failures
 
     compare_keys = ["v1_priority_score"]
-    for key in METRIC_KEYS:
-        compare_keys.extend(
-            [f"v1_raw_{key}", f"v1_norm_{key}", f"v1_contrib_{key}"]
-        )
+    extra_scores = list(expected.get("slim_score_columns") or [])
+    for col in extra_scores:
+        if col not in compare_keys:
+            compare_keys.append(str(col))
+    if expected.get("output_mode") != "slim":
+        for key in METRIC_KEYS:
+            compare_keys.extend(
+                [f"v1_raw_{key}", f"v1_norm_{key}", f"v1_contrib_{key}"]
+            )
 
     for i, (exp, act) in enumerate(zip(exp_rows, scored_rows)):
         # Identity match helpers
@@ -184,6 +208,7 @@ def validate_score(
     expected_path: str | Path | None = None,
     epsilon: float = 1e-5,
     scored_csv_path: str | Path | None = None,
+    output_mode: str | None = None,
 ) -> dict[str, Any]:
     """
     Score a CSV (or use pre-scored file) and validate integrity / golden values.
@@ -213,23 +238,33 @@ def validate_score(
             summary["queue_mode"] = scored_rows[0].get(score_col and "v1_queue_mode")
     else:
         fieldnames, rows = read_csv_rows(csv_path)
-        fieldnames, scored_rows, summary = score_rows(fieldnames, rows, cfg)
+        fieldnames, scored_rows, summary = score_rows(
+            fieldnames, rows, cfg, output_mode=output_mode or "full"
+        )
         summary = dict(summary)
         summary["source"] = "recomputed"
 
-    integrity = check_contrib_integrity(
-        scored_rows,
-        prefix=prefix,
-        score_column=score_col,
-        epsilon=epsilon,
-    )
+    mode = (output_mode or "full").strip().lower() or "full"
+    if mode == "slim":
+        integrity = []
+        kpi_totals = summary.get("kpi_totals") if isinstance(summary, dict) else {}
+        if not isinstance(kpi_totals, dict):
+            kpi_totals = {}
+        kpi_failures = []
+    else:
+        integrity = check_contrib_integrity(
+            scored_rows,
+            prefix=prefix,
+            score_column=score_col,
+            epsilon=epsilon,
+        )
 
-    summary_kpi = summary.get("kpi_totals") if isinstance(summary, dict) else None
-    kpi_totals, kpi_failures = check_kpi_quantifier_integrity(
-        scored_rows,
-        epsilon=max(epsilon, 1e-4),
-        expected_totals=summary_kpi if isinstance(summary_kpi, dict) else None,
-    )
+        summary_kpi = summary.get("kpi_totals") if isinstance(summary, dict) else None
+        kpi_totals, kpi_failures = check_kpi_quantifier_integrity(
+            scored_rows,
+            epsilon=max(epsilon, 1e-4),
+            expected_totals=summary_kpi if isinstance(summary_kpi, dict) else None,
+        )
 
     golden: list[dict[str, Any]] = []
     expected_meta: dict[str, Any] | None = None

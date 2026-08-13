@@ -148,6 +148,9 @@ else {
         'Set-ExcelRange',
         'Set-ExcelHeaderStyle',
         'Set-ExcelAutoFit',
+        'Set-ExcelColumnWidth',
+        'Enable-ExcelAutoFilter',
+        'Invoke-ExcelWorksheetActivate',
         'Import-CsvToWorksheet',
         'Export-WorksheetToCsv',
         'Test-ExcelComEnvironment'

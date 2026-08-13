@@ -53,6 +53,16 @@ param(
     [switch]$UseDisplayNames,
     [string]$DisplayNameProperty = '',
     [string]$SheetName = 'Data',
+    [string]$GroupsCsv = '',
+    [string]$GroupsSheetName = 'Groups',
+    [switch]$Worklist,
+    [string]$WorklistSheetName = 'Worklist',
+    [string]$TotalsCsv = '',
+    [string]$TotalsSheetName = 'Totals',
+    [switch]$PoiScoreSheetOnly,
+    [string]$PoiScoreSheetName = 'POI_Scores',
+    [string]$SummaryCsv = '',
+    [string]$SummarySheetName = 'Summary',
     [string]$Password = '',
     [switch]$Visible,
     [switch]$DryRun,
@@ -128,6 +138,16 @@ export-csv options:
   -UseDisplayNames        Apply schema display labels
   -DisplayNameProperty    Preferred schema label property
   -SheetName <name>       Worksheet name (default Data)
+  -GroupsCsv <path>       Optional kpi-analytics groups CSV (Groups sheet)
+  -GroupsSheetName <name> Groups tab (default Groups)
+  -Worklist               Two-level GROUP/CLAIM sheet (requires -GroupsCsv)
+  -WorklistSheetName <name> Worklist tab (default Worklist)
+  -TotalsCsv <path>       Optional file-level totals CSV (Totals sheet)
+  -TotalsSheetName <name> Totals tab (default Totals)
+  -PoiScoreSheetOnly      Write only POI_Scores (identity + source + context + four scores)
+  -PoiScoreSheetName <name> POI sheet tab (default POI_Scores)
+  -SummaryCsv <path>      Optional kpi-analytics summary CSV (Summary sheet)
+  -SummarySheetName <name> Summary tab (default Summary)
   -Password <text>        Optional workbook open password (not logged)
   -Visible                Show Excel UI
   -DryRun                 Validate only; do not write
@@ -338,13 +358,33 @@ try {
             Write-CliHost ("export-csv: {0} -> {1}" -f $CsvPath, $OutputPath) Cyan
 
             $exportParams = @{
-                CsvPath      = $CsvPath
-                OutputPath   = $OutputPath
-                SchemaFormat = $SchemaFormat
-                SheetName    = $SheetName
-                DryRun       = $DryRun
-                Visible      = $Visible
-                Force        = $Force
+                CsvPath           = $CsvPath
+                OutputPath        = $OutputPath
+                SchemaFormat      = $SchemaFormat
+                SheetName         = $SheetName
+                DryRun            = $DryRun
+                Visible           = $Visible
+                Force             = $Force
+                GroupsSheetName   = $GroupsSheetName
+                WorklistSheetName = $WorklistSheetName
+                TotalsSheetName   = $TotalsSheetName
+                PoiScoreSheetName = $PoiScoreSheetName
+                SummarySheetName  = $SummarySheetName
+            }
+            if (-not [string]::IsNullOrWhiteSpace($GroupsCsv)) {
+                $exportParams['GroupsCsv'] = $GroupsCsv
+            }
+            if ($Worklist) {
+                $exportParams['Worklist'] = $true
+            }
+            if (-not [string]::IsNullOrWhiteSpace($TotalsCsv)) {
+                $exportParams['TotalsCsv'] = $TotalsCsv
+            }
+            if ($PoiScoreSheetOnly) {
+                $exportParams['PoiScoreSheetOnly'] = $true
+            }
+            if (-not [string]::IsNullOrWhiteSpace($SummaryCsv)) {
+                $exportParams['SummaryCsv'] = $SummaryCsv
             }
             if (-not [string]::IsNullOrWhiteSpace($SchemaPath)) {
                 $exportParams['SchemaPath'] = $SchemaPath
@@ -373,6 +413,21 @@ try {
                 Message             = $r.Message
                 HeadersSample       = @($r.HeadersSample)
                 SheetName           = $r.SheetName
+                GroupsCsv           = $r.GroupsCsv
+                GroupsSheetName     = $r.GroupsSheetName
+                GroupsRowCount      = $r.GroupsRowCount
+                Worklist            = [bool]$r.Worklist
+                WorklistSheetName   = $r.WorklistSheetName
+                WorklistRowCount    = $r.WorklistRowCount
+                TotalsCsv           = $r.TotalsCsv
+                TotalsSheetName     = $r.TotalsSheetName
+                TotalsRowCount      = $r.TotalsRowCount
+                PoiScoreSheetOnly   = [bool]$r.PoiScoreSheetOnly
+                PoiScoreSheet       = $r.PoiScoreSheet
+                PoiScoreRowCount    = $r.PoiScoreRowCount
+                SummaryCsv          = $r.SummaryCsv
+                SummarySheetName    = $r.SummarySheetName
+                SummaryRowCount     = $r.SummaryRowCount
             }
             $null = Add-ExcelToolkitGateFields -Target $payloadHt -Gate $gate
             $payload = [pscustomobject]$payloadHt
@@ -389,6 +444,9 @@ try {
                     }
                     Write-Host ("  Rows   : {0}" -f $r.RowCount)
                     Write-Host ("  Cols   : {0}" -f $r.ColumnCount)
+                    if ($r.PoiScoreSheetOnly) {
+                        Write-Host ("  Sheet  : {0}" -f $r.PoiScoreSheet)
+                    }
                     if ($r.HeadersSample -and $r.HeadersSample.Count -gt 0) {
                         Write-Host ("  Headers: {0}" -f ($r.HeadersSample -join ', '))
                     }
@@ -402,7 +460,7 @@ try {
                 $exitCode = 0
             }
             else {
-                if ($r.Message -match 'not found|required|No columns|preflight|Schema file|password|free output path') {
+                if ($r.Message -match 'not found|required|No columns|preflight|Schema file|password|free output path|PoiScore|cannot be combined|POI score') {
                     $exitCode = 1
                 }
                 else {

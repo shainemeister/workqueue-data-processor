@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.9.0"
+version: "1.21.0"
 status: current
 audience:
   - security
@@ -13,15 +13,15 @@ related:
   - CLI-GUIDE.md
   - diagnostics/README.md
   - ../certification/README.md
-last_updated: "2026-08-09"
+last_updated: "2026-08-13"
 ---
 
 # Excel Toolkit — Enterprise Security & Execution Notes
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.9.0  
-**Document version:** 1.9.0  
+**Toolkit version:** 1.21.0  
+**Document version:** 1.21.0  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
@@ -256,3 +256,18 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.7.1 | Fix interactive guided-mapping pipeline pollution (ExitCode crash); no trust-boundary change |
 | 1.8.0–1.8.1 | Partial-rank confirm after score / guided mapping; no trust-boundary change |
 | 1.9.0 | Menu scoring-profile pick + Advanced profile-list/help via sibling `kpi-analytics.cmd` only (`score --profile` / `profile-list`); no trust-boundary change |
+| 1.10.0 | Optional `-GroupsCsv` / `-Worklist` on export (local CSVs only; no scoring math); no trust-boundary change |
+| 1.11.0 | Menu Build worklist composes sibling `kpi-analytics.cmd score --group-preset` / `--groups` then local `Export-ExcelFromCsv -GroupsCsv -Worklist`; no trust-boundary change |
+| 1.12.0 | Menu multi-file preview (local CSV parse only) + `[WQ]_MM-DD-YYYY.xlsx` names; optional `-TotalsCsv` copy to a Totals sheet; no trust-boundary change |
+| 1.12.1 | Worklist key compare is case-sensitive (`-cne` after trim / `(blank)`); no trust-boundary change |
+| 1.13.0 | Menu Score output Full/Slim composes sibling `--output-mode slim`; no trust-boundary change |
+| 1.14.0 | Menu Express + `-PoiScoreSheetOnly` copy slim identity/score columns to one sheet; no trust-boundary change |
+| 1.14.1 | Menu [5] Express highlighted (Cyan) + version stamp; no trust-boundary change |
+| 1.14.2 | Menu [5] label Express score; same DarkGray as other actions; no trust-boundary change |
+| 1.15.0 | Express `POI_Scores` copies score-input source columns; no trust-boundary change |
+| 1.16.0 | Express `POI_Scores` copies context source columns (plan / codes / billing); no trust-boundary change |
+| 1.17.0 | Express `POI_Scores` frozen column order; no trust-boundary change |
+| 1.18.0 | Menu deletes generated output CSVs after successful Excel; no trust-boundary change |
+| 1.19.0 | Express Summary sheet + date format on service_date / last_worked_date; no trust-boundary change |
+| 1.20.0 | Express opens on POI_Scores; column width 12; no trust-boundary change |
+| 1.21.0 | Express POI_Scores AutoFilter; no trust-boundary change |

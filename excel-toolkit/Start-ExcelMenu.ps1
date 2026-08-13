@@ -17,14 +17,23 @@
     headers score silently; incomplete/ambiguous headers open guided column
     mapping on an interactive console (or fail clearly when non-interactive).
     A sibling <stem>_mapping.json next to the CSV is auto-applied when present.
-    Full pipeline and Score only optionally pick a scoring profile (POI focus)
-    and pass it as kpi-analytics score --profile (no scoring math in PowerShell).
+    Full pipeline, Score only, and Build worklist optionally pick a scoring
+    profile (POI focus) and pass it as kpi-analytics score --profile.
+    Build worklist also picks a --group-preset and exports Data + Groups +
+    Worklist sheets (no scoring math in PowerShell). Express score skips
+    profile / password / Full-Slim picks, scores --output-mode slim, and
+    writes one POI_Scores sheet (identity + score-input + context source + four scores; copy only).
+    Multi-file preview (2+ files) shows name, WQ stem, row count, max
+    out_ins_amt without scoring. Excel deliverable names use
+    [WQ]_MM-DD-YYYY.xlsx. File-level Totals sheet copies existing scored
+    columns (count / dollar sums / max priority / min appeal).
 
-    Column layout always comes from your data CSV. An optional schema (JSON or
-    CSV) supplies display labels only. Nothing domain-specific is hard-coded.
+    Column layout for the Data sheet comes from your data CSV. Worklist and
+    POI_Scores use frozen composition headers (copy only; no scoring math).
+    An optional schema (JSON or CSV) supplies display labels only.
     Existing output files are not overwritten: a free path with a numerical
     suffix (name_1.ext) is chosen instead. Optional workbook open password is
-    offered on every menu path that produces Excel.
+    offered on Excel paths except Express (unprotected POI_Scores only).
 
 .NOTES
     Launch via Start-ExcelMenu.cmd so the process uses -ExecutionPolicy Bypass
@@ -83,6 +92,24 @@ function Ensure-ExcelMenuDiagnosticsPass {
         Write-Host ("Diagnostics auto-ran and passed. Report: {0}" -f $gate.ReportTextPath) -ForegroundColor DarkGray
     }
     return $true
+}
+
+function Get-ExcelMenuToolkitVersion {
+    <#
+    .SYNOPSIS
+        excel-toolkit version for menu banners (same source as Get-ExcelToolkitVersion).
+    #>
+    [CmdletBinding()]
+    param()
+
+    if (Get-Command -Name Get-ExcelToolkitVersion -ErrorAction SilentlyContinue) {
+        return [string](Get-ExcelToolkitVersion)
+    }
+    if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
+        return 'unknown'
+    }
+    Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+    return [string](Get-ExcelToolkitVersion)
 }
 
 function Wait-ForEnter {
@@ -428,13 +455,20 @@ function Invoke-ProcessMyData {
         Write-Host ("  - {0}" -f $c) -ForegroundColor DarkGray
     }
 
+    Show-ExcelMenuMultiFilePreview -CsvPaths @($csvPaths.ToArray())
+
     # Defaults: full pipeline for CSV work; if selection was pure Excel, still offer pipeline first after import
     $defaultAction = '1'
+    $menuVersion = Get-ExcelMenuToolkitVersion
     Write-Host ''
     Write-Host 'What should I do with the selected file(s)?' -ForegroundColor Cyan
-    Write-Host '  [1] Full pipeline (Score -> Excel)     <- recommended' -ForegroundColor DarkGray
-    Write-Host '  [2] Score only (CSV results)' -ForegroundColor DarkGray
-    Write-Host '  [3] Export only (CSV -> Excel, no scoring)' -ForegroundColor DarkGray
+    Write-Host ("excel-toolkit {0}" -f $menuVersion) -ForegroundColor DarkGray
+    Write-Host 'Excel is the human deliverable. Generated CSVs under output\ are removed after a successful Excel write.' -ForegroundColor DarkGray
+    Write-Host '  [1] Full pipeline (Score -> Excel deliverable)     <- recommended' -ForegroundColor DarkGray
+    Write-Host '  [2] Score only (CSV artifacts)' -ForegroundColor DarkGray
+    Write-Host '  [3] Export only (CSV -> Excel deliverable, no scoring)' -ForegroundColor DarkGray
+    Write-Host '  [4] Build worklist (Score + Groups + Worklist Excel)' -ForegroundColor DarkGray
+    Write-Host '  [5] Express score' -ForegroundColor DarkGray
     $action = Read-Host ("Choice [{0}]" -f $defaultAction)
     if ([string]::IsNullOrWhiteSpace($action)) {
         $action = $defaultAction
@@ -456,6 +490,12 @@ function Invoke-ProcessMyData {
             else {
                 Invoke-MenuExportCsv -CsvPaths $pathsArray
             }
+        }
+        '4' {
+            Invoke-KpiScoreExportMenu -Worklist -InputPaths $pathsArray
+        }
+        '5' {
+            Invoke-KpiScoreExportMenu -Express -InputPaths $pathsArray
         }
         default {
             Write-Host 'Unrecognized choice; cancelling.' -ForegroundColor Yellow
@@ -651,10 +691,48 @@ function Confirm-KpiKeepPartialRankOutputs {
     return ($ans -match '^[Yy]')
 }
 
+function Test-ExcelMenuCsvSafeToRemove {
+    <#
+    .SYNOPSIS
+        True when a path is a generated output CSV (under output\, not the input, not import\).
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Path,
+
+        [string]$OutputDir,
+
+        [string[]]$ProtectedPaths
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path)) {
+        return $false
+    }
+    $resolved = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+    $ext = [System.IO.Path]::GetExtension($resolved)
+    if ($ext -cne '.csv') {
+        return $false
+    }
+    foreach ($prot in @($ProtectedPaths)) {
+        if ([string]::IsNullOrWhiteSpace($prot)) { continue }
+        $want = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($prot)
+        if ($resolved -ceq $want) {
+            return $false
+        }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OutputDir)) {
+        $outRoot = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputDir)
+        if (-not $resolved.StartsWith($outRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $false
+        }
+    }
+    return $true
+}
+
 function Remove-KpiScoredOutputPair {
     <#
     .SYNOPSIS
-        Delete scored detail + summary CSV paths if they exist (partial rank decline).
+        Delete generated scored / summary / groups / totals CSV paths under output\.
     #>
     [CmdletBinding()]
     param(
@@ -662,12 +740,25 @@ function Remove-KpiScoredOutputPair {
         [string]$ScoredCsv,
 
         [Parameter(Mandatory = $false)]
-        [string]$SummaryCsv
+        [string]$SummaryCsv,
+
+        [Parameter(Mandatory = $false)]
+        [string]$GroupsCsv,
+
+        [Parameter(Mandatory = $false)]
+        [string]$TotalsCsv,
+
+        [string]$OutputDir = '',
+
+        [string[]]$ProtectedPaths = @()
     )
 
-    foreach ($p in @($ScoredCsv, $SummaryCsv)) {
-        if (-not [string]::IsNullOrWhiteSpace($p) -and (Test-Path -LiteralPath $p)) {
-            Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue
+    foreach ($p in @($ScoredCsv, $SummaryCsv, $GroupsCsv, $TotalsCsv)) {
+        if (-not (Test-ExcelMenuCsvSafeToRemove -Path $p -OutputDir $OutputDir -ProtectedPaths $ProtectedPaths)) {
+            continue
+        }
+        Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue
+        if (-not (Test-Path -LiteralPath $p)) {
             Write-Host ("  Removed: {0}" -f $p) -ForegroundColor DarkGray
         }
     }
@@ -1042,7 +1133,7 @@ function Show-KpiScoringProfilesHelp {
     Write-Host '  Package default = omit --profile (Balanced).' -ForegroundColor DarkGray
     Write-Host '  Do not put claim rows in profile JSON. Prefer user_*.json for local saves.' -ForegroundColor DarkGray
     Write-Host '  Full contract: kpi-analytics\CLI-GUIDE.md (Scoring profiles).' -ForegroundColor DarkGray
-    Write-Host '  Process my data (Full pipeline / Score only) can pick a profile interactively.' -ForegroundColor DarkGray
+    Write-Host '  Process my data (Full pipeline / Score only / Build worklist) can pick a profile interactively.' -ForegroundColor DarkGray
 }
 
 function Select-KpiScoreInvokeResult {
@@ -1135,6 +1226,15 @@ function Invoke-KpiAnalyticsScore {
         [string]$Profile,
 
         [Parameter(Mandatory = $false)]
+        [string]$GroupPreset,
+
+        [Parameter(Mandatory = $false)]
+        [string]$GroupsPath,
+
+        [Parameter(Mandatory = $false)]
+        [string]$OutputMode,
+
+        [Parameter(Mandatory = $false)]
         [switch]$DryRun,
 
         [Parameter(Mandatory = $false)]
@@ -1160,6 +1260,18 @@ function Invoke-KpiAnalyticsScore {
     if (-not [string]::IsNullOrWhiteSpace($Profile)) {
         $scoreArgs.Add('--profile')
         $scoreArgs.Add($Profile)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+        $scoreArgs.Add('--group-preset')
+        $scoreArgs.Add($GroupPreset)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
+        $scoreArgs.Add('--groups')
+        $scoreArgs.Add($GroupsPath)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OutputMode)) {
+        $scoreArgs.Add('--output-mode')
+        $scoreArgs.Add($OutputMode)
     }
     if ($DryRun) {
         $scoreArgs.Add('--dry-run')
@@ -1325,6 +1437,8 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         4) If problems and host is non-interactive → fail with clear guidance (no hang).
         5) If clean → full score with redirects + JSON (unchanged automation-friendly path).
         Optional -Profile is passed through to every score invoke as --profile (no merge in PS).
+        Optional -GroupPreset / -GroupsPath are passed as --group-preset / --groups.
+        Optional -OutputMode is passed as --output-mode (full or slim).
     #>
     [CmdletBinding()]
     param(
@@ -1338,7 +1452,16 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         [string]$SummaryPath,
 
         [Parameter(Mandatory = $false)]
-        [string]$Profile
+        [string]$Profile,
+
+        [Parameter(Mandatory = $false)]
+        [string]$GroupPreset,
+
+        [Parameter(Mandatory = $false)]
+        [string]$GroupsPath,
+
+        [Parameter(Mandatory = $false)]
+        [string]$OutputMode
     )
 
     $mappingPath = Get-KpiSiblingMappingPath -CsvPath $CsvPath
@@ -1347,6 +1470,9 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     }
     if (-not [string]::IsNullOrWhiteSpace($Profile)) {
         Write-Host ("  Scoring profile: {0}" -f $Profile) -ForegroundColor DarkGray
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+        Write-Host ("  Group preset: {0}" -f $GroupPreset) -ForegroundColor DarkGray
     }
 
     Write-Host '  Mapping preflight (dry-run)...' -ForegroundColor DarkGray
@@ -1361,6 +1487,15 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     }
     if (-not [string]::IsNullOrWhiteSpace($Profile)) {
         $preParams['Profile'] = $Profile
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+        $preParams['GroupPreset'] = $GroupPreset
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
+        $preParams['GroupsPath'] = $GroupsPath
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OutputMode)) {
+        $preParams['OutputMode'] = $OutputMode
     }
     $preflight = Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @preParams)
 
@@ -1403,6 +1538,15 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         }
         if (-not [string]::IsNullOrWhiteSpace($Profile)) {
             $runParams['Profile'] = $Profile
+        }
+        if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+            $runParams['GroupPreset'] = $GroupPreset
+        }
+        if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
+            $runParams['GroupsPath'] = $GroupsPath
+        }
+        if (-not [string]::IsNullOrWhiteSpace($OutputMode)) {
+            $runParams['OutputMode'] = $OutputMode
         }
         return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @runParams))
     }
@@ -1470,7 +1614,436 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     if (-not [string]::IsNullOrWhiteSpace($Profile)) {
         $guideParams['Profile'] = $Profile
     }
+    if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+        $guideParams['GroupPreset'] = $GroupPreset
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
+        $guideParams['GroupsPath'] = $GroupsPath
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OutputMode)) {
+        $guideParams['OutputMode'] = $OutputMode
+    }
     return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @guideParams))
+}
+
+function Select-KpiOutputMode {
+    <#
+    .SYNOPSIS
+        Full (default) vs slim WQ+POI scores. Slim skips the scoring-profile pick.
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Host ''
+    Write-Host 'Score output:' -ForegroundColor Cyan
+    Write-Host '  [1] Full (WQ + v1 audit + kpi_q)     <- recommended' -ForegroundColor DarkGray
+    Write-Host '  [2] Slim (WQ + score per POI preset)' -ForegroundColor DarkGray
+    $choice = Read-Host 'Choice [1]'
+    if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '1' }
+    switch ($choice.Trim()) {
+        '1' { return 'full' }
+        '2' { return 'slim' }
+        default {
+            Write-Host 'Unrecognized output choice; using Full.' -ForegroundColor Yellow
+            return 'full'
+        }
+    }
+}
+
+function Select-KpiGroupPreset {
+    <#
+    .SYNOPSIS
+        Interactive group-preset picker for menu worklist path.
+        Returns a kpi-analytics --group-preset name, or $null if cancelled.
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Host ''
+    Write-Host 'Group worklist by (kpi-analytics --group-preset):' -ForegroundColor Cyan
+    Write-Host '  [1] Payer + denial category     <- recommended' -ForegroundColor DarkGray
+    Write-Host '  [2] Payer only' -ForegroundColor DarkGray
+    Write-Host '  [3] Denial category only' -ForegroundColor DarkGray
+    Write-Host '  [4] Location' -ForegroundColor DarkGray
+    Write-Host '  [0] Cancel' -ForegroundColor DarkGray
+    $choice = Read-Host 'Choice [1]'
+    if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '1' }
+    switch ($choice.Trim()) {
+        '1' { return 'payer_category' }
+        '2' { return 'payer' }
+        '3' { return 'category' }
+        '4' { return 'location' }
+        '0' { return $null }
+        default {
+            Write-Host 'Unrecognized group choice; cancelling.' -ForegroundColor Yellow
+            return $null
+        }
+    }
+}
+
+function ConvertTo-ExcelMenuWqFileToken {
+    <#
+    .SYNOPSIS
+        Sanitize a WQ label for [WQ]_MM-DD-YYYY.xlsx names (freeze: letters, digits, _ , -).
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return 'wq'
+    }
+    $chars = $Text.ToCharArray()
+    $buf = New-Object System.Text.StringBuilder
+    foreach ($ch in $chars) {
+        if ([char]::IsLetterOrDigit($ch) -or $ch -eq '_' -or $ch -eq '-') {
+            [void]$buf.Append($ch)
+        }
+        else {
+            [void]$buf.Append('_')
+        }
+    }
+    $out = $buf.ToString().Trim('_')
+    if ([string]::IsNullOrWhiteSpace($out)) {
+        return 'wq'
+    }
+    return $out
+}
+
+function ConvertTo-ExcelMenuOptionalDouble {
+    <#
+    .SYNOPSIS
+        Parse a CSV cell as a number (invariant). Returns $null when blank or not numeric.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return $null
+    }
+    $t = $Text.Trim()
+    if ($t.Length -eq 0) {
+        return $null
+    }
+    $t = $t.Replace('$', '').Replace(',', '')
+    $n = 0.0
+    if ([double]::TryParse($t, [System.Globalization.NumberStyles]::Float,
+            [System.Globalization.CultureInfo]::InvariantCulture, [ref]$n)) {
+        return $n
+    }
+    return $null
+}
+
+function Get-ExcelMenuCsvHeaderMatch {
+    param(
+        [string[]]$Headers,
+        [string]$Name
+    )
+
+    $want = $Name.ToLowerInvariant()
+    foreach ($h in @($Headers)) {
+        if ([string]::IsNullOrWhiteSpace($h)) { continue }
+        if ($h.ToLowerInvariant() -eq $want) {
+            return $h
+        }
+    }
+    return $null
+}
+
+function Get-KpiProfileWqLabel {
+    <#
+    .SYNOPSIS
+        Read optional profile JSON wq_label. No config merge and no score.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$ProfileToken
+    )
+
+    if ([string]::IsNullOrWhiteSpace($ProfileToken)) {
+        return $null
+    }
+    $path = $null
+    $token = $ProfileToken.Trim()
+    if ($token.IndexOfAny([char[]]@('\', '/')) -ge 0 -or $token.EndsWith('.json', [StringComparison]::OrdinalIgnoreCase)) {
+        if (Test-Path -LiteralPath $token) {
+            $path = $token
+        }
+    }
+    else {
+        $dir = Join-Path $kpiAnalyticsDir 'profiles'
+        foreach ($cand in @(($token + '.json'), ('poi_' + $token + '.json'))) {
+            $tryPath = Join-Path $dir $cand
+            if (Test-Path -LiteralPath $tryPath) {
+                $path = $tryPath
+                break
+            }
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($path)) {
+        return $null
+    }
+    try {
+        $raw = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+        $obj = $raw | ConvertFrom-Json
+        if ($null -eq $obj) { return $null }
+        if (@($obj.PSObject.Properties.Name) -contains 'wq_label') {
+            $v = [string]$obj.wq_label
+            if (-not [string]::IsNullOrWhiteSpace($v)) {
+                return $v.Trim()
+            }
+        }
+    }
+    catch {
+        return $null
+    }
+    return $null
+}
+
+function Get-ExcelMenuWqLabelForFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CsvPath,
+
+        [string]$BatchProfileLabel
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($BatchProfileLabel)) {
+        return (ConvertTo-ExcelMenuWqFileToken -Text $BatchProfileLabel)
+    }
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($CsvPath)
+    return (ConvertTo-ExcelMenuWqFileToken -Text $stem)
+}
+
+function Get-ExcelMenuDeliverableXlsxPath {
+    <#
+    .SYNOPSIS
+        Planned Excel deliverable path: [WQ]_MM-DD-YYYY.xlsx (or _summary).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$OutputDir,
+
+        [Parameter(Mandatory = $true)]
+        [string]$WqLabel,
+
+        [ValidateSet('data', 'summary')]
+        [string]$Kind = 'data'
+    )
+
+    $datePart = Get-Date -Format 'MM-dd-yyyy'
+    $base = '{0}_{1}' -f $WqLabel, $datePart
+    if ($Kind -eq 'summary') {
+        $base = '{0}_summary' -f $base
+    }
+    return (Join-Path $OutputDir ($base + '.xlsx'))
+}
+
+function Get-ExcelMenuCsvPreview {
+    <#
+    .SYNOPSIS
+        File name, WQ stem, row count, max out_ins_amt. Does not call score. No PHI columns printed.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CsvPath
+    )
+
+    $name = [System.IO.Path]::GetFileName($CsvPath)
+    $label = ConvertTo-ExcelMenuWqFileToken -Text ([System.IO.Path]::GetFileNameWithoutExtension($CsvPath))
+    $rowCount = 0
+    $hasAmt = $false
+    $maxAmt = $null
+    if (Test-Path -LiteralPath $CsvPath) {
+        $rows = @(Import-Csv -LiteralPath $CsvPath)
+        $rowCount = $rows.Count
+        if ($rowCount -gt 0) {
+            $headers = @($rows[0].PSObject.Properties | ForEach-Object { $_.Name })
+            $amtCol = Get-ExcelMenuCsvHeaderMatch -Headers $headers -Name 'out_ins_amt'
+            if (-not [string]::IsNullOrWhiteSpace($amtCol)) {
+                $hasAmt = $true
+                foreach ($r in $rows) {
+                    $cell = [string]$r.PSObject.Properties[$amtCol].Value
+                    $v = ConvertTo-ExcelMenuOptionalDouble -Text $cell
+                    if ($null -ne $v) {
+                        if ($null -eq $maxAmt -or $v -gt $maxAmt) {
+                            $maxAmt = $v
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return [pscustomobject]@{
+        FileName      = $name
+        WqLabel       = $label
+        RowCount      = $rowCount
+        HasOutInsAmt  = $hasAmt
+        MaxOutInsAmt  = $maxAmt
+    }
+}
+
+function Show-ExcelMenuMultiFilePreview {
+    <#
+    .SYNOPSIS
+        Print preview for 2+ selected CSVs. Skipped when fewer than two files.
+    #>
+    [CmdletBinding()]
+    param(
+        [string[]]$CsvPaths
+    )
+
+    $paths = @($CsvPaths | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($paths.Count -lt 2) {
+        return
+    }
+
+    Write-Host ''
+    Write-Host 'Multi-file preview (no score):' -ForegroundColor Cyan
+    foreach ($p in $paths) {
+        try {
+            $info = Get-ExcelMenuCsvPreview -CsvPath $p
+            $line = ('  {0}  wq={1}  rows={2}' -f $info.FileName, $info.WqLabel, $info.RowCount)
+            if ($info.HasOutInsAmt) {
+                if ($null -ne $info.MaxOutInsAmt) {
+                    $line = $line + ('  max_out_ins_amt={0}' -f $info.MaxOutInsAmt)
+                }
+                else {
+                    $line = $line + '  max_out_ins_amt=(none numeric)'
+                }
+            }
+            Write-Host $line -ForegroundColor DarkGray
+        }
+        catch {
+            Write-Host ("  {0}  (preview failed: {1})" -f $p, $_.Exception.Message) -ForegroundColor Yellow
+        }
+    }
+    Write-Host 'Each file is scored separately. Groups and worklists do not span files.' -ForegroundColor DarkGray
+}
+
+function Get-ExcelMenuFileTotals {
+    <#
+    .SYNOPSIS
+        File-level totals from already-scored columns (count / sum / max / min). Not a new score.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScoredCsv,
+
+        [Parameter(Mandatory = $true)]
+        [string]$WqLabel,
+
+        [string]$SourceFile
+    )
+
+    $inv = [System.Globalization.CultureInfo]::InvariantCulture
+    $list = New-Object System.Collections.Generic.List[object]
+    $list.Add([pscustomobject]@{ metric = 'wq_label'; value = $WqLabel })
+    $srcName = ''
+    if (-not [string]::IsNullOrWhiteSpace($SourceFile)) {
+        $srcName = [System.IO.Path]::GetFileName($SourceFile)
+    }
+    $list.Add([pscustomobject]@{ metric = 'source_file'; value = $srcName })
+
+    $rows = @()
+    if (Test-Path -LiteralPath $ScoredCsv) {
+        $rows = @(Import-Csv -LiteralPath $ScoredCsv)
+    }
+    $list.Add([pscustomobject]@{ metric = 'claim_count'; value = [string]$rows.Count })
+
+    $headers = @()
+    if ($rows.Count -gt 0) {
+        $headers = @($rows[0].PSObject.Properties | ForEach-Object { $_.Name })
+    }
+
+    $sumCols = @(
+        @{ Metric = 'sum_out_ins_amt'; Column = 'out_ins_amt' },
+        @{ Metric = 'sum_billed_amount'; Column = 'billed_amount' }
+    )
+    foreach ($spec in $sumCols) {
+        $col = Get-ExcelMenuCsvHeaderMatch -Headers $headers -Name $spec.Column
+        if ([string]::IsNullOrWhiteSpace($col)) {
+            continue
+        }
+        $sum = 0.0
+        $any = $false
+        foreach ($r in $rows) {
+            $v = ConvertTo-ExcelMenuOptionalDouble -Text ([string]$r.PSObject.Properties[$col].Value)
+            if ($null -ne $v) {
+                $sum += $v
+                $any = $true
+            }
+        }
+        if ($any) {
+            $list.Add([pscustomobject]@{ metric = $spec.Metric; value = $sum.ToString($inv) })
+        }
+    }
+
+    $maxCol = Get-ExcelMenuCsvHeaderMatch -Headers $headers -Name 'v1_priority_score'
+    if (-not [string]::IsNullOrWhiteSpace($maxCol)) {
+        $mx = $null
+        foreach ($r in $rows) {
+            $v = ConvertTo-ExcelMenuOptionalDouble -Text ([string]$r.PSObject.Properties[$maxCol].Value)
+            if ($null -ne $v) {
+                if ($null -eq $mx -or $v -gt $mx) { $mx = $v }
+            }
+        }
+        if ($null -ne $mx) {
+            $list.Add([pscustomobject]@{ metric = 'max_v1_priority_score'; value = $mx.ToString($inv) })
+        }
+    }
+
+    $minCol = Get-ExcelMenuCsvHeaderMatch -Headers $headers -Name 'days_until_appeal_deadline'
+    if (-not [string]::IsNullOrWhiteSpace($minCol)) {
+        $mn = $null
+        foreach ($r in $rows) {
+            $v = ConvertTo-ExcelMenuOptionalDouble -Text ([string]$r.PSObject.Properties[$minCol].Value)
+            if ($null -ne $v) {
+                if ($null -eq $mn -or $v -lt $mn) { $mn = $v }
+            }
+        }
+        if ($null -ne $mn) {
+            $list.Add([pscustomobject]@{ metric = 'min_days_until_appeal_deadline'; value = $mn.ToString($inv) })
+        }
+    }
+
+    return @($list.ToArray())
+}
+
+function Show-ExcelMenuFileTotals {
+    param(
+        [object[]]$Totals
+    )
+
+    if ($null -eq $Totals -or @($Totals).Count -eq 0) {
+        return
+    }
+    Write-Host '  File totals (existing columns; not a new score):' -ForegroundColor DarkGray
+    foreach ($t in @($Totals)) {
+        Write-Host ("    {0}={1}" -f $t.metric, $t.value) -ForegroundColor DarkGray
+    }
+}
+
+function Write-ExcelMenuFileTotalsCsv {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object[]]$Totals,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $dir = [System.IO.Path]::GetDirectoryName($Path)
+    if (-not [string]::IsNullOrWhiteSpace($dir) -and -not (Test-Path -LiteralPath $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+    @($Totals) | Export-Csv -LiteralPath $Path -NoTypeInformation -Encoding UTF8
 }
 
 function Get-ImportProcessableFiles {
@@ -1824,9 +2397,8 @@ function Invoke-MenuExportCsv {
             continue
         }
 
-        $stem = [System.IO.Path]::GetFileNameWithoutExtension($csvPath)
-        if ([string]::IsNullOrWhiteSpace($stem)) { $stem = 'export' }
-        $plannedXlsx = Join-Path $outputDir ('{0}.xlsx' -f $stem)
+        $wqLabel = Get-ExcelMenuWqLabelForFile -CsvPath $csvPath
+        $plannedXlsx = Get-ExcelMenuDeliverableXlsxPath -OutputDir $outputDir -WqLabel $wqLabel -Kind data
 
         $exportParams = @{
             CsvPath    = $csvPath
@@ -1890,6 +2462,11 @@ function Invoke-KpiScoreExportMenu {
         interactive host, prompts once per batch (package default = no --profile).
     .PARAMETER SkipProfilePrompt
         When set, do not prompt for a scoring profile (use -Profile as-is, may be empty).
+    .PARAMETER Worklist
+        Score with --group-preset and export Data + Groups + Worklist sheets.
+    .PARAMETER Express
+        Score --output-mode slim; export one POI_Scores sheet (identity + score-input + context source + four scores).
+        Skips profile, password, and Full/Slim picks. No summary xlsx.
     #>
     [CmdletBinding()]
     param(
@@ -1903,8 +2480,17 @@ function Invoke-KpiScoreExportMenu {
 
         [string]$Profile,
 
-        [switch]$SkipProfilePrompt
+        [switch]$SkipProfilePrompt,
+
+        [switch]$Worklist,
+
+        [switch]$Express
     )
+
+    $modeFlags = @($ScoreOnly, $Worklist, $Express) | Where-Object { $_ }
+    if (@($modeFlags).Count -gt 1) {
+        throw '-ScoreOnly, -Worklist, and -Express are mutually exclusive'
+    }
 
     Write-Host ''
     if ($ScoreOnly) {
@@ -1912,9 +2498,21 @@ function Invoke-KpiScoreExportMenu {
         Write-Host 'Runs kpi-analytics score; writes scored + summary CSVs under output\.' -ForegroundColor DarkGray
         Write-Host 'No Excel export on this path.' -ForegroundColor DarkGray
     }
+    elseif ($Worklist) {
+        Write-Host 'Build worklist (Score -> Groups + Worklist Excel)' -ForegroundColor Cyan
+        Write-Host 'kpi-analytics scores and writes *_groups.csv; Excel COM adds Groups + Worklist + Totals sheets.' -ForegroundColor DarkGray
+        Write-Host 'Excel is the human deliverable ([WQ]_MM-DD-YYYY.xlsx). No scoring math in PowerShell.' -ForegroundColor DarkGray
+    }
+    elseif ($Express) {
+        Write-Host 'Express score (all POI -> one POI_Scores sheet)' -ForegroundColor Cyan
+        Write-Host 'kpi-analytics scores --output-mode slim; Excel COM copies identity, score-input and context source columns, and four scores.' -ForegroundColor DarkGray
+        Write-Host 'No profile pick, password, or Full/Slim pick. Summary CSV is kept; no summary Excel.' -ForegroundColor DarkGray
+        Write-Host 'Excel is the human deliverable ([WQ]_MM-DD-YYYY.xlsx). No scoring math in PowerShell.' -ForegroundColor DarkGray
+    }
     else {
-        Write-Host 'Run full pipeline (Score CSV -> Excel)' -ForegroundColor Cyan
+        Write-Host 'Run full pipeline (Score CSV -> Excel deliverable)' -ForegroundColor Cyan
         Write-Host 'Runs kpi-analytics score, then exports scored + summary CSVs to Excel.' -ForegroundColor DarkGray
+        Write-Host 'Excel is the human deliverable ([WQ]_MM-DD-YYYY.xlsx); CSV artifacts stay under output\.' -ForegroundColor DarkGray
         Write-Host 'Engines stay separate: Python scores; Excel COM formats workbooks.' -ForegroundColor DarkGray
     }
     Write-Host 'Existing outputs are kept; new files use a free numerical suffix when needed.' -ForegroundColor DarkGray
@@ -1954,9 +2552,24 @@ function Invoke-KpiScoreExportMenu {
     }
     Write-Host ''
 
+    $resolvedOutputMode = 'full'
+    if ($Express) {
+        $resolvedOutputMode = 'slim'
+        Write-Host 'Express: slim scores (all shipped POI) -> one POI_Scores sheet.' -ForegroundColor Cyan
+    }
+    else {
+        $resolvedOutputMode = Select-KpiOutputMode
+        if ($resolvedOutputMode -eq 'slim') {
+            Write-Host 'Slim output: WQ columns + one score per shipped POI (no --profile).' -ForegroundColor Cyan
+        }
+    }
+
     # One scoring profile for the whole batch (composition only; no merge in PowerShell).
     $resolvedProfile = $null
-    if ($PSBoundParameters.ContainsKey('Profile') -and -not [string]::IsNullOrWhiteSpace($Profile)) {
+    if ($resolvedOutputMode -eq 'slim') {
+        $resolvedProfile = $null
+    }
+    elseif ($PSBoundParameters.ContainsKey('Profile') -and -not [string]::IsNullOrWhiteSpace($Profile)) {
         $resolvedProfile = $Profile.Trim()
         Write-Host ("Scoring profile (provided): {0}" -f $resolvedProfile) -ForegroundColor Cyan
     }
@@ -1967,6 +2580,24 @@ function Invoke-KpiScoreExportMenu {
         $resolvedProfile = Select-KpiScoringProfile
     }
 
+    $resolvedGroupPreset = $null
+    if ($Worklist) {
+        $resolvedGroupPreset = Select-KpiGroupPreset
+        if ([string]::IsNullOrWhiteSpace($resolvedGroupPreset)) {
+            Write-Host 'Worklist cancelled (no group preset).' -ForegroundColor Yellow
+            return
+        }
+        Write-Host ("Group preset: {0}" -f $resolvedGroupPreset) -ForegroundColor Cyan
+    }
+
+    $batchProfileWqLabel = $null
+    if (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
+        $batchProfileWqLabel = Get-KpiProfileWqLabel -ProfileToken $resolvedProfile
+        if (-not [string]::IsNullOrWhiteSpace($batchProfileWqLabel)) {
+            Write-Host ("WQ label (profile wq_label): {0}" -f $batchProfileWqLabel) -ForegroundColor Cyan
+        }
+    }
+
     # Excel COM gate only when this action will export workbooks
     if (-not $ScoreOnly) {
         if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
@@ -1975,7 +2606,7 @@ function Invoke-KpiScoreExportMenu {
     }
 
     $exportPassword = $null
-    if (-not $ScoreOnly) {
+    if (-not $ScoreOnly -and -not $Express) {
         if ($SkipPasswordPrompt) {
             $exportPassword = $Password
         }
@@ -1997,14 +2628,23 @@ function Invoke-KpiScoreExportMenu {
 
             $plannedScoredCsv   = Join-Path $outputDir ('{0}_scored.csv' -f $stem)
             $plannedSummaryCsv  = Join-Path $outputDir ('{0}_scored_summary.csv' -f $stem)
+            $plannedGroupsCsv   = Join-Path $outputDir ('{0}_scored_groups.csv' -f $stem)
 
             $scoredCsvInfo  = Resolve-ExcelToolkitUniquePath -Path $plannedScoredCsv
             $summaryCsvInfo = Resolve-ExcelToolkitUniquePath -Path $plannedSummaryCsv
+            $groupsCsvInfo  = $null
+            if ($Worklist) {
+                $groupsCsvInfo = Resolve-ExcelToolkitUniquePath -Path $plannedGroupsCsv
+            }
 
-            if ($scoredCsvInfo.PathAdjusted -or $summaryCsvInfo.PathAdjusted) {
+            $groupsAdjusted = ($Worklist -and $null -ne $groupsCsvInfo -and $groupsCsvInfo.PathAdjusted)
+            if ($scoredCsvInfo.PathAdjusted -or $summaryCsvInfo.PathAdjusted -or $groupsAdjusted) {
                 Write-Host '  Unique CSV paths (avoided overwrite):' -ForegroundColor Yellow
                 Write-Host ("    Scored  : {0}" -f $scoredCsvInfo.Path)
                 Write-Host ("    Summary : {0}" -f $summaryCsvInfo.Path)
+                if ($Worklist -and $null -ne $groupsCsvInfo) {
+                    Write-Host ("    Groups  : {0}" -f $groupsCsvInfo.Path)
+                }
             }
             else {
                 Write-Host ("  Scored CSV  : {0}" -f $scoredCsvInfo.Path)
@@ -2019,6 +2659,14 @@ function Invoke-KpiScoreExportMenu {
             }
             if (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
                 $scoreMapParams['Profile'] = $resolvedProfile
+            }
+            if ($Worklist) {
+                $scoreMapParams['GroupPreset'] = $resolvedGroupPreset
+                $scoreMapParams['GroupsPath'] = $groupsCsvInfo.Path
+                Write-Host ("  Groups CSV  : {0}" -f $groupsCsvInfo.Path) -ForegroundColor DarkGray
+            }
+            if ($resolvedOutputMode -eq 'slim') {
+                $scoreMapParams['OutputMode'] = 'slim'
             }
             $scoreResult = Select-KpiScoreInvokeResult -Raw (
                 Invoke-KpiAnalyticsScoreWithMapping @scoreMapParams
@@ -2080,7 +2728,14 @@ function Invoke-KpiScoreExportMenu {
             elseif (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
                 $profileNote = (" profile={0}" -f $resolvedProfile)
             }
-            Write-Host ("  Score OK.{0}{1}" -f $rowNote, $profileNote) -ForegroundColor Green
+            $groupNote = ''
+            if ($Worklist -and $null -ne $scoreJson) {
+                $sjNames = @($scoreJson.PSObject.Properties.Name)
+                if ($sjNames -contains 'GroupCount') {
+                    $groupNote = (" groups={0}" -f $scoreJson.GroupCount)
+                }
+            }
+            Write-Host ("  Score OK.{0}{1}{2}" -f $rowNote, $profileNote, $groupNote) -ForegroundColor Green
 
             # H2: surface partial ranks; require confirm before keeping / Excel export.
             $rankIsFull = Test-KpiScoreRankIsFull -ScoreJson $scoreJson
@@ -2088,11 +2743,35 @@ function Invoke-KpiScoreExportMenu {
                 Show-KpiPartialRankBanner -ScoreJson $scoreJson
                 if (-not (Confirm-KpiKeepPartialRankOutputs)) {
                     Write-Host '  Partial rank declined; removing scored CSVs for this file.' -ForegroundColor Yellow
-                    Remove-KpiScoredOutputPair -ScoredCsv $actualScoredCsv -SummaryCsv $actualSummaryCsv
+                    $removeParams = @{
+                        ScoredCsv       = $actualScoredCsv
+                        SummaryCsv      = $actualSummaryCsv
+                        OutputDir       = $outputDir
+                        ProtectedPaths  = @($csvPath)
+                    }
+                    if ($Worklist) {
+                        $declineGroups = $groupsCsvInfo.Path
+                        if ($null -ne $scoreJson -and $scoreJson.GroupsPath) {
+                            $declineGroups = [string]$scoreJson.GroupsPath
+                        }
+                        $removeParams['GroupsCsv'] = $declineGroups
+                    }
+                    Remove-KpiScoredOutputPair @removeParams
                     $failCount++
                     continue
                 }
                 Write-Host '  Continuing with PARTIAL rank outputs.' -ForegroundColor Yellow
+            }
+
+            $fileWqLabel = Get-ExcelMenuWqLabelForFile -CsvPath $csvPath -BatchProfileLabel $batchProfileWqLabel
+            $fileTotals = @()
+            try {
+                $fileTotals = @(Get-ExcelMenuFileTotals -ScoredCsv $actualScoredCsv -WqLabel $fileWqLabel -SourceFile $csvPath)
+                Show-ExcelMenuFileTotals -Totals $fileTotals
+            }
+            catch {
+                Write-Host ("  File totals skipped: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+                $fileTotals = @()
             }
 
             if ($ScoreOnly) {
@@ -2103,16 +2782,55 @@ function Invoke-KpiScoreExportMenu {
                 continue
             }
 
-            $plannedScoredXlsx  = [System.IO.Path]::ChangeExtension($actualScoredCsv, '.xlsx')
-            $plannedSummaryXlsx = [System.IO.Path]::ChangeExtension($actualSummaryCsv, '.xlsx')
+            $plannedScoredXlsx  = Get-ExcelMenuDeliverableXlsxPath -OutputDir $outputDir -WqLabel $fileWqLabel -Kind data
+            $plannedSummaryXlsx = Get-ExcelMenuDeliverableXlsxPath -OutputDir $outputDir -WqLabel $fileWqLabel -Kind summary
 
             if (-not $rankIsFull) {
                 Write-Host '  Exporting PARTIAL-rank workbooks...' -ForegroundColor Yellow
             }
-            Write-Host '  Exporting scored workbook...' -ForegroundColor Cyan
+            if ($Express) {
+                Write-Host '  Exporting POI_Scores workbook...' -ForegroundColor Cyan
+            }
+            else {
+                Write-Host '  Exporting scored workbook...' -ForegroundColor Cyan
+            }
             $ex1Params = @{
                 CsvPath    = $actualScoredCsv
                 OutputPath = $plannedScoredXlsx
+            }
+            $totalsCsvPath = $null
+            if ($Express) {
+                $ex1Params['PoiScoreSheetOnly'] = $true
+                if (Test-Path -LiteralPath $actualSummaryCsv) {
+                    $ex1Params['SummaryCsv'] = $actualSummaryCsv
+                }
+            }
+            elseif (@($fileTotals).Count -gt 0) {
+                $plannedTotalsCsv = Join-Path $outputDir ('{0}_scored_totals.csv' -f $stem)
+                $totalsCsvInfo = Resolve-ExcelToolkitUniquePath -Path $plannedTotalsCsv
+                try {
+                    Write-ExcelMenuFileTotalsCsv -Totals $fileTotals -Path $totalsCsvInfo.Path
+                    $ex1Params['TotalsCsv'] = $totalsCsvInfo.Path
+                    $totalsCsvPath = $totalsCsvInfo.Path
+                    Write-Host ("  Totals CSV  : {0}" -f $totalsCsvInfo.Path) -ForegroundColor DarkGray
+                }
+                catch {
+                    Write-Host ("  Totals sheet skipped: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+                }
+            }
+            if ($Worklist) {
+                $actualGroupsCsv = $groupsCsvInfo.Path
+                if ($null -ne $scoreJson -and $scoreJson.GroupsPath) {
+                    $actualGroupsCsv = [string]$scoreJson.GroupsPath
+                }
+                if (-not (Test-Path -LiteralPath $actualGroupsCsv)) {
+                    Write-Host ("  FAIL groups CSV missing: {0}" -f $actualGroupsCsv) -ForegroundColor Red
+                    $failCount++
+                    continue
+                }
+                $ex1Params['GroupsCsv'] = $actualGroupsCsv
+                $ex1Params['Worklist'] = $true
+                Write-Host ("  Groups CSV  : {0}" -f $actualGroupsCsv) -ForegroundColor DarkGray
             }
             if ($null -ne $exportPassword -and $exportPassword.Length -gt 0) {
                 $ex1Params['Password'] = $exportPassword
@@ -2125,30 +2843,78 @@ function Invoke-KpiScoreExportMenu {
                 continue
             }
             Write-Host ("  Scored XLSX : {0}" -f $ex1.OutputPath) -ForegroundColor Green
+            $exNames = @($ex1.PSObject.Properties.Name)
+            if ($Express -and $exNames -contains 'PoiScoreRowCount') {
+                Write-Host ("  POI_Scores rows: {0}" -f $ex1.PoiScoreRowCount) -ForegroundColor DarkGray
+            }
+            if ($Express -and $exNames -contains 'SummaryRowCount' -and $ex1.SummaryRowCount -gt 0) {
+                Write-Host ("  Summary rows : {0}" -f $ex1.SummaryRowCount) -ForegroundColor DarkGray
+            }
+            if ($exNames -contains 'TotalsRowCount' -and $ex1.TotalsRowCount -gt 0) {
+                Write-Host ("  Totals rows : {0}" -f $ex1.TotalsRowCount) -ForegroundColor DarkGray
+            }
+            if ($Worklist) {
+                if ($exNames -contains 'WorklistRowCount') {
+                    Write-Host ("  Worklist rows: {0}" -f $ex1.WorklistRowCount) -ForegroundColor DarkGray
+                }
+            }
 
-            Write-Host '  Exporting summary workbook...' -ForegroundColor Cyan
-            if (-not (Test-Path -LiteralPath $actualSummaryCsv)) {
-                Write-Host ("  FAIL summary CSV missing: {0}" -f $actualSummaryCsv) -ForegroundColor Red
-                $failCount++
-                continue
+            if (-not $Express) {
+                Write-Host '  Exporting summary workbook...' -ForegroundColor Cyan
+                if (-not (Test-Path -LiteralPath $actualSummaryCsv)) {
+                    Write-Host ("  FAIL summary CSV missing: {0}" -f $actualSummaryCsv) -ForegroundColor Red
+                    $failCount++
+                    continue
+                }
+                $ex2Params = @{
+                    CsvPath    = $actualSummaryCsv
+                    OutputPath = $plannedSummaryXlsx
+                }
+                if ($null -ne $exportPassword -and $exportPassword.Length -gt 0) {
+                    $ex2Params['Password'] = $exportPassword
+                }
+                $ex2 = Export-ExcelFromCsv @ex2Params
+                if (-not $ex2.Success) {
+                    Write-Host ("  FAIL summary Excel: {0}" -f $ex2.Message) -ForegroundColor Red
+                    Write-Host ("  Summary CSV still at: {0}" -f $actualSummaryCsv) -ForegroundColor Yellow
+                    $failCount++
+                    continue
+                }
+                Write-Host ("  Summary XLSX: {0}" -f $ex2.OutputPath) -ForegroundColor Green
             }
-            $ex2Params = @{
-                CsvPath    = $actualSummaryCsv
-                OutputPath = $plannedSummaryXlsx
+            $cleanupParams = @{
+                ScoredCsv      = $actualScoredCsv
+                SummaryCsv     = $actualSummaryCsv
+                OutputDir      = $outputDir
+                ProtectedPaths = @($csvPath)
             }
-            if ($null -ne $exportPassword -and $exportPassword.Length -gt 0) {
-                $ex2Params['Password'] = $exportPassword
+            if ($Worklist) {
+                $cleanupGroups = $null
+                if ($null -ne $groupsCsvInfo) {
+                    $cleanupGroups = $groupsCsvInfo.Path
+                }
+                if ($null -ne $scoreJson -and $scoreJson.GroupsPath) {
+                    $cleanupGroups = [string]$scoreJson.GroupsPath
+                }
+                if (-not [string]::IsNullOrWhiteSpace($cleanupGroups)) {
+                    $cleanupParams['GroupsCsv'] = $cleanupGroups
+                }
             }
-            $ex2 = Export-ExcelFromCsv @ex2Params
-            if (-not $ex2.Success) {
-                Write-Host ("  FAIL summary Excel: {0}" -f $ex2.Message) -ForegroundColor Red
-                Write-Host ("  Summary CSV still at: {0}" -f $actualSummaryCsv) -ForegroundColor Yellow
-                $failCount++
-                continue
+            if (-not [string]::IsNullOrWhiteSpace($totalsCsvPath)) {
+                $cleanupParams['TotalsCsv'] = $totalsCsvPath
             }
-            Write-Host ("  Summary XLSX: {0}" -f $ex2.OutputPath) -ForegroundColor Green
+            Remove-KpiScoredOutputPair @cleanupParams
+            Write-Host '  Generated CSVs removed (Excel is the deliverable).' -ForegroundColor DarkGray
 
-            Write-Host '  Pipeline complete for this file.' -ForegroundColor Green
+            if ($Worklist) {
+                Write-Host '  Worklist complete for this file.' -ForegroundColor Green
+            }
+            elseif ($Express) {
+                Write-Host '  Express complete for this file.' -ForegroundColor Green
+            }
+            else {
+                Write-Host '  Pipeline complete for this file.' -ForegroundColor Green
+            }
             $okCount++
         }
         catch {

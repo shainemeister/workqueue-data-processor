@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.9.0"
+version: "1.10.26"
 status: current
 audience:
   - developers
@@ -11,28 +11,30 @@ doc_type: other
 related:
   - ../README.md
   - ../CHANGELOG.md
+  - ../PLAN.md
   - ../kit/MARKDOWN-STANDARD.md
   - ../kit/RULES.md
   - ../LICENSE
   - ../certification/README.md
   - PLAN.md
-last_updated: "2026-07-30"
+  - README.md
+last_updated: "2026-08-13"
 ---
 
 # File Catalog
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.9.0  
-**Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards + `docs/`  
+**Document version:** 1.10.26  
+**Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
-**Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [PLAN.md](./PLAN.md)
+**Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
 
 ---
 
 ## Summary
 
-This repository holds a **Work Queue (WQ) data contract** under **`wq_schema/`**, two local toolkits (**excel-toolkit**: PowerShell 5.1 + Excel COM; **kpi-analytics**: Python 3.13 stdlib only), standards under **`kit/`**, and maintainer/design docs under **`docs/`**.
+This repository holds a **Work Queue (WQ) data contract** under **`wq_schema/`**, two local toolkits (**excel-toolkit**: PowerShell 5.1 + Excel COM; **kpi-analytics**: Python 3.13 stdlib only), standards under **`kit/`** (including Agent Instruct), and an AI docs workspace plus maintainer design docs under **`docs/`**.
 
 Each row below states **what the file is for** in one sentence. Runtime contracts live in toolkit READMEs and CLI guides; this catalog does not restate flags or formulas.
 
@@ -43,8 +45,10 @@ Each row below states **what the file is for** in one sentence. Runtime contract
 | KPI score / generate / validate / diagnostics | `kpi-analytics\kpi-analytics.cmd` |
 | Markdown conventions | [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) |
 | Maintenance policy | [kit/RULES.md](../kit/RULES.md) |
+| Agent Instruct | [kit/agents/OPS.md](../kit/agents/OPS.md) · root [PLAN.md](../PLAN.md) |
 | Project history | [CHANGELOG.md](../CHANGELOG.md) |
-| Living development plan | [PLAN.md](./PLAN.md) |
+| Product enhancement plan | [PLAN.md](./PLAN.md) |
+| AI docs workspace index | [README.md](./README.md) |
 
 Generated artifacts under `output\` and Python `__pycache__\` are intentionally **not** cataloged as source.
 
@@ -56,8 +60,8 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 2. [Repository layout](#repository-layout)
 3. [Root](#root)
 4. [wq_schema](#wq_schema)
-5. [docs](#docs)
-6. [kit](#kit)
+5. [docs](#docs) (AI workspace + design inventory)
+6. [kit](#kit) (includes agents)
 7. [import](#import)
 8. [excel-toolkit](#excel-toolkit)
 9. [excel-toolkit/sample-test](#excel-toolkitsample-test)
@@ -67,8 +71,9 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 13. [kpi-analytics/diagnostics](#kpi-analyticsdiagnostics)
 14. [kpi-analytics/fixtures](#kpi-analyticsfixtures)
 15. [certification](#certification)
-16. [Generated and ignored paths](#generated-and-ignored-paths)
-17. [Document history](#document-history)
+16. [scripts](#scripts)
+17. [Generated and ignored paths](#generated-and-ignored-paths)
+18. [Document history](#document-history)
 
 ---
 
@@ -76,15 +81,16 @@ Generated artifacts under `output\` and Python `__pycache__\` are intentionally 
 
 ```text
 workqueue-data-processor/
-  README.md, CHANGELOG.md, LICENSE, .gitignore
+  README.md, CHANGELOG.md, LICENSE, .gitignore, PLAN.md
   Start-ExcelMenu.cmd
   wq_schema/              # shared WQ data contract (schema + sample)
-  docs/                   # maintainer inventory, plan, design concepts
-  kit/                    # repo-kit standards (RULES hub, rules modules, templates, UPGRADE)
+  docs/                   # AI workspace + product PLAN, FILE-CATALOG, concept
+  kit/                    # repo-kit standards (RULES, rules, agents, templates, UPGRADE)
   import/                 # tracked synthetic / non-PHI inputs only
   excel-toolkit/          # PowerShell Excel COM toolkit
   kpi-analytics/          # Python KPI + priority scoring
   certification/          # formal Domain A/B self-attestation (outputs gitignored)
+  scripts/                # optional operator utilities
   output/                 # generated only (gitignored)
 ```
 
@@ -97,7 +103,9 @@ workqueue-data-processor/
 | [README.md](../README.md) | doc | Repository overview: WQ two-file data model, toolkit map, and synthetic → score → Excel flow. |
 | [LICENSE](../LICENSE) | legal | MIT license for this repository. |
 | [CHANGELOG.md](../CHANGELOG.md) | doc | Project history (Keep a Changelog); required by repo-kit. Kit version lives in kit/RULES kit baseline only. |
+| [PLAN.md](../PLAN.md) | doc | Project control surface: mission, stages, non-goals + **Agent models** (Agent Instruct). Product backlog under `docs/PLAN.md`; freezes under `docs/plan/`. |
 | [Start-ExcelMenu.cmd](../Start-ExcelMenu.cmd) | launcher | Root convenience shim; calls `excel-toolkit\Start-ExcelMenu.cmd`. |
+| [Remove-MaintainerDocs.cmd](../Remove-MaintainerDocs.cmd) | launcher | Optional post-clone working-copy slim (calls `scripts\Remove-MaintainerDocs.ps1`). |
 | [.gitignore](../.gitignore) | config | Excludes `output\`, local numbered `import\` copies, mapping profiles, package diagnostics certs, formal `certification/last_certification.*` + logs, Python caches, env dirs, editor noise. |
 
 ---
@@ -116,34 +124,59 @@ Shared **data contract** for both toolkits (not package-local). Product defaults
 
 ## docs
 
-Maintainer and design documentation (not end-user product entry points).
+AI resource workspace plus maintainer/design documentation (not end-user product entry points). Policy: [kit/rules/ai-docs-workspace.md](../kit/rules/ai-docs-workspace.md).
 
 | Path | Type | Summary |
 |------|------|---------|
+| [README.md](./README.md) | doc | AI docs workspace index: triple PLAN map, workboard, modules, plan index. |
+| [WORKBOARD.md](./WORKBOARD.md) | doc | Live multi-phase board (open / next / SHA). |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
-| [PLAN.md](./PLAN.md) | doc | Living post-V1 plan (0.3.0): Cluster 1 CLI shipped (kpi 2.6.0); residual menu profile picker + optional base retune; Clusters 2–3 multi-file / analysis still developing. |
+| [PLAN.md](./PLAN.md) | doc | Living product post-V1 backlog (0.5.4): Cluster 1 complete; Cluster 2 shipped; freezes link to `docs/plan/`; Agent models in root PLAN only. |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
+| [research/README.md](./research/README.md) | doc | Research index: investigations and spikes. |
+| [research/2026-08-12-rules-compliance-gaps.md](./research/2026-08-12-rules-compliance-gaps.md) | doc | RULES.md gap audit; P1 + local P2 applied 2026-08-12 (see CHANGELOG 1.14.1). |
+| [research/2026-08-12-worklist-grouping-and-industry-metrics.md](./research/2026-08-12-worklist-grouping-and-industry-metrics.md) | doc | Planning: column inventory vs industry RCM metrics; grouped worklist options (not a Cluster 3 freeze). |
+| [plan/README.md](./plan/README.md) | doc | Execution plans index (kit triple surface; live work on WORKBOARD). |
+| [plan/repo-kit-upgrade-2.4.0.md](./plan/repo-kit-upgrade-2.4.0.md) | doc | Completed execution record for repo-kit 2.4.0 upgrade. |
+| [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | doc | Completed execution record for repo-kit 2.3.1 upgrade. |
+| [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 freeze + P8 ship notes: per-file score, filename/`wq_label` identity, preview/naming/Totals. |
+| [plan/slim-poi-output.md](./plan/slim-poi-output.md) | doc | Freeze: slim detail CSV + Express `POI_Scores` (frozen column order). |
+| [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) | doc | Cluster 3 design-freeze checklist (developing; V2 boundary). |
+| [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) | doc | Optional B1.1 base-weight retune checklist (pending). |
+| [plan/post-v1-enhancement/README.md](./plan/post-v1-enhancement/README.md) | doc | Open annex index; active only while WORKBOARD Optional annex points here. |
+| [plan/post-v1-enhancement/ooo.md](./plan/post-v1-enhancement/ooo.md) | doc | Master OOO for grouped POI worklists and later optional Cluster 2 / B1.1. |
+| [plan/post-v1-enhancement/p2-rehearsal.md](./plan/post-v1-enhancement/p2-rehearsal.md) | doc | P2 synthetic group-key rehearsal (option A); not a freeze. |
+| [project_build/README.md](./project_build/README.md) | doc | Scaffold: implementation build notes. |
+| [resources/README.md](./resources/README.md) | doc | Curated in-repo and external pointers for AI/maintainers. |
 
 ---
 
 ## kit
 
-Standards from [repo-kit](https://github.com/shainemeister/repo-kit) **2.0.1** (project-filled). Product code stays outside this tree.
+Standards from [repo-kit](https://github.com/shainemeister/repo-kit) **2.4.0** (project-filled). Product code stays outside this tree.
 
 | Path | Type | Summary |
 |------|------|---------|
-| [RULES.md](../kit/RULES.md) | doc | Maintenance hub: authority map, kit baseline (**2.0.1**), Must/Must not, domain module index |
-| [UPGRADE.md](../kit/UPGRADE.md) | doc | Durable upgrade procedure and 1.x → 2.x layout migration |
+| [RULES.md](../kit/RULES.md) | doc | Maintenance hub: authority map, kit baseline (**2.4.0**), Operator enforcement, Must/Must not, domain module index |
+| [UPGRADE.md](../kit/UPGRADE.md) | doc | Durable upgrade procedure, 1.x → 2.x layout migration, Agent Instruct preserve/regen; workboard/continuity preserve list |
 | [MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) | doc | Markdown structure, frontmatter, platform-aware examples, author checklist |
 | [rules/hygiene.md](../kit/rules/hygiene.md) | doc | Packaging: standards under `kit/`; product outside |
 | [rules/authoring-and-style.md](../kit/rules/authoring-and-style.md) | doc | Docs rules; pylint; PowerShell style gates |
 | [rules/architecture.md](../kit/rules/architecture.md) | doc | Runtime separation, entry points, composition |
 | [rules/contracts.md](../kit/rules/contracts.md) | doc | Contract ownership, co-updates, data/schema rules |
 | [rules/security.md](../kit/rules/security.md) | doc | Inventory, SAST, certification renewal enforcement |
-| [rules/versioning-and-git.md](../kit/rules/versioning-and-git.md) | doc | Version surfaces, CHANGELOG, commits, AI disclosure |
+| [rules/versioning-and-git.md](../kit/rules/versioning-and-git.md) | doc | Version surfaces, CHANGELOG, commits, AI disclosure (Instructed-by cascade) |
 | [rules/verification-and-ops.md](../kit/rules/verification-and-ops.md) | doc | Verification table, completion, checklist, anti-patterns |
+| [rules/ai-docs-workspace.md](../kit/rules/ai-docs-workspace.md) | doc | Root `docs/` AI resource workspace policy (triple surface) |
+| [rules/workboard.md](../kit/rules/workboard.md) | doc | Multi-phase workboard lifecycle, annex/archive, agent resume |
+| [rules/continuity.md](../kit/rules/continuity.md) | doc | Optional surgical-edit overlay policy (no product paths) |
+| [agents/README.md](../kit/agents/README.md) | doc | Agent Instruct index (packs as views over L4) |
+| [agents/OPS.md](../kit/agents/OPS.md) | doc | Utilization order of operations (O3) when Instruct is in use |
+| [agents/BUILD.md](../kit/agents/BUILD.md) | doc | Emit/regen procedure for generated packs |
+| [agents/PLAN-HOOK.md](../kit/agents/PLAN-HOOK.md) | doc | PLAN Agent models control-surface contract |
+| [agents/generated/](../kit/agents/generated/) | pack | Thin project-filled expert packs (maintainer, implementer, docs-author, security, plan-author, reviewer) |
 | [configs/pylintrc](../kit/configs/pylintrc) | config | Kit starter pylint config (product gate uses `kpi-analytics/.pylintrc`) |
-| [templates/](../kit/templates/) | template | Document skeletons (README, CLI, methodology, security, certification, concept, generic) |
+| [templates/](../kit/templates/) | template | Document skeletons (README, CLI, methodology, security, certification, concept, generic, docs workspace, WORKBOARD, continuity, program annex/OOO) |
 
 ---
 
@@ -170,12 +203,12 @@ Tracked **input** files for scoring demos and local runs. Prefer synthetic or de
 | [CLI-GUIDE.md](../excel-toolkit/CLI-GUIDE.md) | doc | CLI contract: verbs, exit codes, JSON shapes, and automation examples. |
 | [ENTERPRISE-SECURITY.md](../excel-toolkit/ENTERPRISE-SECURITY.md) | doc | Trust boundary, disallowed patterns, and execution-policy guidance for COM automation. |
 | [ExcelCom.psm1](../excel-toolkit/ExcelCom.psm1) | module | Low-level Excel COM lifecycle, range I/O, CSV sheet import/export, optional workbook passwords, and safe Quit (no force-kill). |
-| [ExcelToolkit.psm1](../excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, unique paths, export/import, and enterprise diagnostics gate (`Assert-ExcelToolkitDiagnosticsPass`, readiness suite). |
+| [ExcelToolkit.psm1](../excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, unique paths, export/import, Groups/Worklist/Totals/POI_Scores sheets, and enterprise diagnostics gate. |
 | [ExcelToolkit.ps1](../excel-toolkit/ExcelToolkit.ps1) | script | CLI entry: `version` / `probe` / `diagnostics` / `export-csv` / `import-excel` / `help` over `ExcelToolkit.psm1`. |
 | [diagnostics/README.md](../excel-toolkit/diagnostics/README.md) | doc | Pass certificate + first-run gate; distinct from root `certification/` (json/txt gitignored). |
 | [excel-toolkit.cmd](../excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](../excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
-| [Start-ExcelMenu.ps1](../excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export, mapping preflight + guided column mapping via kpi-analytics TTY, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
+| [Start-ExcelMenu.ps1](../excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export/build worklist/Express POI sheet, multi-file preview, `[WQ]_MM-DD-YYYY.xlsx` deliverable, mapping preflight + guided column mapping via kpi-analytics TTY, optional export password except Express) and Advanced tools; unique output paths (`name_N.ext`) by default. |
 | [Export-CsvToExcel.ps1](../excel-toolkit/Export-CsvToExcel.ps1) | script | Thin menu/legacy wrapper around `Export-ExcelFromCsv` in the high-level module. |
 | [Export-WqDataToExcel.ps1](../excel-toolkit/Export-WqDataToExcel.ps1) | script | Compatibility forwarder to `Export-CsvToExcel.ps1` (legacy entry name). |
 | [Test-ExcelCom.ps1](../excel-toolkit/Test-ExcelCom.ps1) | script | Dry-run and full smoke tests for COM readiness and workbook operations. |
@@ -214,7 +247,7 @@ Minimal probes for locked-down corporate PCs: can `.cmd`, `.ps1`, and `.psm1` ex
 | [ENTERPRISE-SECURITY.md](../kpi-analytics/ENTERPRISE-SECURITY.md) | doc | Offline stdlib-only trust model; no Office automation, network, or third-party deps. |
 | [SCORE-METHODOLOGY.md](../kpi-analytics/SCORE-METHODOLOGY.md) | doc | Implementation methodology: V1 priority columns, `kpi_q_*` impacts, and summary CSV. |
 | [RCM_KPI_Claim_Impact_Methodology.md](../kpi-analytics/RCM_KPI_Claim_Impact_Methodology.md) | doc | Dual-attribution theory for Days in AR and aging-percentage claim impacts. |
-| [kpi-analytics.cmd](../kpi-analytics/kpi_analytics.cmd) | launcher | Shim: prefer `py -3.13 -m kpi_modules`, else `python -m kpi_modules`. |
+| [kpi-analytics.cmd](../kpi-analytics/kpi-analytics.cmd) | launcher | Shim: prefer `py -3.13 -m kpi_modules`, else `python -m kpi_modules`. |
 | [.pylintrc](../kpi-analytics/.pylintrc) | config | **Dev tooling only** — PEP-8 style gate for `kpi_modules` (not a product runtime dependency). |
 
 ---
@@ -225,18 +258,20 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.6.0). |
+| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.10.0). |
 | [__main__.py](../kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](../kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--profile`, `--interactive-mapping`, `--strict`), `generate`, `validate-score`, `profile-list` / `profile-show` / `profile-save`; diagnostics gate on operational score/generate/validate. |
 | [column_map.py](../kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
 | [completeness.py](../kpi-analytics/kpi_modules/completeness.py) | module | Rank completeness evaluation (`RankCompleteness`, strict roles/full tiers) for score JSON and CLI `--strict`. |
 | [diagnostics.py](../kpi-analytics/kpi_modules/diagnostics.py) | module | Enterprise runtime/import dry-run, durable pass/fail report, operational gate helpers. |
+| [group_summary.py](../kpi-analytics/kpi_modules/group_summary.py) | module | Post-score group aggregates (`--group-by` / `--group-preset`); reporting only. |
 | [config.py](../kpi-analytics/kpi_modules/config.py) | module | Loads and validates JSON config; resolves healthy vs chaos weight sets (optional active-metric renorm). |
 | [config_default.json](../kpi-analytics/kpi_modules/config_default.json) | config | Default field maps, weights, thresholds, and KPI quantifier settings. |
 | [profiles.py](../kpi-analytics/kpi_modules/profiles.py) | module | Scoring profile envelope, deep-merge onto package default, path resolve, list/show/save helpers. |
 | [io_csv.py](../kpi-analytics/kpi_modules/io_csv.py) | module | Stdlib CSV read/write helpers shared by score and generate paths. |
 | [metrics.py](../kpi-analytics/kpi_modules/metrics.py) | module | Raw priority metrics (claim age, BWDO, denial count, dual-deadline, balances, appeal, WQ age); date parse including Excel serials. |
 | [normalize.py](../kpi-analytics/kpi_modules/normalize.py) | module | Normalizes raw metrics to [0, 1] via minmax or percentile ranks. |
+| [output_sort.py](../kpi-analytics/kpi_modules/output_sort.py) | module | Post-score detail-row sort (`--sort` / `--sort-preset`); no V1 math. |
 | [privacy.py](../kpi-analytics/kpi_modules/privacy.py) | module | Score-output PHI masking for patient name / DOB (header aliases; prefix+4-digit token by default; configurable omit). |
 | [score_v1.py](../kpi-analytics/kpi_modules/score_v1.py) | module | Orchestrates metrics → queue mode → weights → norms → contributions → final score; accepts pre-merged config and mapping roles. |
 | [kpi_quantifiers.py](../kpi-analytics/kpi_modules/kpi_quantifiers.py) | module | Portfolio KPIs plus per-claim static share and resolution-delta (`kpi_q_*`) columns. |
@@ -281,6 +316,7 @@ Small golden inputs used by `validate-score` and hand-check documentation.
 | [v1_handcalc_input.csv](../kpi-analytics/fixtures/v1_handcalc_input.csv) | fixture | Tiny claim set sized for hand-calculable priority scoring. |
 | [v1_handcalc_config.json](../kpi-analytics/fixtures/v1_handcalc_config.json) | fixture | Config binding fields/weights for the V1 handcalc case. |
 | [v1_handcalc_expected.json](../kpi-analytics/fixtures/v1_handcalc_expected.json) | fixture | Golden expected priority outputs for the handcalc case. |
+| [slim_poi_expected.json](../kpi-analytics/fixtures/slim_poi_expected.json) | fixture | Golden slim multi-POI scores on the handcalc input. |
 | [rcm_impact_example.csv](../kpi-analytics/fixtures/rcm_impact_example.csv) | fixture | Small claim set for RCM dual-attribution checks. |
 | [rcm_impact_config.json](../kpi-analytics/fixtures/rcm_impact_config.json) | fixture | Config for the RCM impact fixture run. |
 | [rcm_impact_expected.json](../kpi-analytics/fixtures/rcm_impact_expected.json) | fixture | Golden expected portfolio totals and claim-level KPI Q values. |
@@ -300,6 +336,16 @@ Formal **security + code-validation** self-attestation package (developer-only).
 | [scripts/](../certification/scripts/) | script | Dynamic invariant helpers (`invariant_*.py`, `_common.py`) |
 | [fixtures/privacy_score_input.csv](../certification/fixtures/privacy_score_input.csv) | fixture | Synthetic privacy score fixture (no real PHI) |
 | [Invoke-Certification.ps1](../certification/Invoke-Certification.ps1) | script | Full-suite harness; kinds include `python-assert` / `policy-scan`; `-Mode Standard\|Ship`; exit 0 iff OverallPass |
+
+---
+
+## scripts
+
+Optional operator utilities (not a product toolkit).
+
+| Path | Type | Summary |
+|------|------|---------|
+| [Remove-MaintainerDocs.ps1](../scripts/Remove-MaintainerDocs.ps1) | script | Deletes maintainer-only trees from the working copy after clone; restore with `git checkout -- .`. |
 
 ---
 
@@ -340,6 +386,33 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.26 | excel-toolkit 1.21.0 Express POI_Scores AutoFilter |
+| 1.10.25 | excel-toolkit 1.20.0 Express open sheet + width 12 |
+| 1.10.24 | excel-toolkit 1.19.0 Express Summary sheet + date format |
+| 1.10.23 | excel-toolkit 1.18.0 patient-after-invoice; menu CSV cleanup |
+| 1.10.22 | excel-toolkit 1.17.0 Express column order |
+| 1.10.21 | excel-toolkit 1.16.0 Express context source columns |
+| 1.10.20 | excel-toolkit 1.15.0 Express score-input source columns |
+| 1.10.19 | excel-toolkit 1.14.2 [5] Express score label |
+| 1.10.18 | excel-toolkit 1.14.1 menu [5] Express visibility lock |
+| 1.10.17 | excel-toolkit 1.14.0 Express / `-PoiScoreSheetOnly` |
+| 1.10.16 | `scripts/Remove-MaintainerDocs.ps1` + root cmd |
+| 1.10.15 | kpi 2.10.0 slim output; `slim_poi_expected.json`; `__version__` 2.10.0 |
+| 1.10.14 | Freeze `plan/slim-poi-output.md` |
+| 1.10.13 | excel-toolkit 1.12.1 Worklist case-sensitive match |
+| 1.10.12 | excel-toolkit 1.12.0 Cluster 2 menu preview / naming / Totals |
+| 1.10.11 | Cluster 2 freeze signed (cluster-2-multi-file 1.1.0) |
+| 1.10.10 | excel-toolkit 1.11.0 menu Build worklist notes |
+| 1.10.9 | excel-toolkit 1.10.0 Groups/Worklist export notes |
+| 1.10.8 | kpi-analytics 2.9.0 `group_summary.py`; `__version__` row 2.9.0 |
+| 1.10.7 | kpi-analytics 2.8.0 `output_sort.py`; `__version__` row 2.8.0 |
+| 1.10.6 | P2 rehearsal note under post-v1-enhancement annex |
+| 1.10.5 | Annex `plan/post-v1-enhancement/` (workboard-linked OOO) |
+| 1.10.4 | repo-kit **2.4.0**: WORKBOARD, workboard/continuity modules, upgrade 2.4.0 note |
+| 1.10.3 | Research note: worklist grouping and industry-metric fit |
+| 1.10.2 | Research note for RULES gap audit; fix kpi-analytics.cmd catalog link; `__version__` row 2.7.0 |
+| 1.10.1 | Plan dual-surface compliance: docs/plan freezes (cluster 2/3, B1.1, upgrade complete); root PLAN stages; docs/PLAN 0.5.0; resources index |
+| 1.10.0 | repo-kit **2.3.1**: root PLAN + agents + ai-docs-workspace; docs workspace modules; baseline/catalog refresh |
 | 1.9.0 | kpi-analytics 2.6.0: `profiles.py`, shipped `profiles/poi_*.json` focus presets; CLI profile verbs; PLAN blurb updated for 0.3.0 backlog status |
 | 1.8.6 | Data contract moved to `wq_schema/` (`wq_schema.json`, `wq_schema.csv`, `wq_data.csv`); root no longer holds schema/sample CSVs |
 | 1.8.5 | Root cleanup: `PLAN.md`, `FILE-CATALOG.md`, and concept doc under `docs/`; root keeps data contract + entry shim only among product docs |

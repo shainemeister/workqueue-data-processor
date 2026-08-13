@@ -123,7 +123,7 @@ Commands and pass criteria for this repository (also encoded in [checks.json](./
 | **Dynamic — password JSON** | — | `invariant_password_json_contract.py` | CLI/module JSON exposes `PasswordUsed` boolean only |
 | **Policy** | — | `policy-scan` + [policies/banned-patterns.json](./policies/banned-patterns.json) | Zero critical banned patterns in product trees |
 
-**Required surfaces:** Python, PowerShell, Secrets. All required checks for the selected **mode** run on **every** certification renewal (full suite; no partial recert). Standard mode currently runs **16** required checks (static + dynamic + policy).
+**Required surfaces:** Python, PowerShell, Secrets. All required checks for the selected **mode** run on **every** certification renewal (full suite; no partial recert). Standard mode currently runs **17** required checks (static + dynamic + policy).
 
 **Gitleaks modes (both required):**
 

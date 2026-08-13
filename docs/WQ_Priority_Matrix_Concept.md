@@ -11,7 +11,10 @@ related:
   - ../kpi-analytics/SCORE-METHODOLOGY.md
   - ../kpi-analytics/README.md
   - ../wq_schema/wq_schema.json
-last_updated: "2026-07-22"
+  - ../PLAN.md
+  - PLAN.md
+  - plan/cluster-3-analysis.md
+last_updated: "2026-08-10"
 ---
 
 # Work Queue Priority Matrix – Concept Documentation
@@ -20,8 +23,10 @@ This document describes a progressive, multi-version approach to prioritization 
 
 **Document version:** 1.0.0  
 **Current implementation target:** Version 1 (implemented in `kpi-analytics`)  
+**Product backlog:** [PLAN.md](./PLAN.md) (Clusters 2–3 reporting only; V2/V3 not opened for code)  
+**Control surface:** [../PLAN.md](../PLAN.md) stage **S5** (design only)
 
-**Related:** [kpi-analytics/SCORE-METHODOLOGY.md](../kpi-analytics/SCORE-METHODOLOGY.md) · [kpi-analytics/README.md](../kpi-analytics/README.md)
+**Related:** [kpi-analytics/SCORE-METHODOLOGY.md](../kpi-analytics/SCORE-METHODOLOGY.md) · [kpi-analytics/README.md](../kpi-analytics/README.md) · [PLAN.md](./PLAN.md) · [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md)
 
 ---
 

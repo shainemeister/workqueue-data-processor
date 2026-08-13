@@ -23,13 +23,95 @@ from .completeness import (
     format_strict_failure_message,
     strict_mode_allows,
 )
-from .config import METRIC_KEYS, effective_weights, load_config, validate_config
+from .config import (
+    METRIC_KEYS,
+    effective_weights,
+    load_config,
+    validate_config,
+)
+from .profiles import deep_merge, load_profile, profiles_dir
 from .io_csv import read_csv_rows, resolve_unique_path, write_csv_rows
+from .group_summary import (
+    build_group_rows,
+    default_groups_path,
+    resolve_group_by,
+)
+from .output_sort import (
+    apply_output_sort,
+    resolve_sort_spec,
+    sort_applied_payload,
+)
 from .kpi_quantifiers import apply_quantifiers_to_rows
 from .metrics import compute_raw_metrics, detect_chaos_mode, resolve_as_of
 from .normalize import normalize_all
 from .privacy import apply_privacy_to_rows
 from .summary_report import default_summary_path, write_summary_csv
+
+
+OUTPUT_MODES = ("full", "slim")
+
+# Shipped POI name → slim detail column. Balanced score stays v1_priority_score.
+SLIM_POI_SCORE_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("protect_writeoffs", "v1_score_protect_writeoffs"),
+    ("maximize_cash", "v1_score_maximize_cash"),
+    ("suppress_aging", "v1_score_suppress_aging"),
+)
+
+
+def resolve_output_mode(raw: str | None) -> str:
+    """Return full or slim. Empty means full."""
+    text = (raw or "").strip().lower() or "full"
+    if text not in OUTPUT_MODES:
+        known = ", ".join(OUTPUT_MODES)
+        raise ValueError(
+            f"unknown output mode {raw!r}; expected one of: {known}"
+        )
+    return text
+
+
+def slim_score_column_names() -> list[str]:
+    """Balanced score plus one column per shipped POI."""
+    return ["v1_priority_score"] + [col for _name, col in SLIM_POI_SCORE_COLUMNS]
+
+
+def _priority_score(
+    weights: dict[str, float],
+    norm: dict[str, float],
+) -> float:
+    score = 0.0
+    for key in METRIC_KEYS:
+        score += float(weights[key]) * float(norm[key])
+    if score < 0.0:
+        return 0.0
+    if score > 1.0:
+        return 1.0
+    return score
+
+
+def _shipped_poi_weights(
+    base_cfg: dict[str, Any],
+    chaos_mode: bool,
+    active: list[str],
+) -> list[tuple[str, str, dict[str, float]]]:
+    """Load packaged poi_*.json multipliers; same chaos/active as the batch."""
+    out: list[tuple[str, str, dict[str, float]]] = []
+    root = profiles_dir()
+    for name, column in SLIM_POI_SCORE_COLUMNS:
+        path = root / f"poi_{name}.json"
+        if not path.is_file():
+            raise FileNotFoundError(
+                f"shipped POI profile missing for slim output: {path}"
+            )
+        prof = load_profile(path)
+        overlay = prof.get("config")
+        if not isinstance(overlay, dict):
+            overlay = {}
+        merged = validate_config(deep_merge(base_cfg, overlay))
+        weights = effective_weights(
+            merged, chaos_mode, active_metrics=active
+        )
+        out.append((name, column, weights))
+    return out
 
 
 def _fmt_num(value: float | None, digits: int = 6) -> str:
@@ -83,6 +165,7 @@ def score_rows(
     *,
     as_of: date | None = None,
     mapping_report: dict[str, Any] | None = None,
+    output_mode: str = "full",
 ) -> tuple[list[str], list[dict[str, Any]], dict[str, Any]]:
     """
     Score in-memory rows and attach portfolio KPI quantifiers.
@@ -116,25 +199,38 @@ def score_rows(
     score_col = str(cfg["output"].get("score_column", "v1_priority_score"))
     mode_col = str(cfg["output"].get("mode_column", "v1_queue_mode"))
     mode_label = "chaos" if chaos_mode else "healthy"
-
-    audit_cols: list[str] = [
-        f"{prefix}as_of_date",
-        mode_col,
-        f"{prefix}poi_name",
-        f"{prefix}normalization",
-    ]
-    for key in METRIC_KEYS:
-        audit_cols.append(f"{prefix}raw_{key}")
-    for key in METRIC_KEYS:
-        audit_cols.append(f"{prefix}norm_{key}")
-    for key in METRIC_KEYS:
-        audit_cols.append(f"{prefix}weight_{key}")
-    for key in METRIC_KEYS:
-        audit_cols.append(f"{prefix}contrib_{key}")
-    audit_cols.append(score_col)
-
+    mode = resolve_output_mode(output_mode)
     poi_name = str(cfg.get("point_of_interest", {}).get("name", "default"))
     norm_method = str(cfg.get("normalization", "minmax"))
+
+    extra_poi_weights: list[tuple[str, str, dict[str, float]]] = []
+    if mode == "slim":
+        extra_poi_weights = _shipped_poi_weights(cfg, chaos_mode, active)
+
+    extra_cols: list[str] = [
+        f"{prefix}as_of_date",
+        mode_col,
+        f"{prefix}normalization",
+        score_col,
+    ]
+    if mode == "full":
+        extra_cols = [
+            f"{prefix}as_of_date",
+            mode_col,
+            f"{prefix}poi_name",
+            f"{prefix}normalization",
+        ]
+        for key in METRIC_KEYS:
+            extra_cols.append(f"{prefix}raw_{key}")
+        for key in METRIC_KEYS:
+            extra_cols.append(f"{prefix}norm_{key}")
+        for key in METRIC_KEYS:
+            extra_cols.append(f"{prefix}weight_{key}")
+        for key in METRIC_KEYS:
+            extra_cols.append(f"{prefix}contrib_{key}")
+        extra_cols.append(score_col)
+    else:
+        extra_cols.extend(col for _n, col in SLIM_POI_SCORE_COLUMNS)
 
     out_rows: list[dict[str, Any]] = []
     scores: list[float] = []
@@ -145,24 +241,29 @@ def score_rows(
         out = dict(src)
         out[f"{prefix}as_of_date"] = as_of.isoformat()
         out[mode_col] = mode_label
-        out[f"{prefix}poi_name"] = poi_name
         out[f"{prefix}normalization"] = norm_method
 
-        score = 0.0
-        for key in METRIC_KEYS:
-            w = weights[key]
-            nval = float(norm[key])
-            contrib = w * nval
-            score += contrib
-            out[f"{prefix}raw_{key}"] = _fmt_num(raw.get(key))
-            out[f"{prefix}norm_{key}"] = _fmt_num(nval)
-            out[f"{prefix}weight_{key}"] = _fmt_num(w)
-            out[f"{prefix}contrib_{key}"] = _fmt_num(contrib)
-
-        if score < 0.0:
+        if mode == "full":
+            out[f"{prefix}poi_name"] = poi_name
             score = 0.0
-        elif score > 1.0:
-            score = 1.0
+            for key in METRIC_KEYS:
+                w = weights[key]
+                nval = float(norm[key])
+                contrib = w * nval
+                score += contrib
+                out[f"{prefix}raw_{key}"] = _fmt_num(raw.get(key))
+                out[f"{prefix}norm_{key}"] = _fmt_num(nval)
+                out[f"{prefix}weight_{key}"] = _fmt_num(w)
+                out[f"{prefix}contrib_{key}"] = _fmt_num(contrib)
+            if score < 0.0:
+                score = 0.0
+            elif score > 1.0:
+                score = 1.0
+        else:
+            score = _priority_score(weights, norm)
+            for _name, column, poi_w in extra_poi_weights:
+                out[column] = _fmt_num(_priority_score(poi_w, norm))
+
         out[score_col] = _fmt_num(score)
         scores.append(score)
         out_rows.append(out)
@@ -173,8 +274,14 @@ def score_rows(
     # PHI masking on output only (after metrics / KPI Q; input CSV unchanged)
     privacy_stats = apply_privacy_to_rows(out_rows, cfg)
 
+    if mode == "slim":
+        for row in out_rows:
+            for col in kpi_cols:
+                row.pop(col, None)
+
     out_fields = list(fieldnames)
-    for col in audit_cols + kpi_cols:
+    attach = extra_cols if mode == "slim" else extra_cols + list(kpi_cols)
+    for col in attach:
         if col not in out_fields:
             out_fields.append(col)
 
@@ -191,6 +298,10 @@ def score_rows(
         "score_max": round(max(scores), 6) if scores else None,
         "score_mean": round(sum(scores) / len(scores), 6) if scores else None,
         "score_column": score_col,
+        "output_mode": mode,
+        "slim_score_columns": (
+            slim_score_column_names() if mode == "slim" else []
+        ),
         "kpi_totals": kpi_totals,
         "kpi_columns": kpi_cols,
         "privacy": privacy_stats,
@@ -253,6 +364,12 @@ def score_csv(
     interactive_mapping: bool = False,
     strict: str | None = None,
     force: bool = False,
+    sort_spec: str | None = None,
+    sort_preset: str | None = None,
+    group_by: str | None = None,
+    group_preset: str | None = None,
+    groups_path: str | Path | None = None,
+    output_mode: str | None = None,
 ) -> dict[str, Any]:
     """
     Score a data CSV and write an enriched CSV.
@@ -277,6 +394,16 @@ def score_csv(
     strict: None (default), \"roles\", or \"full\". When set, fail without writing
     files if rank completeness does not meet that tier (see completeness module).
 
+    sort_spec / sort_preset: optional post-score detail-row order (Cluster 3.2).
+    Default (both omitted) keeps input order. Mutually exclusive.
+
+    group_by / group_preset / groups_path: optional group summary CSV
+    (Cluster 3.1 reporting). Omitted means no groups file.
+
+    output_mode: ``full`` (default) or ``slim``. Slim writes WQ columns plus
+    balanced and shipped-POI scores only. Mutually exclusive with a custom
+    *config* dict (scoring profile) or a non-default *config_path*.
+
     force: when False (default), if the output path already exists, write to a
     unique sibling path with a numerical suffix (``name_1.ext``). When True,
     overwrite the exact output path. Explicit summary paths are resolved the same
@@ -284,6 +411,16 @@ def score_csv(
 
     Returns a result dict suitable for CLI JSON output.
     """
+    mode = resolve_output_mode(output_mode)
+    if mode == "slim" and config is not None:
+        raise ValueError(
+            "--output-mode slim cannot be combined with --profile"
+        )
+    if mode == "slim" and config_path is not None:
+        raise ValueError(
+            "--output-mode slim cannot be combined with --config"
+        )
+
     if config is not None:
         if not isinstance(config, dict):
             raise ValueError("config must be a dict when provided")
@@ -382,12 +519,32 @@ def score_csv(
             "or re-run with --interactive-mapping on a TTY."
         )
 
+    sort_text, preset_name, sort_pairs = resolve_sort_spec(
+        sort_spec=sort_spec,
+        sort_preset=sort_preset,
+    )
+    group_keys, group_preset_name = resolve_group_by(
+        group_by=group_by,
+        group_preset=group_preset,
+    )
+    if groups_path is not None and not group_keys:
+        raise ValueError("--groups requires --group-by or --group-preset")
+
     out_fields, out_rows, summary = score_rows(
         fieldnames,
         rows,
         cfg,
         mapping_report=mapping_report,
+        output_mode=mode,
     )
+    if sort_pairs:
+        out_rows = apply_output_sort(out_rows, sort_pairs, out_fields)
+    group_fields: list[str] = []
+    group_rows: list[dict[str, Any]] = []
+    if group_keys:
+        group_fields, group_rows = build_group_rows(
+            out_rows, group_keys, out_fields
+        )
 
     completeness = evaluate_rank_completeness(
         active_metrics=summary.get("active_metrics"),
@@ -427,6 +584,26 @@ def score_csv(
         sum_requested_resolved = None
         sum_adjusted = False
 
+    write_groups = bool(group_keys)
+    if write_groups:
+        groups_explicit = groups_path is not None
+        if groups_explicit:
+            grp_write, grp_requested, grp_adjusted = resolve_unique_path(
+                Path(groups_path), force=bool(force)
+            )
+            grp_path = grp_write.resolve()
+            grp_requested_resolved = grp_requested.resolve()
+        else:
+            grp_path = default_groups_path(out_resolved)
+            grp_requested_resolved = default_groups_path(
+                out_requested_resolved
+            )
+            grp_adjusted = out_adjusted
+    else:
+        grp_path = None
+        grp_requested_resolved = None
+        grp_adjusted = False
+
     strict_mode = None
     if strict is not None and str(strict).strip():
         strict_mode = str(strict).strip().lower()
@@ -456,6 +633,17 @@ def score_csv(
         ),
         "SummaryPathAdjusted": bool(sum_adjusted) if write_summary else False,
         "Force": bool(force),
+        "SortSpec": sort_text,
+        "SortPreset": preset_name,
+        "SortApplied": sort_applied_payload(sort_pairs),
+        "GroupBy": list(group_keys),
+        "GroupPreset": group_preset_name,
+        "GroupCount": len(group_rows),
+        "GroupsPath": str(grp_path) if write_groups else None,
+        "RequestedGroupsPath": (
+            str(grp_requested_resolved) if write_groups else None
+        ),
+        "GroupsPathAdjusted": bool(grp_adjusted) if write_groups else False,
         "RowCount": summary["row_count"],
         "ColumnCount": summary["column_count"],
         "DryRun": dry_run,
@@ -465,6 +653,8 @@ def score_csv(
         "ScoreMax": summary["score_max"],
         "ScoreMean": summary["score_mean"],
         "ScoreColumn": summary["score_column"],
+        "OutputMode": summary.get("output_mode") or mode,
+        "SlimScoreColumns": list(summary.get("slim_score_columns") or []),
         "PoiName": summary["poi_name"],
         "Normalization": summary["normalization"],
         "Weights": summary["weights"],
@@ -522,6 +712,8 @@ def score_csv(
     # Fail-before-write when strict mode rejects partial ranks.
     if not dry_run and success:
         write_csv_rows(out_resolved, out_fields, out_rows)
+        if write_groups and grp_path is not None:
+            write_csv_rows(grp_path, group_fields, group_rows)
         if write_summary and sum_path is not None:
             write_summary_csv(
                 sum_path,
@@ -530,21 +722,29 @@ def score_csv(
                 output_path=out_resolved,
                 config_path=config_path,
             )
+            extras = ["detail", "summary"]
+            if write_groups:
+                extras.append("groups")
+            extra_s = " + ".join(extras)
             if out_adjusted:
                 result["Message"] = (
-                    "Score complete (detail + summary; avoided overwrite of "
+                    f"Score complete ({extra_s}; avoided overwrite of "
                     f"{out_requested_resolved})."
                 )
             else:
-                result["Message"] = "Score complete (detail + summary)."
+                result["Message"] = f"Score complete ({extra_s})."
         else:
+            extras = ["detail"]
+            if write_groups:
+                extras.append("groups")
+            extra_s = " + ".join(extras)
             if out_adjusted:
                 result["Message"] = (
-                    "Score complete (avoided overwrite of "
+                    f"Score complete ({extra_s}; avoided overwrite of "
                     f"{out_requested_resolved})."
                 )
             else:
-                result["Message"] = "Score complete."
+                result["Message"] = f"Score complete ({extra_s})."
     elif dry_run and success:
         if out_adjusted:
             result["Message"] = (
@@ -557,6 +757,7 @@ def score_csv(
     elif not success:
         result["OutputPath"] = None
         result["SummaryPath"] = None
+        result["GroupsPath"] = None
         result["RequestedSummaryPath"] = None
 
     return result

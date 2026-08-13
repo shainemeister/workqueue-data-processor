@@ -30,6 +30,12 @@ if ($menuText -notmatch 'function Read-OptionalExportPassword') {
 if ($menuText -notmatch '1\) Process my data') {
     throw 'Main menu Process my data label not found'
 }
+if ($menuText -notmatch "Write-Host '  \[5\] Express score' -ForegroundColor DarkGray") {
+    throw 'Process my data action [5] Express score (DarkGray) not found'
+}
+if ($menuText -match 'Express = \[5\]') {
+    throw 'Extra Express hint line must not be present'
+}
 Write-Host 'SYMBOLS_OK' -ForegroundColor Green
 
 # Dot-source helpers only: run the function definitions by isolating via a temp module approach.

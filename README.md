@@ -42,6 +42,9 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | **Share results with leadership** | Formatted `.xlsx` from a scored or summary CSV | [excel-toolkit](./excel-toolkit/README.md) |
 | **Score and Excel in one menu step** | Scored + summary workbooks under `output\` | `Start-ExcelMenu.cmd` → **Process my data** → Full pipeline |
 | **Score only (no Excel)** | Scored + summary CSV under `output\` | `Start-ExcelMenu.cmd` → **Process my data** → Score only |
+| **Grouped follow-up worklist** | Scored workbook with Groups + two-level Worklist sheets | `Start-ExcelMenu.cmd` → **Process my data** → Build worklist |
+| **All POI scores on one sheet** | Slim scores in one `POI_Scores` Excel tab (identity + four scores) | `Start-ExcelMenu.cmd` → **Process my data** → Express score |
+| **Several files, named Excel** | Per-file preview (2+ files); Excel named `[WQ]_MM-DD-YYYY.xlsx` plus Totals sheet | `Start-ExcelMenu.cmd` → **Process my data** |
 | **First run on a locked-down PC** | Pass/fail environment certificates for IT | KPI or Excel `diagnostics` · [KPI security](./kpi-analytics/ENTERPRISE-SECURITY.md) · [Excel security](./excel-toolkit/ENTERPRISE-SECURITY.md) |
 | **Understand the data layout** | Field definitions and sample fact rows | [wq_schema.json](./wq_schema/wq_schema.json) · [wq_data.csv](./wq_schema/wq_data.csv) |
 
@@ -58,6 +61,17 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | Demo inputs | `import\` | Tracked synthetic (or other non-PHI) inputs you choose to keep |
 | Run outputs | `output\` | Scored CSVs and Excel files (regenerable; not versioned) |
 | Design (optional) | `docs\WQ_Priority_Matrix_Concept.md` | Priority matrix roadmap (V1–V3); **V1 is implemented** |
+
+### Operator working copy (optional)
+
+After a clone, you can drop maintainer-only trees (`kit\`, `docs\`, `certification\`, `PLAN.md`, fixtures, sample-test) from **this folder** so only the runtime toolkits remain. Toolkit README / CLI-GUIDE / methodology stay.
+
+```bat
+Remove-MaintainerDocs.cmd -WhatIf
+Remove-MaintainerDocs.cmd
+```
+
+Restore with `git checkout -- .`. Do **not** commit those deletions. This is not `git clean` and does not rewrite history. Optional `-GitCleanUntracked` also removes untracked files (`git clean -fd`; ignored `output\` and local `import\` copies stay).
 
 ---
 
@@ -140,10 +154,15 @@ Policy and inventory (not required for day-to-day scoring or export):
 
 | Document | Purpose |
 |----------|---------|
-| [kit/RULES.md](./kit/RULES.md) | Maintenance policy hub; **kit baseline** (adopted repo-kit version lives only there); domain modules under `kit/rules/` |
+| [kit/RULES.md](./kit/RULES.md) | Maintenance policy hub; **kit baseline** (adopted repo-kit version lives only there); Operator enforcement; domain modules under `kit/rules/` |
 | [kit/UPGRADE.md](./kit/UPGRADE.md) | Durable repo-kit upgrade / 1.x→2.x migration guide |
+| [PLAN.md](./PLAN.md) | Project control surface: mission, stages, **Agent models** (Agent Instruct) |
+| [docs/WORKBOARD.md](./docs/WORKBOARD.md) | Live multi-phase execution (open / next / SHA) |
+| [kit/agents/](./kit/agents/) | Agent Instruct (OPS, BUILD, generated packs) — views over L4 law |
 | [CHANGELOG.md](./CHANGELOG.md) | Project history (Keep a Changelog); kit upgrades get a short note only—not kit release history |
-| [docs/PLAN.md](./docs/PLAN.md) | Post-V1 product roadmap; **Cluster 1** (config presets / profiles) design-frozen for implementation |
+| [docs/PLAN.md](./docs/PLAN.md) | Post-V1 product enhancement backlog (Clusters 1–3) |
+| [docs/plan/](./docs/plan/) | Execution / design-freeze plans (Cluster 2–3, B1.1, kit upgrade) |
+| [docs/README.md](./docs/README.md) | AI docs workspace index (`research/`, `plan/`, `project_build/`, `resources/`, workboard) |
 | [LICENSE](./LICENSE) | MIT license |
 | [docs/FILE-CATALOG.md](./docs/FILE-CATALOG.md) | Purpose of every intentional source file |
 | [kit/MARKDOWN-STANDARD.md](./kit/MARKDOWN-STANDARD.md) | How we structure documentation |

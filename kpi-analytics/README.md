@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics
 description: Python 3.13 stdlib toolkit for Work Queue priority scoring, RCM claim-level KPI impacts, synthetic data, and validation.
-version: "2.7.0"
+version: "2.10.0"
 status: current
 audience:
   - users
@@ -13,7 +13,7 @@ related:
   - SCORE-METHODOLOGY.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-30"
+last_updated: "2026-08-12"
 ---
 
 # KPI Analytics (`kpi-analytics`)
@@ -27,9 +27,12 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 5. **Validation** — integrity checks and golden fixtures.  
 6. **Enterprise diagnostics** — first-run runtime/import dry-run with a durable pass/fail report and a gate on operational commands.  
 7. **PHI field masking** — optional score-output masking of patient name and DOB (config-driven; default on).  
-8. **Scoring profiles** — named POI focus presets and saved configs (`score --profile`, `profile-list` / `show` / `save`).
+8. **Scoring profiles** — named POI focus presets and saved configs (`score --profile`, `profile-list` / `show` / `save`).  
+9. **Detail sort (2.8.0+)** — optional `score --sort` / `--sort-preset` (input order by default; formulas unchanged).  
+10. **Group summary (2.9.0+)** — optional `score --group-by` / `--group-preset` writes `*_groups.csv` (reporting only).
+11. **Slim detail (2.10.0+)** — optional `score --output-mode slim` writes WQ columns plus one V1 score per shipped POI (default remains full).
 
-**Toolkit version:** 2.7.0  
+**Toolkit version:** 2.10.0  
 **Product folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\` (implementation; name differs from the product folder on purpose)
 

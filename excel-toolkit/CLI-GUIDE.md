@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.9.0"
+version: "1.21.0"
 status: current
 audience:
   - developers
@@ -11,14 +11,14 @@ related:
   - README.md
   - ENTERPRISE-SECURITY.md
   - diagnostics/README.md
-last_updated: "2026-08-09"
+last_updated: "2026-08-13"
 ---
 
 # Excel Toolkit — CLI Reference
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.9.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.21.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -79,7 +79,7 @@ ExcelToolkit.ps1 (CLI)  →  ExcelToolkit.psm1  →  ExcelCom.psm1
 |--------|-----------------|
 | Another **PowerShell** script (same process) | `Import-Module .\ExcelToolkit.psm1` and call `Export-ExcelFromCsv` / `Get-ExcelToolkitVersion` |
 | **Python**, cmd, Task Scheduler, CI | **CLI** (`ExcelToolkit.ps1` or `excel-toolkit.cmd`) |
-| Interactive user | `Start-ExcelMenu.cmd` — **Process my data** lists `import\` CSV/Excel; multi-select accepts `1`, `1,2`, `1-3`, `1,3-5,8`, or a full path; Full pipeline / Score only pick an optional **scoring profile** (subprocess `score --profile`); score path runs mapping preflight + guided column mapping when headers need attention; optional workbook password on Excel export. Advanced → scoring profiles list/help. CLI verbs unchanged. |
+| Interactive user | `Start-ExcelMenu.cmd` — **Process my data** lists `import\` CSV/Excel; multi-select accepts `1`, `1,2`, `1-3`, `1,3-5,8`, or a full path; 2+ files show a **preview** (name, WQ stem, row count, max `out_ins_amt`) without scoring. Full pipeline / Score only / **Build worklist** pick an optional **scoring profile** (subprocess `score --profile`); Build worklist also picks `--group-preset`. **Express score** skips those picks, scores `--output-mode slim`, and writes one `POI_Scores` sheet. Excel deliverable names `[WQ]_MM-DD-YYYY.xlsx`. Score path runs mapping preflight + guided column mapping when headers need attention; optional workbook password on Excel export except Express. Advanced → scoring profiles list/help. CLI: `export-csv -PoiScoreSheetOnly` (1.14.0), `-TotalsCsv` (1.12.0), Groups/Worklist (1.10.0). |
 
 The CLI is a thin wrapper around the same module functions. It does not replace `Import-Module` for in-process PowerShell work.
 
@@ -296,7 +296,12 @@ Exports a **data CSV** to a formatted `.xlsx` workbook. Column layout is always 
 ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
     [-SchemaPath <path>] [-SchemaFormat Auto|Json|Csv]
     [-UseDisplayNames] [-DisplayNameProperty <name>]
-    [-SheetName <name>] [-Visible] [-DryRun]
+    [-SheetName <name>] [-GroupsCsv <path>] [-GroupsSheetName <name>]
+    [-Worklist] [-WorklistSheetName <name>]
+    [-TotalsCsv <path>] [-TotalsSheetName <name>]
+    [-PoiScoreSheetOnly] [-PoiScoreSheetName <name>]
+    [-SummaryCsv <path>] [-SummarySheetName <name>]
+    [-Visible] [-DryRun]
     [-Json] [-Quiet]
 ```
 
@@ -308,7 +313,17 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
 | `-SchemaFormat` | No | `Auto` | `Auto`, `Json`, or `Csv` |
 | `-UseDisplayNames` | No | off | Apply schema labels to header row |
 | `-DisplayNameProperty` | No | auto | Force a schema property for labels |
-| `-SheetName` | No | `Data` | Worksheet tab name |
+| `-SheetName` | No | `Data` | Detail worksheet tab name |
+| `-GroupsCsv` | No | — | Optional kpi-analytics `*_groups.csv`. Adds a **Groups** sheet (copy only; no scoring math). |
+| `-GroupsSheetName` | No | `Groups` | Groups tab name (must differ from `-SheetName`) |
+| `-Worklist` | No | off | Also write a two-level **Worklist** sheet (GROUP then matching CLAIM rows). Requires `-GroupsCsv`. |
+| `-WorklistSheetName` | No | `Worklist` | Worklist tab name |
+| `-TotalsCsv` | No | — | Optional file-level totals CSV (`metric`,`value`). Adds a **Totals** sheet (copy only; no scoring math). |
+| `-TotalsSheetName` | No | `Totals` | Totals tab name (must differ from Data / Groups / Worklist) |
+| `-PoiScoreSheetOnly` | No | off | Write a `POI_Scores` sheet: frozen source columns (if present) + four slim scores. Copy only; no scoring math. Cannot combine with `-GroupsCsv` / `-Worklist` / `-TotalsCsv`. May combine with `-SummaryCsv`. Requires slim score columns. Date columns `service_date` / `last_worked_date` use `mm/dd/yyyy`. |
+| `-PoiScoreSheetName` | No | `POI_Scores` | Tab name when `-PoiScoreSheetOnly` is set |
+| `-SummaryCsv` | No | — | Optional kpi-analytics summary CSV. Adds a **Summary** sheet (copy only). |
+| `-SummarySheetName` | No | `Summary` | Summary tab name |
 | `-Visible` | No | off | Show Excel UI (debug) |
 | `-Password` | No | — | Optional workbook **open** password when saving `.xlsx` (not logged; not in JSON) |
 | `-Force` | No | off | Replace the **exact** `-OutputPath` if it exists. Default: **do not overwrite** — write to a free sibling path with a numerical suffix (`export_1.xlsx`, …) |
@@ -342,6 +357,16 @@ excel-toolkit.cmd export-csv ^
   -SchemaPath ..\wq_schema\wq_schema.json ^
   -UseDisplayNames ^
   -OutputPath ..\output\export.xlsx ^
+  -Json
+```
+
+Express POI score sheet from a slim scored CSV (identity + score-input source + four scores):
+
+```bat
+excel-toolkit.cmd export-csv ^
+  -CsvPath ..\output\wq_scored.csv ^
+  -OutputPath ..\output\wq_poi_scores.xlsx ^
+  -PoiScoreSheetOnly ^
   -Json
 ```
 
@@ -621,7 +646,37 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.9.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.21.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.21.0 notes:** Express `POI_Scores` has AutoFilter on every header column.
+
+**1.20.0 notes:** Express workbook opens on **POI_Scores**. Express sheets use column width **12** (not AutoFit).
+
+**1.19.0 notes:** Express / `-PoiScoreSheetOnly` may add a **Summary** sheet (`-SummaryCsv`). Date columns `service_date` / `last_worked_date` use Excel format `mm/dd/yyyy`.
+
+**1.18.0 notes:** Express column `patient` follows `invoice_num`. After a successful **menu** Excel write (Full pipeline / Worklist / Express), generated `output\` CSVs for that run are deleted. Score-only and Export-only keep CSVs. CLI `export-csv` does not delete inputs.
+
+**1.17.0 notes:** Express `POI_Scores` uses the frozen **column order** in [slim-poi-output.md](../docs/plan/slim-poi-output.md) (include if present). Row order is unchanged.
+
+**1.16.0 notes:** Express `POI_Scores` also copies context source columns when present (`plan`, `reason_code_list`, `remittance_code`, `cpt_codes`, `modifiers`, `diagnosis_codes`, `billing_provider`, `department`, `billing_provider_tax_id`, `billing_provider_npi`). Schema name is `cpt_codes`.
+
+**1.15.0 notes:** `-PoiScoreSheetOnly` / Express `POI_Scores` also copies score-input **source** columns when present (`out_ins_amt`, `billed_amount`, deadline days, `days_on_wq_tab`, `denial_count`, `last_worked_date`). Still no `v1_raw_*`. Copy only.
+
+**1.14.2 notes:** Action **[5]** label is **Express score** (same DarkGray as [1]–[4]; no extra Express hint line).
+
+**1.14.1 notes:** Process my data action list prints toolkit version and lists **[5] Express score**. Numbers [1]–[5] unchanged. Close and relaunch the menu after upgrade.
+
+**1.14.0 notes:** `export-csv -PoiScoreSheetOnly` writes one **POI_Scores** sheet (identity + four slim scores; copy only). Process my data **Express score** composes `score --output-mode slim` then this switch (no profile / password / Full-Slim pick; no summary xlsx). JSON: `PoiScoreSheetOnly`, `PoiScoreSheet`, `PoiScoreRowCount`.
+
+**1.13.0 notes:** Process my data offers **Score output** Full or Slim. Slim composes `kpi-analytics.cmd score --output-mode slim` (no `--profile`). No scoring math in PowerShell.
+
+**1.12.1 notes:** Worklist key match is case-sensitive (same trim / `(blank)` rule as kpi-analytics `_cell_label`). PowerShell `-ne` is not used.
+
+**1.12.0 notes:** Cluster 2 menu: multi-file preview (no `score`); Excel names `[WQ]_MM-DD-YYYY.xlsx` (WQ = filename stem or profile `wq_label`); `export-csv -TotalsCsv` copies a file-level totals CSV to a **Totals** sheet. Per-file scoring unchanged. See [README.md](./README.md).
+
+**1.11.0 notes:** interactive `Start-ExcelMenu` **Process my data → Build worklist** composes `kpi-analytics.cmd score --group-preset` / `--groups` then `Export-ExcelFromCsv -GroupsCsv -Worklist`. Group picker: `payer_category` (default) / `payer` / `category` / `location`. Same scoring-profile pick as Full pipeline. No new Excel CLI verbs; no scoring math in PowerShell. See [README.md](./README.md).
+
+**1.10.0 notes:** `export-csv -GroupsCsv` copies a kpi-analytics groups file to a **Groups** sheet. `-Worklist` adds a two-level **Worklist** sheet (GROUP then CLAIM) by matching group key columns. No scoring or KPI math in PowerShell.
 
 **1.9.0 notes:** interactive `Start-ExcelMenu` Full pipeline / Score only offer a **scoring profile** picker (package default = omit `--profile`; listed POI presets or typed name/path). Choice is applied once per batch and passed to every `kpi-analytics.cmd score` invoke (preflight dry-run, full score, guided mapping, rank-enrich dry-run). Advanced tools → **Scoring profiles (list / CLI help)** runs `profile-list` only. No new Excel CLI verbs; no scoring math in PowerShell. See [README.md](./README.md) and [kpi-analytics CLI — Scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
 
