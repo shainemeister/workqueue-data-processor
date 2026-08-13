@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.9"
+version: "1.1.10"
 status: current
 audience:
   - ai-agents
@@ -57,13 +57,14 @@ last_updated: "2026-08-12"
 | P8 | Cluster 2 implement | `done` | `322b6c6` | excel 1.12.0 preview / naming / Totals |
 | P9 | B1.1 base-weight retune | `deferred` | — | Analyst-gated |
 | P10 | V2/V3 in-score category metrics | `cancelled` | — | Not this program (S5) |
-| P11 | Register audit-fix OOO | `active` | — | Surgical P12–P14 from P3–P8 review |
-| P12 | Worklist case-sensitive key match | `open` | — | excel 1.12.1; `-cne`; local smoke + full cert |
-| P13 | Cluster 3 PLAN wording | `open` | — | Partial vs remaining 3.1 filters |
-| P14 | Preview comment + kpi ENTERPRISE 2.9.0 | `open` | — | No trust-boundary change |
+| P11 | Register audit-fix OOO | `done` | `df1cbe5` | Surgical P12–P14 from P3–P8 review |
+| P12 | Worklist case-sensitive key match | `done` | `5f6622f` | excel 1.12.1; `-cne`; smoke 4 rows; cert pass |
+| P13 | Cluster 3 PLAN wording | `done` | `851d86e` | Partial vs remaining 3.1 filters |
+| P14 | Preview comment + kpi ENTERPRISE 2.9.0 | `done` | `851d86e` | No trust-boundary change |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-12 Closed P11–P14 audit-fix (Worklist 1.12.1, PLAN partial, kpi ENTERPRISE 2.9.0).  
 - 2026-08-12 Opened P11–P14 audit-fix stack (Worklist `-cne`, PLAN Cluster 3 wording, kpi security version).  
 - 2026-08-12 P8 shipped excel-toolkit 1.12.0 preview, `[WQ]_MM-DD-YYYY.xlsx`, Totals sheet.  
 - 2026-08-12 P7 signed Cluster 2 freeze (per-file score; groups do not span files).  
@@ -110,4 +111,4 @@ last_updated: "2026-08-12"
 
 ---
 
-*Agents: P11 active (audit-fix). Next product is P12 Worklist case-sensitive match. P1 filters remain blocked. P9 deferred.*
+*Agents: P11–P14 done. Next leftover is P1 (filters / patient-group policy). P9 B1.1 remains deferred.*
