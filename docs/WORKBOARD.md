@@ -51,7 +51,7 @@ last_updated: "2026-08-12"
 | P2 | Optional Excel rehearsal (option A) | `done` | `cb78d08` | Findings: [p2-rehearsal.md](./plan/post-v1-enhancement/p2-rehearsal.md) |
 | P3 | Implement 3.2 multi-sort | `done` | `b3759d6` | kpi 2.8.0 `--sort` / `--sort-preset` (docs `bf66b2d`) |
 | P4 | Group summary CSV (option B) | `done` | `a2e3601` | kpi 2.9.0 `--group-by` / `--group-preset` (docs `db334da`) |
-| P5 | Excel groups / two-level worklist (C+D) | `done` | — | excel 1.10.0 `-GroupsCsv` / `-Worklist`. SHA after commit |
+| P5 | Excel groups / two-level worklist (C+D) | `done` | `cf14c23` | excel 1.10.0 `-GroupsCsv` / `-Worklist` (docs `20868cb`) |
 | P6 | Menu Build worklist (E) | `open` | — | After P4–P5 |
 | P7 | Cluster 2 design freeze | `open` | — | Only if groups span files |
 | P8 | Cluster 2 implement | `open` | — | After P7 |
