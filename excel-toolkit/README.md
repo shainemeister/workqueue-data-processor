@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.12.0"
+version: "1.12.1"
 status: current
 audience:
   - users
@@ -18,7 +18,7 @@ last_updated: "2026-08-12"
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), guided **Process my data** menu (via sibling `kpi-analytics` for scoring), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.12.0  
+**Toolkit version:** 1.12.1  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)

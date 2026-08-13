@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.19.1] - 2026-08-12
+
+#### Fixed
+
+- **excel-toolkit 1.12.1:** Worklist GROUP/CLAIM match is case-sensitive (same trim / `(blank)` rule as kpi-analytics). Mixed-case keys no longer attach one claim to two groups.
+
 ### [1.19.0] - 2026-08-12
 
 #### Added

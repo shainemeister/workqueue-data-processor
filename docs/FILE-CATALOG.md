@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.12"
+version: "1.10.13"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.12  
+**Document version:** 1.10.13  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -371,6 +371,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.13 | excel-toolkit 1.12.1 Worklist case-sensitive match |
 | 1.10.12 | excel-toolkit 1.12.0 Cluster 2 menu preview / naming / Totals |
 | 1.10.11 | Cluster 2 freeze signed (cluster-2-multi-file 1.1.0) |
 | 1.10.10 | excel-toolkit 1.11.0 menu Build worklist notes |

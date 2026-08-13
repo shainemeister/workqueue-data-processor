@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.12.0'
+$script:ExcelToolkitVersion = '1.12.1'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -278,6 +278,27 @@ function Get-ExcelToolkitGroupKeyColumns {
     return @($Headers | Where-Object { $skip -notcontains $_ })
 }
 
+function Normalize-ExcelToolkitWorklistKey {
+    <#
+    .SYNOPSIS
+        Trim a group/detail key; blank becomes (blank). Matches kpi _cell_label.
+    #>
+    [CmdletBinding()]
+    param(
+        [AllowNull()]
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return '(blank)'
+    }
+    $trimmed = $Value.Trim()
+    if ([string]::IsNullOrWhiteSpace($trimmed)) {
+        return '(blank)'
+    }
+    return $trimmed
+}
+
 function New-ExcelToolkitWorklistRows {
     <#
     .SYNOPSIS
@@ -333,10 +354,9 @@ function New-ExcelToolkitWorklistRows {
         foreach ($d in @($DetailRows)) {
             $match = $true
             foreach ($key in $keyCols) {
-                $cell = [string]$d.$key
-                if ([string]::IsNullOrWhiteSpace($cell)) { $cell = '(blank)' }
-                else { $cell = $cell.Trim() }
-                if ($cell -ne ([string]$g.$key).Trim()) {
+                $cell = Normalize-ExcelToolkitWorklistKey -Value ([string]$d.$key)
+                $want = Normalize-ExcelToolkitWorklistKey -Value ([string]$g.$key)
+                if ($cell -cne $want) {
                     $match = $false
                     break
                 }

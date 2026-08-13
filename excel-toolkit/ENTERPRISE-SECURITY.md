@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.12.0"
+version: "1.12.1"
 status: current
 audience:
   - security
@@ -20,8 +20,8 @@ last_updated: "2026-08-12"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.12.0  
-**Document version:** 1.12.0  
+**Toolkit version:** 1.12.1  
+**Document version:** 1.12.1  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
@@ -259,3 +259,4 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.10.0 | Optional `-GroupsCsv` / `-Worklist` on export (local CSVs only; no scoring math); no trust-boundary change |
 | 1.11.0 | Menu Build worklist composes sibling `kpi-analytics.cmd score --group-preset` / `--groups` then local `Export-ExcelFromCsv -GroupsCsv -Worklist`; no trust-boundary change |
 | 1.12.0 | Menu multi-file preview (local CSV parse only) + `[WQ]_MM-DD-YYYY.xlsx` names; optional `-TotalsCsv` copy to a Totals sheet; no trust-boundary change |
+| 1.12.1 | Worklist key compare is case-sensitive (`-cne` after trim / `(blank)`); no trust-boundary change |
