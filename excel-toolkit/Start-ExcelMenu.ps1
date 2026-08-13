@@ -1771,7 +1771,7 @@ function Get-ExcelMenuCsvPreview {
 function Show-ExcelMenuMultiFilePreview {
     <#
     .SYNOPSIS
-        Print preview for 2+ selected CSVs. Skipped for a single file (P7 freeze).
+        Print preview for 2+ selected CSVs. Skipped when fewer than two files.
     #>
     [CmdletBinding()]
     param(

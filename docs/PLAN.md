@@ -1,7 +1,7 @@
 ---
 title: "Development Plan — Post-V1 Enhancement Concepts"
 description: "Living product backlog: Cluster 1 complete; Cluster 2 freeze signed; Cluster 3 partial; optional base retune. Control surface in root PLAN.md; live multi-phase on docs/WORKBOARD.md; execution freezes in docs/plan/."
-version: "0.5.4"
+version: "0.5.5"
 status: current
 audience:
   - developers
@@ -27,7 +27,7 @@ last_updated: "2026-08-12"
 
 Living **product enhancement backlog** after V1 priority matrix, dynamic mapping, guided menu, gap-safety, scoring profiles, quality audit, certification Phase 2, and menu scoring-profile picker.
 
-**Document version:** 0.5.4  
+**Document version:** 0.5.5  
 **Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Cluster **2 shipped** (excel 1.12.0). Cluster **3** partial (sort/groups/menu shipped; 3.1 filters still open).  
 
 | Kit triple surface | Path |
@@ -80,7 +80,7 @@ Do not start Cluster 2 **product** code until this freeze is signed (it is). Do 
 3. [Shared principles and hard constraints](#shared-principles-and-hard-constraints)
 4. [Cluster 1 — KPI config optimization and saved profiles](#cluster-1--kpi-config-optimization-and-saved-profiles) (**complete; optional retune only**)
 5. [Cluster 2 — Multi-file ingest, aggregation, and output conventions](#cluster-2--multi-file-ingest-aggregation-and-output-conventions) (**shipped**)
-6. [Cluster 3 — Grouping, sorting, and denial analysis sheet](#cluster-3--grouping-sorting-and-denial-analysis-sheet) (**developing**)
+6. [Cluster 3 — Grouping, sorting, and denial analysis sheet](#cluster-3--grouping-sorting-and-denial-analysis-sheet) (**partial**)
 7. [Recommended sequencing](#recommended-sequencing)
 8. [Compliance, versioning, and change control](#compliance-versioning-and-change-control)
 9. [Cross-cutting open questions](#cross-cutting-open-questions)
@@ -372,7 +372,7 @@ After file discovery and before Full pipeline / Score only / Export only / Build
 
 ## Cluster 3 — Grouping, sorting, and denial analysis sheet
 
-**Status:** developing concept  
+**Status:** **Partial** — 3.2 sort, 3.1 group CSV, 3.3 Groups/Worklist + menu shipped; **3.1 row filters / patient-group policy still open**.  
 **Execution freeze checklist:** [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md)  
 **Research (options, not a freeze):** [research/2026-08-12-worklist-grouping-and-industry-metrics.md](./research/2026-08-12-worklist-grouping-and-industry-metrics.md)  
 **Primary surface:** both toolkits (post-score reporting preferred)  
@@ -380,7 +380,7 @@ After file discovery and before Full pipeline / Score only / Export only / Build
 
 | Gate | State |
 |------|--------|
-| Implementation-ready? | **No** — freeze open questions first; keep reporting-only vs V2 boundary explicit |
+| Implementation-ready? | **No** for remaining **3.1 filters** (still need freeze). Shipped slices stay reporting-only vs V2. |
 | Role in backlog | Post-score analysis / presentation; higher risk of V2 overlap |
 
 ### 3.1 Group qualifier (break by filters: DOS or dollar amount by Patient name)
@@ -388,13 +388,11 @@ After file discovery and before Full pipeline / Score only / Export only / Build
 **Intent**  
 Allow the operator to partition or highlight rows that pass simple group-level filters—for example, patients whose total outstanding balance exceeds a threshold, or whose service dates fall in a chosen window—while still preserving the underlying scored detail.
 
-**Status:** **Group CSV shipped (kpi-analytics 2.9.0)** — `score --group-by` / `--group-preset`. Threshold filters and Excel two-level lists remain open.
+**Status:** **Group CSV shipped (kpi-analytics 2.9.0)** — `score --group-by` / `--group-preset`. Excel two-level Worklist shipped (1.10.0+; case-sensitive match in 1.12.1). Threshold **filters** remain open.
 
 **Open design points**
 - Exact filter language (threshold on sum of `out_ins_amt` per patient, min/max `service_date`, combination rules)
-- Whether grouping is a score-time feature, a post-score CSV transform, or an Excel sheet/filter only
 - Interaction with privacy masking (patient tokens vs. original names)
-- Output shape (extra columns, separate grouped summary, or filtered workbook sheets)
 
 ### 3.2 Multiple ways of sorting data
 
@@ -496,6 +494,7 @@ When a concept moves from “developing” to “ready for implementation”, fr
 
 | Version | Notes |
 |---------|--------|
+| 0.5.5 | Cluster 3 header: partial (filters still open); Worklist case-sensitive match 1.12.1 |
 | 0.5.4 | Cluster 2 **shipped** (excel 1.12.0 / P8) |
 | 0.5.3 | Cluster 2 **freeze signed** (P7); P8 implement |
 | 0.5.2 | P6 menu Build worklist (excel 1.11.0); Cluster 3.2/3.3/3.1 CSV statuses |
