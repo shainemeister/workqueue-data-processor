@@ -66,14 +66,14 @@ last_updated: "2026-08-13"
 | P17 | Slim golden fixture | `done` | `114ac02` | `slim_poi_expected.json`; cert check |
 | P18 | Menu Full / Slim | `done` | `114ac02` | excel 1.13.0 compose |
 | P19 | L4 + CHANGELOG + catalog | `done` | `114ac02` | repo 1.20.0 |
-| P20 | Freeze Express POI Excel sheet | `done` | — | slim-poi-output 1.1.0 |
-| P21 | Menu [5] Express score | `done` | — | slim; skip profile/password |
-| P22 | export-csv -PoiScoreSheetOnly | `done` | — | Copy columns; no math |
-| P23 | L4 + CHANGELOG + cert | `done` | — | excel 1.14.0 |
+| P20 | Freeze Express POI Excel sheet | `done` | `cb20bb0` | slim-poi-output 1.1.0 |
+| P21 | Menu [5] Express score | `done` | `cb20bb0` | slim; skip profile/password |
+| P22 | export-csv -PoiScoreSheetOnly | `done` | `cb20bb0` | Copy columns; no math |
+| P23 | L4 + CHANGELOG + cert | `done` | `cb20bb0` | excel 1.14.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
-- 2026-08-13 Shipped P20–P23 Express score (excel 1.14.0).  
+- 2026-08-13 Shipped P20–P23 Express score (`cb20bb0`; excel 1.14.0).  
 - 2026-08-13 Opened P20–P23 Express score (all POI → one Excel sheet).  
 - 2026-08-12 Shipped P15–P19 slim multi-POI detail (`114ac02`; kpi 2.10.0 / excel 1.13.0).  
 - 2026-08-12 Opened P15–P19 slim multi-POI detail output (opt-in; full default).  
