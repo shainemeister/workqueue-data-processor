@@ -1,7 +1,7 @@
 ---
 title: Repository Maintenance Rules
 description: Maintenance policy hub—authority map, kit baseline, and index to domain rule modules for workqueue-data-processor.
-version: "2.3.1"
+version: "2.4.0"
 status: current
 audience:
   - developers
@@ -26,10 +26,12 @@ related:
   - rules/versioning-and-git.md
   - rules/verification-and-ops.md
   - rules/ai-docs-workspace.md
+  - rules/workboard.md
+  - rules/continuity.md
   - ../kpi-analytics/.pylintrc
   - ../certification/README.md
   - templates/TEMPLATE-CERTIFICATION-README.md
-last_updated: "2026-08-10"
+last_updated: "2026-08-12"
 ---
 
 # Repository Maintenance Rules
@@ -38,7 +40,7 @@ Policy for keeping **workqueue-data-processor** professional, auditable, and saf
 
 **If you only need to score work or export Excel:** start with the root [README.md](../README.md) and the toolkit guides. Come back here when you edit code, docs, schema, or release behavior.
 
-**Document version:** 2.3.1  
+**Document version:** 2.4.0  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [docs/FILE-CATALOG.md](../docs/FILE-CATALOG.md) · [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [UPGRADE.md](./UPGRADE.md) · [agents/OPS.md](./agents/OPS.md) · [rules/](./rules/) · [kpi-analytics/.pylintrc](../kpi-analytics/.pylintrc) · [certification/README.md](../certification/README.md)
 
@@ -74,9 +76,11 @@ The product is a **Work Queue data contract** plus two **independent** toolkits:
 | **When Instruct is in use:** open pack expertise; co-update **canonical L4** in the same change set | Load all generated packs, or use remote URLs as overlays/law |
 | **When Instruct is in use:** evolve agents (PLAN + [BUILD](./agents/BUILD.md)) when features, packages, surfaces, languages, or durable task classes appear | Leave packs stale after authority map / inventory / enablement change |
 | Follow [Operator enforcement](#operator-enforcement) on every maintenance turn | Skip request verify, procedure check, or Progress Tracker when advancing repo work |
-| Dynamically build and maintain root **`docs/`** AI workspace when research/plan/build context is needed ([ai-docs-workspace](./rules/ai-docs-workspace.md)) | Put project research under `kit/`; use `docs/` as dual home for public contracts |
+| Dynamically build and maintain root **`docs/`** AI workspace when research/plan/build context is needed ([ai-docs-workspace](./rules/ai-docs-workspace.md)) | Put project research under `kit/`; use `docs/` as dual home for public contracts; abandon stale critical plans without status |
+| Track **multi-phase** work on [docs/WORKBOARD.md](../docs/WORKBOARD.md) ([workboard](./rules/workboard.md)) | Start multi-phase work only in chat or unlinked folders; paste live phase tables into PLAN.md |
+| Prefer surgical edits when a [continuity](./rules/continuity.md) overlay is in use | Full-file rewrite of a named protected surface without an explicit restore ask |
 
-**Later kit upgrades:** [UPGRADE.md](./UPGRADE.md) (durable). Do **not** re-add permanent `SETUP.md`. **Agent Instruct:** [agents/README.md](./agents/README.md) · [agents/OPS.md](./agents/OPS.md). **AI workspace:** [docs/README.md](../docs/README.md) · [ai-docs-workspace](./rules/ai-docs-workspace.md).
+**Later kit upgrades:** [UPGRADE.md](./UPGRADE.md) (durable). Do **not** re-add permanent `SETUP.md`. **Agent Instruct:** [agents/README.md](./agents/README.md) · [agents/OPS.md](./agents/OPS.md). **AI workspace:** [docs/README.md](../docs/README.md) · [ai-docs-workspace](./rules/ai-docs-workspace.md). **Multi-phase execution:** [workboard](./rules/workboard.md) · `docs/WORKBOARD.md`.
 
 ---
 
@@ -89,7 +93,7 @@ Standing checklist for AI and humans **maintaining this repository**. Domain det
 | 1 | **Verify the user request** and comply with this hub + domain modules | Open the [authority map](#authority-map); do not invent policy outside L4 |
 | 2 | **Validate the procedure** before execution | When Instruct: [OPS O3](./agents/OPS.md). Always: declared gates and completion ([verification-and-ops](./rules/verification-and-ops.md)) |
 | 3 | **Apply the appropriate Agent / Persona** for the task | When Instruct is in use: one primary expert pack ([OPS](./agents/OPS.md), [When Instruct is in use](#when-agent-instruct-is-in-use)). Bare adopt: this hub + domain modules only |
-| 4 | **Plan + AI `docs/` workspace** when work is multi-step, research, or durable | Root [PLAN.md](../PLAN.md) for mission/Agent models; product backlog → [docs/PLAN.md](../docs/PLAN.md); detailed plans → `docs/plan/`; research → `docs/research/`; build context → `docs/project_build/`; curated refs → `docs/resources/` ([ai-docs-workspace](./rules/ai-docs-workspace.md)). Scaffold modules **when needed**. Skip for trivial single-step replies |
+| 4 | **Plan + AI `docs/` workspace** when work is multi-step, research, or durable | Root [PLAN.md](../PLAN.md) for mission/Agent models (not a todo list). **Multi-phase:** register and update **`docs/WORKBOARD.md`** ([workboard](./rules/workboard.md)) before phase code. Product backlog → [docs/PLAN.md](../docs/PLAN.md); detailed plans / optional annex → `docs/plan/`; research → `docs/research/`; build context → `docs/project_build/`; curated refs → `docs/resources/` ([ai-docs-workspace](./rules/ai-docs-workspace.md)). Scaffold modules **when needed**. Skip for trivial single-step replies |
 | 5 | **Git format + confirm complete** | Conventional commits match staged files ([versioning-and-git](./rules/versioning-and-git.md)); when AI assisted, end the message with `Assisted-by` / `Compliance` / `Instructed-by` (dynamic `Instructed-by`: git `user.name` → ask+record → `User` — [AI disclosure](./rules/versioning-and-git.md#ai-assisted-commits-required-disclosure)); confirm L4 co-updates and declared gates before “done” ([completion rule](./rules/verification-and-ops.md#completion-rule)); promote durable findings from `docs/` to L4 when they become promises |
 | 6 | **Progress Tracker** at the end of each reply that advances work | Ordered tasks with status; **commit SHA** for each completed task that was committed; `—` if not committed. Durable notes belong in `docs/`, not only the tracker |
 
@@ -141,6 +145,9 @@ Update the **owner** document for a change. Cross-link; do not paste full contra
 | Path-level file inventory | [docs/FILE-CATALOG.md](../docs/FILE-CATALOG.md) |
 | AI docs workspace index | [docs/README.md](../docs/README.md) |
 | AI docs workspace policy | [rules/ai-docs-workspace.md](./rules/ai-docs-workspace.md) |
+| Active multi-phase work / next phase | [docs/WORKBOARD.md](../docs/WORKBOARD.md) — [workboard](./rules/workboard.md); skip if no multi-phase work |
+| Workboard / annex / archive policy | [rules/workboard.md](./rules/workboard.md) |
+| Code continuity overlay (optional) | Portable policy [rules/continuity.md](./rules/continuity.md); filled overlay **not recorded** (deferred) |
 | Kit upgrade / migration (durable) | [UPGRADE.md](./UPGRADE.md) |
 | Markdown structure, frontmatter, author checklist | [MARKDOWN-STANDARD.md](./MARKDOWN-STANDARD.md) · [templates/](./templates/) |
 | Maintenance policy hub (this file) | **`kit/RULES.md`** ([RULES.md](./RULES.md)) |
@@ -188,7 +195,9 @@ Update the **owner** document for a change. Cross-link; do not paste full contra
 | [rules/security.md](./rules/security.md) | Trust baseline; inventory; SAST; certification renewal |
 | [rules/versioning-and-git.md](./rules/versioning-and-git.md) | Version surfaces; CHANGELOG; commits; AI disclosure |
 | [rules/verification-and-ops.md](./rules/verification-and-ops.md) | Verify table; completion; cadence; anti-patterns; checklist |
-| [rules/ai-docs-workspace.md](./rules/ai-docs-workspace.md) | Root `docs/` AI resource workspace (research, plan, project_build, resources) |
+| [rules/ai-docs-workspace.md](./rules/ai-docs-workspace.md) | Root `docs/` AI resource workspace (research, workboard, plan, project_build, resources) |
+| [rules/workboard.md](./rules/workboard.md) | Multi-phase execution: single board, phase ship, annex archive, agent resume |
+| [rules/continuity.md](./rules/continuity.md) | Optional surgical-edit overlay policy (no product paths in kit defaults) |
 
 ### Optional Instruct (not foldable)
 
@@ -237,7 +246,7 @@ Durable record of **which kit version** this project adopted and **where upgrade
 
 → **[UPGRADE.md](./UPGRADE.md)** — routine upgrade procedure, **1.x / root-layout → 2.x** migration, Agent Instruct preserve/regen, merge options, and copy-paste AI prompts.
 
-Short reminder: read Kit baseline in `kit/RULES.md` → open Kit source `kit/CHANGELOG.md` under `## repo-kit` → merge deltas into project `kit/` → preserve product paths, verification, PLAN Agent models, and root `docs/` content → update baseline + project root CHANGELOG note → re-run BUILD when agents are in use.
+Short reminder: read Kit baseline in `kit/RULES.md` → open Kit source `kit/CHANGELOG.md` under `## repo-kit` → merge deltas into project `kit/` → preserve product paths, verification, PLAN Agent models, root `docs/` content, and any filled `docs/WORKBOARD.md` → update baseline + project root CHANGELOG note → re-run BUILD when agents are in use.
 
 Upstream prompt: [repo-kit README — Upgrade repo-kit](https://github.com/shainemeister/repo-kit#upgrade-repo-kit).
 
@@ -247,6 +256,7 @@ Upstream prompt: [repo-kit README — Upgrade repo-kit](https://github.com/shain
 
 | Version | Notes |
 |---------|--------|
+| 2.4.0 | Plan control: workboard + optional continuity; Operator step 4 names the board; authority-map and domain index (kit 2.4.0). Product fills preserved |
 | 2.3.1 | Upgraded repo-kit **2.3.1**: Operator enforcement, AI docs workspace, Agent Instruct adoption, Instructed-by cascade; product authority map and Must/Must not preserved |
 | 2.0.0 | Migrated to repo-kit **2.0.1**: standards under `kit/`; hub + domain modules; filled authority map and product Must/Must not preserved; upgrade deferred to UPGRADE.md |
 | 1.6.2 | (pre-split, root layout) Aligned with repo-kit **1.2.1**; see project CHANGELOG and prior root RULES history |

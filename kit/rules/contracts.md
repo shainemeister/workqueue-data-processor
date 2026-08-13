@@ -1,7 +1,7 @@
 ---
 title: Contracts
 description: What counts as a contract, canonical ownership, co-update rules, fixtures/schema/API, and cross-reference policy.
-version: "1.2.0"
+version: "1.3.0"
 status: current
 audience:
   - developers
@@ -15,6 +15,7 @@ related:
   - ./verification-and-ops.md
   - ./authoring-and-style.md
   - ./ai-docs-workspace.md
+  - ./workboard.md
   - ../MARKDOWN-STANDARD.md
   - ../agents/README.md
   - ../agents/OPS.md
@@ -25,9 +26,9 @@ last_updated: "2026-08-10"
 
 Stable promises a repository makes—behavior, shapes, exits, fields—and the rules for keeping them honest.
 
-**Document version:** 1.2.0  
+**Document version:** 1.3.0  
 
-**Related:** [RULES.md](../RULES.md) · [architecture.md](./architecture.md) · [versioning-and-git.md](./versioning-and-git.md) · [verification-and-ops.md](./verification-and-ops.md) · [authoring-and-style.md](./authoring-and-style.md) · [ai-docs-workspace.md](./ai-docs-workspace.md) · [MARKDOWN-STANDARD.md](../MARKDOWN-STANDARD.md) · [agents/README.md](../agents/README.md) · [agents/OPS.md](../agents/OPS.md)
+**Related:** [RULES.md](../RULES.md) · [architecture.md](./architecture.md) · [versioning-and-git.md](./versioning-and-git.md) · [verification-and-ops.md](./verification-and-ops.md) · [authoring-and-style.md](./authoring-and-style.md) · [ai-docs-workspace.md](./ai-docs-workspace.md) · [workboard.md](./workboard.md) · [MARKDOWN-STANDARD.md](../MARKDOWN-STANDARD.md) · [agents/README.md](../agents/README.md) · [agents/OPS.md](../agents/OPS.md)
 
 ---
 
@@ -74,7 +75,8 @@ Package structure and runtime boundaries are **architecture** ([architecture.md]
 **Not contracts:**
 
 - Agent Instruct packs under `kit/agents/` are **views** over L4 law (`kit/RULES.md`, `kit/rules/*`, product contracts). They do not own CHANGELOG, SAST, hygiene, or public API promises—see [agents/README.md](../agents/README.md).  
-- Root **`docs/`** AI workspace (research, plan, project_build, resources) is **working memory for AI**—not the canonical home for public product promises. Promote durable findings to authority-map owners ([ai-docs-workspace](./ai-docs-workspace.md)).
+- Root **`docs/`** AI workspace (research, plan, project_build, resources) is **working memory for AI**—not the canonical home for public product promises. Promote durable findings to authority-map owners ([ai-docs-workspace](./ai-docs-workspace.md)).  
+- **`docs/WORKBOARD.md`** is an **execution contract** (what is open / next / SHA), not a product API/CLI/SECURITY contract. Still update it in the **same change set** as a phase ship ([workboard](./workboard.md)). Do not leave the only copy of a public promise on the board or in an annex.
 
 ### Agent Instruct bridge (when in use)
 
@@ -151,6 +153,8 @@ Every substantial markdown file should remain navigable for humans and AI agents
 | Pack redefines CHANGELOG, SAST, hygiene, or public API law | Short procedure + `authority_paths` to L4; fix pack/BUILD if conflict ([agents](../agents/README.md)) |
 | Instruct in use but contracts updated without consulting pack authority_paths | Open primary pack expertise first ([OPS](../agents/OPS.md)); still edit L4 owners |
 | Public API/CLI matrix lives only under `docs/` | Promote to package contract; leave pointer in docs if useful ([ai-docs-workspace](./ai-docs-workspace.md)) |
+| Phase marked done only in chat | Same-change-set `docs/WORKBOARD.md` status + SHA ([workboard](./workboard.md)) |
+| Only explanation of shipped behavior lives in an annex | Promote to L4 owner; archive the annex |
 
 ---
 
@@ -158,6 +162,7 @@ Every substantial markdown file should remain navigable for humans and AI agents
 
 | Version | Notes |
 |---------|--------|
+| 1.3.0 | Workboard is an execution contract; phase-ship same-change-set (kit 2.4.0) |
 | 1.2.0 | AI docs workspace is not a contract; promotion anti-pattern (kit 2.3.0) |
 | 1.1.0 | Instruct bridge: packs direct owners; co-maintain + lifecycle pointer (kit 2.2.0) |
 | 1.0.1 | Agent Instruct packs are views, not contracts; dual-authority anti-pattern |

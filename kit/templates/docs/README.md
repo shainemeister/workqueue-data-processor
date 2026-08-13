@@ -13,7 +13,8 @@ This tree is a **resource for AI** (and humans) maintaining the repository: rese
 | Module | Path | Enabled? | Purpose |
 |--------|------|----------|---------|
 | Research | `docs/research/` | {{ENABLED_RESEARCH}} | Investigations, spikes, findings |
-| Plan | `docs/plan/` | {{ENABLED_PLAN}} | Detailed execution plans (complements root `PLAN.md`) |
+| Workboard | `docs/WORKBOARD.md` | {{ENABLED_WORKBOARD}} | Multi-phase execution (open / next / SHA) |
+| Plan | `docs/plan/` | {{ENABLED_PLAN}} | Detailed plans and optional annexes (complements root `PLAN.md` + workboard) |
 | Project build | `docs/project_build/` | {{ENABLED_PROJECT_BUILD}} | Implementation / build context for AI |
 | Resources | `docs/resources/` | {{ENABLED_RESOURCES}} | Curated repo + external pointers |
 
@@ -27,7 +28,7 @@ Replace `{{ENABLED_*}}` with `yes` / `no` / `on demand`. Omit unused module rows
 2. Keep this index accurate when modules change.  
 3. Prefer thin notes + links to L4 (`kit/RULES.md`, package contracts).  
 4. When a finding becomes a product promise, **promote** to the authority-map owner ([contracts](../../rules/contracts.md)).  
-5. Durable mission / Agent models stay in root **`PLAN.md`**.
+5. Durable mission / Agent models stay in root **`PLAN.md`**. Live multi-phase work stays on **`docs/WORKBOARD.md`** — do not paste phase tables into PLAN.
 
 ---
 
@@ -38,4 +39,5 @@ Replace `{{ENABLED_*}}` with `yes` / `no` / `on demand`. Omit unused module rows
 | Workspace policy | `kit/rules/ai-docs-workspace.md` |
 | Maintenance hub | `kit/RULES.md` |
 | Project plan (control) | `PLAN.md` |
+| Workboard policy | `kit/rules/workboard.md` |
 | Operator enforcement | `kit/RULES.md#operator-enforcement` |

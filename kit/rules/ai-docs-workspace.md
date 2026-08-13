@@ -1,7 +1,7 @@
 ---
 title: AI Docs Workspace
-description: Project root docs/ as modular AI resource workspace—research, plan, project_build, resources; lifecycle and promotion to L4.
-version: "1.0.0"
+description: Project root docs/ as modular AI resource workspace—research, workboard, plan, project_build, resources; lifecycle and promotion to L4.
+version: "1.1.0"
 status: current
 audience:
   - developers
@@ -17,17 +17,19 @@ related:
   - ../UPGRADE.md
   - ../agents/OPS.md
   - ../agents/PLAN-HOOK.md
+  - ./workboard.md
+  - ./continuity.md
   - ../templates/docs/README.md
-last_updated: "2026-08-10"
+last_updated: "2026-08-12"
 ---
 
 # AI Docs Workspace
 
 Policy for the project **root `docs/`** tree: a **modular AI resource workspace** for research, detailed plans, project build context, and curated resources. Live content is **outside `kit/`**. Portable policy and templates live under `kit/`.
 
-**Document version:** 1.0.0  
+**Document version:** 1.1.0  
 
-**Related:** [RULES.md](../RULES.md) · [hygiene.md](./hygiene.md) · [contracts.md](./contracts.md) · [verification-and-ops.md](./verification-and-ops.md) · [SETUP.md](../SETUP.md) · [OPS.md](../agents/OPS.md) · [templates/docs/](../templates/docs/)
+**Related:** [RULES.md](../RULES.md) · [hygiene.md](./hygiene.md) · [contracts.md](./contracts.md) · [workboard.md](./workboard.md) · [verification-and-ops.md](./verification-and-ops.md) · [SETUP.md](../SETUP.md) · [OPS.md](../agents/OPS.md) · [templates/docs/](../templates/docs/)
 
 ---
 
@@ -39,7 +41,7 @@ Policy for the project **root `docs/`** tree: a **modular AI resource workspace*
 | Scaffold modules **when needed**; maintain modules **when used** | Force empty four-module trees on trivial Q&A or bare day-one ceremony |
 | Keep `docs/README.md` accurate when `docs/` exists | Abandon stale critical plans without status/archive |
 | **Promote** durable product promises to canonical L4 owners ([contracts](./contracts.md)) | Dual-own public API/CLI/SECURITY/CHANGELOG law inside `docs/` |
-| Complement root **`PLAN.md`** with `docs/plan/` detail | Move Agent models out of PLAN into docs-only storage |
+| Complement root **`PLAN.md`** with `docs/WORKBOARD.md` + `docs/plan/` detail | Move Agent models out of PLAN into docs-only storage; paste live phase tables into PLAN |
 | Prefer thin markdown + links | Paste full `kit/rules/*` or secrets into the workspace |
 
 **Enforcement:** Policy + operator checklist ([RULES — Operator enforcement](../RULES.md#operator-enforcement)). **Not** a Domain A/B gate.
@@ -54,7 +56,7 @@ Policy for the project **root `docs/`** tree: a **modular AI resource workspace*
 4. [Default modular layout](#default-modular-layout)
 5. [Lifecycle (dynamic)](#lifecycle-dynamic)
 6. [Promotion to L4](#promotion-to-l4)
-7. [PLAN.md dual surface](#planmd-dual-surface)
+7. [PLAN.md triple surface](#planmd-triple-surface)
 8. [Enforcement triggers](#enforcement-triggers)
 9. [Authoring and trust](#authoring-and-trust)
 10. [Anti-patterns](#anti-patterns)
@@ -69,6 +71,7 @@ Policy for the project **root `docs/`** tree: a **modular AI resource workspace*
 | Need | Module |
 |------|--------|
 | Investigations, spikes, findings | `docs/research/` |
+| What multi-phase work is open | `docs/WORKBOARD.md` |
 | Detailed execution / phased build plans | `docs/plan/` |
 | Implementation context, ADRs-lite, build notes | `docs/project_build/` |
 | Curated in-repo and external pointers | `docs/resources/` |
@@ -84,9 +87,10 @@ It is **working memory that survives sessions**—not the Progress Tracker (repl
 |---------|------|-------------------------|
 | **`kit/`** | Portable standards / law | Policy + templates only; no project research dumps |
 | **Package docs** (README, CLI, SECURITY, …) | **L4 product contracts** | Promote findings here when they become promises |
-| **Root `PLAN.md`** | Durable mission, stages, Agent models | Control surface; `docs/plan/` holds detail |
+| **Root `PLAN.md`** | Durable mission, stages, Agent models | Control surface; not a todo list |
+| **`docs/WORKBOARD.md`** | Live multi-phase execution | What is open / next / SHA ([workboard](./workboard.md)) |
 | **`kit/agents/*`** | Instruct + packs (views) | Packs may link into `docs/`; packs do not own workspace law |
-| **Progress Tracker** | End-of-reply status | Ephemeral; durable notes go to `docs/` |
+| **Progress Tracker** | End-of-reply status | Ephemeral; durable notes go to `docs/`; **board wins** on conflict |
 
 On conflict with L4 (`kit/RULES.md`, domain modules, product contracts), **L4 wins**. Fix `docs/` or promote correctly—do not silently override law.
 
@@ -97,8 +101,11 @@ On conflict with L4 (`kit/RULES.md`, domain modules, product contracts), **L4 wi
 ```text
 docs/                          # project root — outside kit/
   README.md                    # AI index (required once docs/ exists)
+  WORKBOARD.md                 # optional until multi-phase work
   research/                    # optional until research work
-  plan/                        # optional until multi-step plans
+  plan/                        # optional until multi-step plans / annexes
+    <program-id>/              # optional annex while OPEN
+    archive/                   # shipped OOO archaeology
   project_build/               # optional until non-trivial implementation context
   resources/                   # optional until curated refs accumulate
 ```
@@ -106,8 +113,9 @@ docs/                          # project root — outside kit/
 | Module id | Path | Contents |
 |-----------|------|----------|
 | **index** | `docs/README.md` | Enabled modules, purpose, update rules, links to policy |
+| **workboard** | `docs/WORKBOARD.md` | Single active multi-phase board ([workboard](./workboard.md)) |
 | **research** | `docs/research/` | Spikes, comparisons, findings, source notes |
-| **plan** | `docs/plan/` | Execution plans, PR breakdowns, option matrices |
+| **plan** | `docs/plan/` | Execution plans, optional program annexes, `archive/` |
 | **project_build** | `docs/project_build/` | Build/implement notes, phased context for AI |
 | **resources** | `docs/resources/` | Curated repo paths + external citations with purpose |
 
@@ -129,7 +137,8 @@ Templates: [templates/docs/](../templates/docs/).
 5. Keep index module list accurate
 6. If finding becomes product law → promote to L4 same change set
 7. If durable mission/stages/Agent models change → update root PLAN.md
-8. Track useful markdown in git; no secrets or huge binaries
+8. If multi-phase: register/update docs/WORKBOARD.md (annex only if needed)
+9. Track useful markdown in git; no secrets or huge binaries
 ```
 
 | Phase | Action |
@@ -158,15 +167,16 @@ Leave a short pointer in `docs/` if helpful. Do **not** leave the only copy of a
 
 ---
 
-## PLAN.md dual surface
+## PLAN.md triple surface
 
 | Need | Where |
 |------|--------|
 | Mission, non-goals, stages, **Agent models** | Root **`PLAN.md`** |
-| Long execution plan, options, research synthesis, PR plan | **`docs/plan/`** |
+| What is open / next phase / ship SHA | **`docs/WORKBOARD.md`** ([workboard](./workboard.md)) |
+| Long execution plan, options, research synthesis, program annex | **`docs/plan/`** (annex = `docs/plan/<id>/` while open) |
 | Session-only scratch | Chat / Progress Tracker—optional later write to docs |
 
-**Rule:** Agent Instruct enablement stays in PLAN ([PLAN-HOOK](../agents/PLAN-HOOK.md)). Detailed plans may live under `docs/plan/` and should link to PLAN when Instruct is in use.
+**Rule:** Agent Instruct enablement stays in PLAN ([PLAN-HOOK](../agents/PLAN-HOOK.md)). Do **not** paste live phase tables into PLAN. Detailed plans may live under `docs/plan/` and must be linked from the workboard when they are active multi-phase work. Alternate folder names (e.g. `docs/planning/`) are allowed if the authority map and `docs/README.md` record them.
 
 ---
 
@@ -178,6 +188,7 @@ Leave a short pointer in `docs/` if helpful. Do **not** leave the only copy of a
 | Trivial single-step edit | Optional; no forced scaffold |
 | Research / multi-source investigation | Ensure `docs/research/` (+ index) |
 | Multi-step or durable execution plan | Ensure `docs/plan/` and/or root `PLAN.md` as appropriate |
+| Multi-phase or multi-session execution | Ensure `docs/WORKBOARD.md`; annex under `docs/plan/<id>/` only if the board cannot hold the OOO ([workboard](./workboard.md)) |
 | Non-trivial implementation / architecture notes | Ensure `docs/project_build/` |
 | Curated external or cross-repo refs for AI | Ensure `docs/resources/` |
 | `docs/` already exists | Keep index honest; maintain modules you touch |
@@ -208,6 +219,8 @@ External citations follow the same trust idea as Agent Instruct expertise: **gui
 | Research only in chat | `docs/research/` |
 | Public CLI matrix only in `docs/plan/` | Package CLI-GUIDE + pointer |
 | Agent models only under `docs/` | Root `PLAN.md` Agent models |
+| Live phase tables only in PLAN.md | `docs/WORKBOARD.md` + optional annex |
+| Unlinked folder treated as “active work” | Board **Optional annex** link ([workboard](./workboard.md)) |
 | Project notes under `kit/docs/` | Root `docs/` |
 | Empty four modules forever “for compliance” | Scaffold on need |
 | `docs/` redefines hygiene/SAST/CHANGELOG | Link L4; promote if needed |
@@ -219,4 +232,5 @@ External citations follow the same trust idea as Agent Instruct expertise: **gui
 
 | Version | Notes |
 |---------|--------|
+| 1.1.0 | Triple surface: PLAN + workboard + docs/plan annex/archive (kit 2.4.0) |
 | 1.0.0 | Initial AI docs workspace policy (kit 2.3.0) |

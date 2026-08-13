@@ -1,7 +1,7 @@
 ---
 title: Root Hygiene
 description: Unified packaging—standards under kit/, repository-specific data outside; SETUP and UPGRADE lifecycles.
-version: "1.3.0"
+version: "1.4.0"
 status: current
 audience:
   - developers
@@ -14,17 +14,18 @@ related:
   - ../CHANGELOG.md
   - ../agents/README.md
   - ./ai-docs-workspace.md
+  - ./workboard.md
   - ../../README.md
-last_updated: "2026-08-10"
+last_updated: "2026-08-12"
 ---
 
 # Root Hygiene
 
 Keep the repository root **scannable**: entry points and project-specific surfaces first; **standards under `kit/`**; product code and AI workspace in purpose directories outside `kit/`.
 
-**Document version:** 1.3.0  
+**Document version:** 1.4.0  
 
-**Related:** [RULES.md](../RULES.md) · [SETUP.md](../SETUP.md) · [UPGRADE.md](../UPGRADE.md) · [CHANGELOG.md](../CHANGELOG.md) · [agents/README.md](../agents/README.md) · [ai-docs-workspace.md](./ai-docs-workspace.md) · [README.md](../../README.md)
+**Related:** [RULES.md](../RULES.md) · [SETUP.md](../SETUP.md) · [UPGRADE.md](../UPGRADE.md) · [CHANGELOG.md](../CHANGELOG.md) · [agents/README.md](../agents/README.md) · [ai-docs-workspace.md](./ai-docs-workspace.md) · [workboard.md](./workboard.md) · [README.md](../../README.md)
 
 ---
 
@@ -78,12 +79,11 @@ Keep the repository root **scannable**: entry points and project-specific surfac
 | `LICENSE` | License |
 | `.gitignore` | Ignore rules |
 | `CHANGELOG.md` | **Project** history (**required**) — repository H2 → version H3 → categories; **not** kit release notes |
-| `PLAN.md` | Project plan control surface. **Required when using Agent Instruct** (Agent models section). Product backlog detail: `docs/PLAN.md` |
-| `docs/` | **AI resource workspace** + maintainer design docs (outside `kit/`) — see [ai-docs-workspace](./ai-docs-workspace.md) |
-| `Start-ExcelMenu.cmd` | Natural top-level entry shim → `excel-toolkit\` |
-| Data contract | `wq_schema/` (`wq_schema.json`, `wq_schema.csv`, `wq_data.csv`) |
+| `PLAN.md` | Project plan (repo-specific; not shipped by the kit). **Required when using Agent Instruct** (Agent models section); optional for bare adopt |
+| `docs/` | **AI resource workspace** (research, plan, project_build, resources)—scaffold when needed; outside `kit/` ([ai-docs-workspace](./ai-docs-workspace.md)) |
+| `docs/WORKBOARD.md` | **Multi-phase execution board** when used ([workboard](./workboard.md)) — project data, not kit law |
 | Package or product entry files | Only when they are the natural top-level surface |
-| `.pylintrc` | Optional; this repo uses package-local `kpi-analytics/.pylintrc` |
+| `.pylintrc` | Optional Python style gate (or package-local / under `kit/configs/`) |
 
 ---
 
@@ -109,17 +109,13 @@ Keep the repository root **scannable**: entry points and project-specific surfac
 
 | Concern | Preferred home |
 |---------|----------------|
-| Product packages / services | `excel-toolkit/`, `kpi-analytics/` (**outside** `kit/`) |
-| Package-level contracts (CLI, SECURITY, methodology) | Inside each toolkit (`CLI-GUIDE.md`, `ENTERPRISE-SECURITY.md`, `SCORE-METHODOLOGY.md`, …) |
-| Shared WQ data contract | `wq_schema/` |
-| Formal security + code-validation certificates | `certification/` at repo root; regenerable outputs gitignored — **not** package diagnostics |
-| Package diagnostics (machine readiness) | `kpi-analytics/diagnostics/`, `excel-toolkit/diagnostics/` |
-| AI research / detailed plans / build notes | Root **`docs/`** modules (`research/`, `plan/`, `project_build/`, `resources/`) |
-| Product backlog plan | `docs/PLAN.md` (complements root `PLAN.md` Agent models) |
-| Path inventory / design concepts | `docs/FILE-CATALOG.md`, `docs/WQ_Priority_Matrix_Concept.md` |
-| Regenerable score/export output | `output\` (never committed) |
-| Style configs | Package-local (e.g. `kpi-analytics/.pylintrc`) or `kit/configs/` starter |
-| CI workflows | `.github/` (or equivalent) if added |
+| Product packages / services | `packages/`, `src/`, or project-chosen layout **outside** `kit/` |
+| Package-level contracts (CLI, SECURITY, methodology) | Inside the package |
+| Formal security + code-validation certificates | `certification/` at repo root (or documented path); regenerable outputs gitignored |
+| AI research / detailed plans / build notes | Root **`docs/`** modules—not under `kit/` and not as ad-hoc root `notes.md` sprawl |
+| Scripts / helpers | `scripts/` or `tooling/` (keep minimal) |
+| Regenerable output | Never committed |
+| CI workflows | `.github/` (or equivalent) |
 
 ---
 
@@ -161,6 +157,7 @@ First adopt: [SETUP.md](../SETUP.md). Later kit bumps: [UPGRADE.md](../UPGRADE.m
 
 | Version | Notes |
 |---------|--------|
+| 1.4.0 | `docs/WORKBOARD.md` allowed at docs root (kit 2.4.0) |
 | 1.3.0 | Root `docs/` AI workspace outside kit; separation rules (kit 2.3.0) |
 | 1.2.0 | Agent Instruct: `kit/agents/`; PLAN required when using agents; generated packs are project-filled views under `kit/` |
 | 1.1.0 | Unified packaging: adopters keep standards under `kit/`; product and project CHANGELOG outside; remove “flatten to root” default |
