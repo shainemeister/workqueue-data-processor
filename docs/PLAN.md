@@ -1,7 +1,7 @@
 ---
 title: "Development Plan — Post-V1 Enhancement Concepts"
-description: "Living product backlog: Cluster 1 complete; optional base retune; Clusters 2–3 developing. Control surface in root PLAN.md; live multi-phase on docs/WORKBOARD.md; execution freezes in docs/plan/."
-version: "0.5.2"
+description: "Living product backlog: Cluster 1 complete; Cluster 2 freeze signed; Cluster 3 partial; optional base retune. Control surface in root PLAN.md; live multi-phase on docs/WORKBOARD.md; execution freezes in docs/plan/."
+version: "0.5.3"
 status: current
 audience:
   - developers
@@ -27,8 +27,8 @@ last_updated: "2026-08-12"
 
 Living **product enhancement backlog** after V1 priority matrix, dynamic mapping, guided menu, gap-safety, scoring profiles, quality audit, certification Phase 2, and menu scoring-profile picker.
 
-**Document version:** 0.5.2  
-**Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Clusters **2–3** still developing (not implementation-ready).  
+**Document version:** 0.5.3  
+**Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Cluster **2 freeze signed** (P8 implement). Cluster **3** partial (sort/groups/menu shipped; 3.1 filters still open).  
 
 | Kit triple surface | Path |
 |--------------------|------|
@@ -66,10 +66,10 @@ Living **product enhancement backlog** after V1 priority matrix, dynamic mapping
 | Tier | Items | Execution plan |
 |------|--------|----------------|
 | **Pending (optional)** | Evidence-based base-weight retune (**B1.1-retune**) | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) |
-| **Developing (needs freeze before code)** | **Cluster 2** multi-file / naming / default xlsx / preview / by-WQ totals | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) |
-| **Developing (needs freeze before code)** | **Cluster 3** grouping / multi-sort / denial analysis sheet (reporting-only vs V2) | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) |
+| **Ready (P8)** | **Cluster 2** multi-file / naming / default xlsx / preview / file-level totals | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) **freeze signed** |
+| **Developing (partial freeze)** | **Cluster 3** grouping / multi-sort / denial analysis sheet (reporting-only vs V2) | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) |
 
-Do not start Cluster 2/3 product code until open questions are design-frozen (update the matching `docs/plan/` file and this backlog in the same change set).
+Do not start Cluster 2 **product** code until this freeze is signed (it is). Do not start remaining Cluster 3 product (filters) until that slice is frozen.
 
 ---
 
@@ -79,7 +79,7 @@ Do not start Cluster 2/3 product code until open questions are design-frozen (up
 2. [Background and current baseline](#background-and-current-baseline)
 3. [Shared principles and hard constraints](#shared-principles-and-hard-constraints)
 4. [Cluster 1 — KPI config optimization and saved profiles](#cluster-1--kpi-config-optimization-and-saved-profiles) (**complete; optional retune only**)
-5. [Cluster 2 — Multi-file ingest, aggregation, and output conventions](#cluster-2--multi-file-ingest-aggregation-and-output-conventions) (**developing**)
+5. [Cluster 2 — Multi-file ingest, aggregation, and output conventions](#cluster-2--multi-file-ingest-aggregation-and-output-conventions) (**freeze signed**)
 6. [Cluster 3 — Grouping, sorting, and denial analysis sheet](#cluster-3--grouping-sorting-and-denial-analysis-sheet) (**developing**)
 7. [Recommended sequencing](#recommended-sequencing)
 8. [Compliance, versioning, and change control](#compliance-versioning-and-change-control)
@@ -322,56 +322,51 @@ Menu calls the same `kpi-analytics.cmd score --profile …` (no scoring math in 
 
 ## Cluster 2 — Multi-file ingest, aggregation, and output conventions
 
-**Status:** developing concept  
-**Execution freeze checklist:** [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md)  
-**Primary surface:** excel-toolkit menu / workflow (with light kpi-analytics support if needed)  
-**Risk to existing contracts:** medium (new aggregation paths; must preserve per-file score semantics)
+**Status:** **Freeze signed (P7, 2026-08-12)** — implementation is **P8**.  
+**Execution freeze:** [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md)  
+**Primary surface:** excel-toolkit menu / workflow (kpi-analytics only if a later rollup verb is required)  
+**Risk to existing contracts:** medium (naming / preview / presentation totals; per-file score semantics must stay)
 
 | Gate | State |
 |------|--------|
-| Implementation-ready? | **No** — freeze open questions first |
-| Role in backlog | Primary multi-file / delivery UX track after Cluster 1 residual |
+| Implementation-ready? | **Yes** for P8 slices in the freeze (preview → naming → wording → file-level totals) |
+| Role in backlog | Delivery UX after Cluster 1; **not** a new score |
 
 ### 2.1 Ingest multiple files and parse / total by WQ
 
 **Intent**  
-When the operator selects several CSV or XLSX files, produce combined totals (and optionally a combined scored view) keyed by Work Queue identity, in addition to (or instead of) purely per-file processing.
+When the operator selects several CSV or XLSX files, produce **file-level** totals keyed by Work Queue **label**, in addition to per-file processing.
 
-**Open design points**
-- Source of WQ identity when the schema has no dedicated WQ-name field (filename convention? `wq_status`? operator label? new optional role?)
-- Whether scoring remains strictly per-file (batch-relative norms) or whether a combined batch is ever scored together
-- Where aggregation lives (post-score in excel-toolkit, new kpi-analytics `aggregate` verb, or both)
-- What “totals” means (row counts, sum of `out_ins_amt`, sum of selected `kpi_q_*`, average priority, etc.)
+**Status:** **Frozen** — [cluster-2-multi-file.md](./plan/cluster-2-multi-file.md).
+
+| Decision | Freeze |
+|----------|--------|
+| WQ identity | Filename stem (after Excel→CSV); optional profile `wq_label`. `wq_status` is not identity. No new required schema field. |
+| Scoring | **Per-file only** (batch-relative). No combined `score`. |
+| Groups / worklists | **Do not span files** (P4–P6 remain per-file). |
+| Totals | Count + dollars + max priority + min appeal days **per file**. Do not average priority. Do not sum `kpi_q_share_*` across files. |
+| Combined view | Presentation of separately scored files only. |
 
 ### 2.2 Output naming convention `[WQ]_MM-DD-YYYY.xlsx`
 
 **Intent**  
-Generate or enforce a predictable workbook name that encodes the Work Queue and the processing date.
+Generate a predictable workbook name that encodes the Work Queue label and the processing date.
 
-**Open design points**
-- Exact date source (`as_of_date`, system date, operator override)
-- How collisions and multi-WQ runs are handled while still respecting the unique-suffix safety rule
-- Whether the same convention applies to intermediate CSVs or only to final Excel
+**Status:** **Frozen.** Excel deliverable only. Date = **local calendar date of export** (not `as_of_date`). Collisions: unique `name_N`. Intermediate CSV stems unchanged.
 
 ### 2.3 Improve aggregation process; default export to `.xlsx` only
 
 **Intent**  
-Make the formatted Excel workbook the primary deliverable of the full pipeline. Keep CSV available for score-only or automation, but stop treating dual CSV+XLSX as the default happy path.
+Make the formatted Excel workbook the **human** deliverable of the full pipeline. Keep CSV for score-only and automation.
 
-**Open design points**
-- Menu wording and action labels
-- Whether intermediate scored CSV is still written (and if so, under what path policy)
-- Impact on existing automation that expects the current CSV paths
+**Status:** **Frozen.** Intermediate scored CSV **still written** (unique-path policy). Menu never Force. Wording change only until P8 ships.
 
 ### 2.4 Multi-file preview: list names per WQ / file and maximum amount by key KPI
 
 **Intent**  
-After file discovery and before the operator chooses Full pipeline / Score only / Export only, show a compact preview: file or WQ name, row count, and the maximum value of a chosen key metric (default `out_ins_amt` or another configurable KPI interest).
+After file discovery and before Full pipeline / Score only / Export only / Build worklist, show file/WQ name, row count, and max `out_ins_amt` when present.
 
-**Open design points**
-- Which metrics are offered as “key KPI interest”
-- Whether the preview is optional or always shown for multi-select
-- Performance on very large extracts (preview should not force a full score)
+**Status:** **Frozen.** Always for **2+** files; no `score` on preview; omit max if the column is missing.
 
 ---
 
@@ -437,8 +432,8 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 |-------|------|--------|-----------|
 | 1 | **1f** Menu profile picker | **Shipped** | Low risk; uses shipped CLI |
 | 2 | **B1.1-retune** Base weights | **Pending** (optional) | Data / analyst gated |
-| 3 | Cluster **2.2–2.4** Naming, default xlsx, multi-file preview | Developing | Freeze before code |
-| 4 | Cluster **2.1** Cross-file / by-WQ totals | Developing | Needs WQ-identity freeze |
+| 3 | Cluster **2.2–2.4** Naming, default xlsx, multi-file preview | **Freeze signed** (P8) | Preview first |
+| 4 | Cluster **2.1** File-level / by-WQ totals | **Freeze signed** (P8 last) | Per-file; no combined score |
 | 5 | Cluster **3.2** Multi-sort | **Shipped** (kpi 2.8.0) | Low-risk post-score |
 | 6 | Cluster **3.1** Group qualifier | Partial (CSV 2.9.0; filters open) | Privacy care |
 | 7 | Cluster **3.3** Denial analysis sheet | Partial (Excel 1.10.0 + menu 1.11.0; extra metrics open) | Reporting-only until V2 |
@@ -446,7 +441,7 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 **Next recommended product slice**
 
 - Live order of operations: [WORKBOARD.md](./WORKBOARD.md) program **`post-v1-enhancement`** · annex [plan/post-v1-enhancement/](./plan/post-v1-enhancement/).  
-- P3–P6 shipped (sort, groups CSV, Excel sheets, menu). Remaining: **P1** filters / patient-group policy (`blocked`); **P7–P8** Cluster 2 if groups must span files.  
+- P3–P7 shipped (sort, groups, sheets, menu, **Cluster 2 freeze**). Next product: **P8** Cluster 2 implement. **P1** filters / patient-group policy remain `blocked`.  
 - Prefer **B1.1-retune** only with analyst evidence (deferred on the board).
 
 ---
@@ -474,12 +469,12 @@ When a concept moves from “developing” to “ready for implementation”, fr
 
 | # | Question | Status |
 |---|----------|--------|
-| 1 | **WQ identity** for multi-file / naming | **Open** (Cluster 2). Profiles may carry optional free-text `wq_label` only |
-| 2 | **Combined vs. per-file scoring** | **Open** (Cluster 2). Default assumption: per-file only |
+| 1 | **WQ identity** for multi-file / naming | **Frozen** (Cluster 2): filename stem; optional profile `wq_label` |
+| 2 | **Combined vs. per-file scoring** | **Frozen** (Cluster 2): per-file only |
 | 3 | **Profile storage** | **Shipped** — `kpi-analytics\profiles\`; shipped presets tracked; user `user_*.json` gitignored; no PHI |
 | 4 | **Analysis vs. V2 boundary** | **Open** (Cluster 3): reporting-only until V2 opened |
-| 5 | **Default artifact** CSV vs Excel | **Open** (Cluster 2.3) |
-| 6 | **Schema evolution** for WQ name | **Open** (Cluster 2) |
+| 5 | **Default artifact** CSV vs Excel | **Frozen** (Cluster 2.3): Excel is the human deliverable; CSV stays as engine artifact |
+| 6 | **Schema evolution** for WQ name | **Frozen** (Cluster 2): no required WQ-name field in P8 |
 | 7 | **Menu profile UX (1f)** | **Shipped** (excel **1.9.0** / repo **1.13.0**) |
 
 ---
@@ -501,9 +496,11 @@ When a concept moves from “developing” to “ready for implementation”, fr
 
 | Version | Notes |
 |---------|--------|
-| 0.1.0 | Initial living plan. Captures sorted enhancement concepts from operator discussion; all items marked developing; details still to be worked out. |
-| 0.2.0 | Baseline updated to kpi 2.5.0 / excel 1.8.0 after gap-safety close. **Cluster 1 design-frozen** (POI presets + profile schema/CLI). |
-| 0.3.0 | Baseline → repo **1.9.0** / kpi **2.6.0** / excel **1.8.0**. Cluster 1 CLI + POI presets marked **shipped**. Residual: menu **1f**, optional base retune. Sequencing reframed; Clusters 2–3 remain developing (not implementation-ready). |
-| 0.4.0 | Baseline → repo **1.13.0** / kpi **2.7.0** / excel **1.9.0**. Menu residual **1f** shipped. Cluster 1 complete except optional B1.1-retune. Clusters 2–3 still developing. |
+| 0.5.3 | Cluster 2 **freeze signed** (P7); P8 implement |
+| 0.5.2 | P6 menu Build worklist (excel 1.11.0); Cluster 3.2/3.3/3.1 CSV statuses |
 | 0.5.1 | Kit triple surface (repo-kit **2.4.0**): `docs/WORKBOARD.md` for live multi-phase; Clusters 2–3 still developing |
 | 0.5.0 | Kit dual-surface compliance (repo-kit **2.3.1**): links to root PLAN stages/Agent models; execution freezes under `docs/plan/`; compliance section for OPS/Operator/Instructed-by; baseline notes repo **1.14.0**. |
+| 0.4.0 | Baseline → repo **1.13.0** / kpi **2.7.0** / excel **1.9.0**. Menu residual **1f** shipped. Cluster 1 complete except optional B1.1-retune. Clusters 2–3 still developing. |
+| 0.3.0 | Baseline → repo **1.9.0** / kpi **2.6.0** / excel **1.8.0**. Cluster 1 CLI + POI presets marked **shipped**. Residual: menu **1f**, optional base retune. Sequencing reframed; Clusters 2–3 remain developing (not implementation-ready). |
+| 0.2.0 | Baseline updated to kpi 2.5.0 / excel 1.8.0 after gap-safety close. **Cluster 1 design-frozen** (POI presets + profile schema/CLI). |
+| 0.1.0 | Initial living plan. Captures sorted enhancement concepts from operator discussion; all items marked developing; details still to be worked out. |

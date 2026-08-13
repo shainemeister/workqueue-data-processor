@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.18.1] - 2026-08-12
+
+#### Changed
+
+- Cluster **2** design freeze signed (P7): per-file scoring; WQ identity = filename stem / optional `wq_label`; groups do not span files; no required schema WQ field. Product code is P8.
+
 ### [1.18.0] - 2026-08-12
 
 #### Added

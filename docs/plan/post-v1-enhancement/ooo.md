@@ -1,7 +1,7 @@
 ---
 title: post-v1-enhancement — order of operations
 description: Goals, constraints, phased OOO, verification, and risks for grouped POI worklists and later Cluster 2 / B1.1.
-version: "1.0.1"
+version: "1.0.2"
 status: draft
 audience:
   - ai-agents
@@ -168,6 +168,7 @@ Defer per-phase implementation detail until that phase is `active` on the board.
 |-------|-------------------------|
 | P0 | Author checklist; FILE-CATALOG; relative links; no cert |
 | P1 | Freeze file + `docs/PLAN.md` status same change set; no product code |
+| P7 | Cluster 2 freeze file + `docs/PLAN.md` + root PLAN S3 same change set; no product code; no cert |
 | P2 | Manual Excel on synthetic scored output |
 | P3+ product | Full `.\certification\Invoke-Certification.ps1`; OverallPass; outputs unstaged |
 | P4 | pylint `kpi_modules` 10.00/10 (via harness); CLI-GUIDE + fixtures if contract |
@@ -184,6 +185,7 @@ Do not invent gates outside the inventory / verification table.
 |-------|---------------------|
 | P0 | FILE-CATALOG; plan indexes; WORKBOARD (this annex) |
 | P1 | `docs/plan/cluster-3-analysis.md`; `docs/PLAN.md` |
+| P7 | `docs/plan/cluster-2-multi-file.md`; `docs/PLAN.md`; root `PLAN.md` S3; CHANGELOG |
 | P3 | excel and/or kpi CLI if sort is a public flag |
 | P4 | `kpi-analytics/CLI-GUIDE.md`; README; CHANGELOG; package version |
 | P5–P6 | excel CLI-GUIDE / README / ENTERPRISE-SECURITY if trust model unchanged except new verb |
@@ -201,7 +203,7 @@ Do not invent gates outside the inventory / verification table.
 | PHI via patient groups | Tokens only on scored output; no unmask in git |
 | Cluster 3 vs V2 creep | Freeze repeats V2 boundary; category-in-score = P10 / S5 |
 | Starting code during P1 | Board P1 stays `blocked` until freeze signed |
-| Cross-file groups without WQ identity | Stay on P7–P8; per-file norms remain default |
+| Cross-file groups without WQ identity | **Frozen (P7):** groups do not span files; identity = filename stem / `wq_label` |
 
 ---
 
@@ -209,5 +211,6 @@ Do not invent gates outside the inventory / verification table.
 
 | Version | Notes |
 |---------|--------|
+| 1.0.2 | P7 Cluster 2 freeze signed; groups do not span files |
 | 1.0.1 | P3–P6 shipped; P1 filters still blocked |
 | 1.0.0 | Initial master OOO at program open |
