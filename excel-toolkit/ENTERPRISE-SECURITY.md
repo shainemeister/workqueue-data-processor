@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.9.0"
+version: "1.10.0"
 status: current
 audience:
   - security
@@ -20,8 +20,8 @@ last_updated: "2026-08-09"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.9.0  
-**Document version:** 1.9.0  
+**Toolkit version:** 1.10.0  
+**Document version:** 1.10.0  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
@@ -256,3 +256,4 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.7.1 | Fix interactive guided-mapping pipeline pollution (ExitCode crash); no trust-boundary change |
 | 1.8.0–1.8.1 | Partial-rank confirm after score / guided mapping; no trust-boundary change |
 | 1.9.0 | Menu scoring-profile pick + Advanced profile-list/help via sibling `kpi-analytics.cmd` only (`score --profile` / `profile-list`); no trust-boundary change |
+| 1.10.0 | Optional `-GroupsCsv` / `-Worklist` on export (local CSVs only; no scoring math); no trust-boundary change |

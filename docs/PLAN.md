@@ -417,6 +417,8 @@ Beyond the default priority-score ranking, offer explicit sort keys (balance, cl
 **Intent**  
 Add a second (or additional) worksheet to the summary Excel that identifies and summarizes common denial types / categories together with key metrics for each category (count, total outstanding, average priority, aging distribution, etc.).
 
+**Status:** **Groups + Worklist sheets shipped (excel-toolkit 1.10.0)** — `-GroupsCsv` / `-Worklist`. Extra denial-only metrics remain open.
+
 **Open design points**
 - Category source column(s): `code_category`, `reason_code_list`, `remittance_code`, or a configurable role
 - Metrics to show per category

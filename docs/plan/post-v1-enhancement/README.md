@@ -30,7 +30,7 @@ last_updated: "2026-08-12"
 |-------|--------|
 | **Program id** | `post-v1-enhancement` |
 | **Status** | `active` |
-| **Next phase** | **P5** Excel groups / two-level worklist (`open`) |
+| **Next phase** | **P6** Menu Build worklist (`open`) |
 | **L4 owners to update on ship** | After product phases: toolkit CLI-GUIDE / README / SCORE-METHODOLOGY as applicable; `CHANGELOG.md`; FILE-CATALOG |
 
 ## Contents of this annex

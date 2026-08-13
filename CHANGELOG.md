@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.17.0] - 2026-08-12
+
+#### Added
+
+- **excel-toolkit 1.10.0:** `export-csv -GroupsCsv` writes a Groups sheet from kpi-analytics `*_groups.csv`. `-Worklist` adds a two-level GROUP/CLAIM sheet by matching key columns (no scoring math).
+
 ### [1.16.0] - 2026-08-12
 
 #### Added

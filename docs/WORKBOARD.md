@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.3"
+version: "1.1.5"
 status: current
 audience:
   - ai-agents
@@ -51,7 +51,7 @@ last_updated: "2026-08-12"
 | P2 | Optional Excel rehearsal (option A) | `done` | `cb78d08` | Findings: [p2-rehearsal.md](./plan/post-v1-enhancement/p2-rehearsal.md) |
 | P3 | Implement 3.2 multi-sort | `done` | `b3759d6` | kpi 2.8.0 `--sort` / `--sort-preset` (docs `bf66b2d`) |
 | P4 | Group summary CSV (option B) | `done` | `a2e3601` | kpi 2.9.0 `--group-by` / `--group-preset` (docs `db334da`) |
-| P5 | Excel groups / two-level worklist (C+D) | `open` | — | No scoring math in PowerShell |
+| P5 | Excel groups / two-level worklist (C+D) | `done` | — | excel 1.10.0 `-GroupsCsv` / `-Worklist`. SHA after commit |
 | P6 | Menu Build worklist (E) | `open` | — | After P4–P5 |
 | P7 | Cluster 2 design freeze | `open` | — | Only if groups span files |
 | P8 | Cluster 2 implement | `open` | — | After P7 |
@@ -60,6 +60,7 @@ last_updated: "2026-08-12"
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-12 P5 shipped excel-toolkit 1.10.0 Groups + Worklist sheets; P1 filters still `blocked`.  
 - 2026-08-12 P4 shipped kpi-analytics 2.9.0 groups CSV; 3.1 CSV frozen; P1 filters/patient freeze still `blocked`.  
 - 2026-08-12 P3 shipped kpi-analytics 2.8.0 detail sort; 3.2 frozen; P1 grouping freeze still `blocked`.  
 - 2026-08-12 P2 rehearsal on synthetic scored workbook; P1 remains `blocked` (user deferred freeze).  
@@ -102,4 +103,4 @@ last_updated: "2026-08-12"
 
 ---
 
-*Agents: P4 done. Next open is P5 (Excel groups). P1 remaining freeze items: filters / patient groups / 3.3 sheet.*
+*Agents: P5 done. Next open is P6 (menu Build worklist). P1 remaining: row filters / patient-group policy.*

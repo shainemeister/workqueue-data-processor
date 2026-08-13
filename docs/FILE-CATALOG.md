@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.8"
+version: "1.10.9"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.8  
+**Document version:** 1.10.9  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -199,7 +199,7 @@ Tracked **input** files for scoring demos and local runs. Prefer synthetic or de
 | [CLI-GUIDE.md](../excel-toolkit/CLI-GUIDE.md) | doc | CLI contract: verbs, exit codes, JSON shapes, and automation examples. |
 | [ENTERPRISE-SECURITY.md](../excel-toolkit/ENTERPRISE-SECURITY.md) | doc | Trust boundary, disallowed patterns, and execution-policy guidance for COM automation. |
 | [ExcelCom.psm1](../excel-toolkit/ExcelCom.psm1) | module | Low-level Excel COM lifecycle, range I/O, CSV sheet import/export, optional workbook passwords, and safe Quit (no force-kill). |
-| [ExcelToolkit.psm1](../excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, unique paths, export/import, and enterprise diagnostics gate (`Assert-ExcelToolkitDiagnosticsPass`, readiness suite). |
+| [ExcelToolkit.psm1](../excel-toolkit/ExcelToolkit.psm1) | module | High-level API: version helpers, unique paths, export/import, Groups/Worklist sheets, and enterprise diagnostics gate. |
 | [ExcelToolkit.ps1](../excel-toolkit/ExcelToolkit.ps1) | script | CLI entry: `version` / `probe` / `diagnostics` / `export-csv` / `import-excel` / `help` over `ExcelToolkit.psm1`. |
 | [diagnostics/README.md](../excel-toolkit/diagnostics/README.md) | doc | Pass certificate + first-run gate; distinct from root `certification/` (json/txt gitignored). |
 | [excel-toolkit.cmd](../excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
@@ -371,6 +371,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.9 | excel-toolkit 1.10.0 Groups/Worklist export notes |
 | 1.10.8 | kpi-analytics 2.9.0 `group_summary.py`; `__version__` row 2.9.0 |
 | 1.10.7 | kpi-analytics 2.8.0 `output_sort.py`; `__version__` row 2.8.0 |
 | 1.10.6 | P2 rehearsal note under post-v1-enhancement annex |

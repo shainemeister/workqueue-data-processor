@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.9.0"
+version: "1.10.0"
 status: current
 audience:
   - developers
@@ -11,14 +11,14 @@ related:
   - README.md
   - ENTERPRISE-SECURITY.md
   - diagnostics/README.md
-last_updated: "2026-08-09"
+last_updated: "2026-08-12"
 ---
 
 # Excel Toolkit — CLI Reference
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.9.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.10.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -296,7 +296,9 @@ Exports a **data CSV** to a formatted `.xlsx` workbook. Column layout is always 
 ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
     [-SchemaPath <path>] [-SchemaFormat Auto|Json|Csv]
     [-UseDisplayNames] [-DisplayNameProperty <name>]
-    [-SheetName <name>] [-Visible] [-DryRun]
+    [-SheetName <name>] [-GroupsCsv <path>] [-GroupsSheetName <name>]
+    [-Worklist] [-WorklistSheetName <name>]
+    [-Visible] [-DryRun]
     [-Json] [-Quiet]
 ```
 
@@ -308,7 +310,11 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
 | `-SchemaFormat` | No | `Auto` | `Auto`, `Json`, or `Csv` |
 | `-UseDisplayNames` | No | off | Apply schema labels to header row |
 | `-DisplayNameProperty` | No | auto | Force a schema property for labels |
-| `-SheetName` | No | `Data` | Worksheet tab name |
+| `-SheetName` | No | `Data` | Detail worksheet tab name |
+| `-GroupsCsv` | No | — | Optional kpi-analytics `*_groups.csv`. Adds a **Groups** sheet (copy only; no scoring math). |
+| `-GroupsSheetName` | No | `Groups` | Groups tab name (must differ from `-SheetName`) |
+| `-Worklist` | No | off | Also write a two-level **Worklist** sheet (GROUP then matching CLAIM rows). Requires `-GroupsCsv`. |
+| `-WorklistSheetName` | No | `Worklist` | Worklist tab name |
 | `-Visible` | No | off | Show Excel UI (debug) |
 | `-Password` | No | — | Optional workbook **open** password when saving `.xlsx` (not logged; not in JSON) |
 | `-Force` | No | off | Replace the **exact** `-OutputPath` if it exists. Default: **do not overwrite** — write to a free sibling path with a numerical suffix (`export_1.xlsx`, …) |
@@ -621,7 +627,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.9.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.10.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.10.0 notes:** `export-csv -GroupsCsv` copies a kpi-analytics groups file to a **Groups** sheet. `-Worklist` adds a two-level **Worklist** sheet (GROUP then CLAIM) by matching group key columns. No scoring or KPI math in PowerShell.
 
 **1.9.0 notes:** interactive `Start-ExcelMenu` Full pipeline / Score only offer a **scoring profile** picker (package default = omit `--profile`; listed POI presets or typed name/path). Choice is applied once per batch and passed to every `kpi-analytics.cmd score` invoke (preflight dry-run, full score, guided mapping, rank-enrich dry-run). Advanced tools → **Scoring profiles (list / CLI help)** runs `profile-list` only. No new Excel CLI verbs; no scoring math in PowerShell. See [README.md](./README.md) and [kpi-analytics CLI — Scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
 
