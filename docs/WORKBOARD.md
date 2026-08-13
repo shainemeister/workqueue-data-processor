@@ -70,11 +70,11 @@ last_updated: "2026-08-13"
 | P21 | Menu [5] Express score | `done` | `cb20bb0` | slim; skip profile/password |
 | P22 | export-csv -PoiScoreSheetOnly | `done` | `cb20bb0` | Copy columns; no math |
 | P23 | L4 + CHANGELOG + cert | `done` | `cb20bb0` | excel 1.14.0 |
-| P24 | Menu [5] Express visibility | `done` | — | Cyan + version stamp; lock in Test-SelectionRange |
+| P24 | Menu [5] Express visibility | `done` | `dcd1d1e` | Cyan + version stamp; lock in Test-SelectionRange |
 
 ### Progress log (newest first, max ~15 lines)
 
-- 2026-08-13 Shipped P24 Express action-list visibility (excel 1.14.1).  
+- 2026-08-13 Shipped P24 Express action-list visibility (`dcd1d1e`; excel 1.14.1).  
 - 2026-08-13 Opened P24 Express action-list visibility (operator could not see [5]).  
 - 2026-08-13 Shipped P20–P23 Express score (`cb20bb0`; excel 1.14.0).  
 - 2026-08-13 Opened P20–P23 Express score (all POI → one Excel sheet).  
