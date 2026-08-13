@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.17.0'
+$script:ExcelToolkitVersion = '1.18.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -400,6 +400,7 @@ function Get-ExcelToolkitPoiScoreCopyColumns {
     #>
     return @(
         'invoice_num',
+        'patient',
         'service_date',
         'last_worked_date',
         'out_ins_amt',
@@ -421,7 +422,6 @@ function Get-ExcelToolkitPoiScoreCopyColumns {
         'billing_provider_npi',
         'follow_up_record_id',
         'account',
-        'patient',
         'v1_priority_score',
         'v1_score_protect_writeoffs',
         'v1_score_maximize_cash',

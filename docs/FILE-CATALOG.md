@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.22"
+version: "1.10.23"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-13"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.22  
+**Document version:** 1.10.23  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -386,6 +386,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.23 | excel-toolkit 1.18.0 patient-after-invoice; menu CSV cleanup |
 | 1.10.22 | excel-toolkit 1.17.0 Express column order |
 | 1.10.21 | excel-toolkit 1.16.0 Express context source columns |
 | 1.10.20 | excel-toolkit 1.15.0 Express score-input source columns |

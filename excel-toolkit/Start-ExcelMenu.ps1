@@ -463,7 +463,7 @@ function Invoke-ProcessMyData {
     Write-Host ''
     Write-Host 'What should I do with the selected file(s)?' -ForegroundColor Cyan
     Write-Host ("excel-toolkit {0}" -f $menuVersion) -ForegroundColor DarkGray
-    Write-Host 'Excel is the human deliverable; scored CSV is still written under output\.' -ForegroundColor DarkGray
+    Write-Host 'Excel is the human deliverable. Generated CSVs under output\ are removed after a successful Excel write.' -ForegroundColor DarkGray
     Write-Host '  [1] Full pipeline (Score -> Excel deliverable)     <- recommended' -ForegroundColor DarkGray
     Write-Host '  [2] Score only (CSV artifacts)' -ForegroundColor DarkGray
     Write-Host '  [3] Export only (CSV -> Excel deliverable, no scoring)' -ForegroundColor DarkGray
@@ -691,10 +691,48 @@ function Confirm-KpiKeepPartialRankOutputs {
     return ($ans -match '^[Yy]')
 }
 
+function Test-ExcelMenuCsvSafeToRemove {
+    <#
+    .SYNOPSIS
+        True when a path is a generated output CSV (under output\, not the input, not import\).
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Path,
+
+        [string]$OutputDir,
+
+        [string[]]$ProtectedPaths
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path)) {
+        return $false
+    }
+    $resolved = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
+    $ext = [System.IO.Path]::GetExtension($resolved)
+    if ($ext -cne '.csv') {
+        return $false
+    }
+    foreach ($prot in @($ProtectedPaths)) {
+        if ([string]::IsNullOrWhiteSpace($prot)) { continue }
+        $want = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($prot)
+        if ($resolved -ceq $want) {
+            return $false
+        }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OutputDir)) {
+        $outRoot = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputDir)
+        if (-not $resolved.StartsWith($outRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $false
+        }
+    }
+    return $true
+}
+
 function Remove-KpiScoredOutputPair {
     <#
     .SYNOPSIS
-        Delete scored detail + summary + optional groups CSV paths (partial rank decline).
+        Delete generated scored / summary / groups / totals CSV paths under output\.
     #>
     [CmdletBinding()]
     param(
@@ -705,12 +743,22 @@ function Remove-KpiScoredOutputPair {
         [string]$SummaryCsv,
 
         [Parameter(Mandatory = $false)]
-        [string]$GroupsCsv
+        [string]$GroupsCsv,
+
+        [Parameter(Mandatory = $false)]
+        [string]$TotalsCsv,
+
+        [string]$OutputDir = '',
+
+        [string[]]$ProtectedPaths = @()
     )
 
-    foreach ($p in @($ScoredCsv, $SummaryCsv, $GroupsCsv)) {
-        if (-not [string]::IsNullOrWhiteSpace($p) -and (Test-Path -LiteralPath $p)) {
-            Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue
+    foreach ($p in @($ScoredCsv, $SummaryCsv, $GroupsCsv, $TotalsCsv)) {
+        if (-not (Test-ExcelMenuCsvSafeToRemove -Path $p -OutputDir $OutputDir -ProtectedPaths $ProtectedPaths)) {
+            continue
+        }
+        Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue
+        if (-not (Test-Path -LiteralPath $p)) {
             Write-Host ("  Removed: {0}" -f $p) -ForegroundColor DarkGray
         }
     }
@@ -2696,8 +2744,10 @@ function Invoke-KpiScoreExportMenu {
                 if (-not (Confirm-KpiKeepPartialRankOutputs)) {
                     Write-Host '  Partial rank declined; removing scored CSVs for this file.' -ForegroundColor Yellow
                     $removeParams = @{
-                        ScoredCsv  = $actualScoredCsv
-                        SummaryCsv = $actualSummaryCsv
+                        ScoredCsv       = $actualScoredCsv
+                        SummaryCsv      = $actualSummaryCsv
+                        OutputDir       = $outputDir
+                        ProtectedPaths  = @($csvPath)
                     }
                     if ($Worklist) {
                         $declineGroups = $groupsCsvInfo.Path
@@ -2748,6 +2798,7 @@ function Invoke-KpiScoreExportMenu {
                 CsvPath    = $actualScoredCsv
                 OutputPath = $plannedScoredXlsx
             }
+            $totalsCsvPath = $null
             if ($Express) {
                 $ex1Params['PoiScoreSheetOnly'] = $true
             }
@@ -2757,6 +2808,7 @@ function Invoke-KpiScoreExportMenu {
                 try {
                     Write-ExcelMenuFileTotalsCsv -Totals $fileTotals -Path $totalsCsvInfo.Path
                     $ex1Params['TotalsCsv'] = $totalsCsvInfo.Path
+                    $totalsCsvPath = $totalsCsvInfo.Path
                     Write-Host ("  Totals CSV  : {0}" -f $totalsCsvInfo.Path) -ForegroundColor DarkGray
                 }
                 catch {
@@ -2824,9 +2876,29 @@ function Invoke-KpiScoreExportMenu {
                 }
                 Write-Host ("  Summary XLSX: {0}" -f $ex2.OutputPath) -ForegroundColor Green
             }
-            else {
-                Write-Host ("  Summary CSV : {0}" -f $actualSummaryCsv) -ForegroundColor DarkGray
+            $cleanupParams = @{
+                ScoredCsv      = $actualScoredCsv
+                SummaryCsv     = $actualSummaryCsv
+                OutputDir      = $outputDir
+                ProtectedPaths = @($csvPath)
             }
+            if ($Worklist) {
+                $cleanupGroups = $null
+                if ($null -ne $groupsCsvInfo) {
+                    $cleanupGroups = $groupsCsvInfo.Path
+                }
+                if ($null -ne $scoreJson -and $scoreJson.GroupsPath) {
+                    $cleanupGroups = [string]$scoreJson.GroupsPath
+                }
+                if (-not [string]::IsNullOrWhiteSpace($cleanupGroups)) {
+                    $cleanupParams['GroupsCsv'] = $cleanupGroups
+                }
+            }
+            if (-not [string]::IsNullOrWhiteSpace($totalsCsvPath)) {
+                $cleanupParams['TotalsCsv'] = $totalsCsvPath
+            }
+            Remove-KpiScoredOutputPair @cleanupParams
+            Write-Host '  Generated CSVs removed (Excel is the deliverable).' -ForegroundColor DarkGray
 
             if ($Worklist) {
                 Write-Host '  Worklist complete for this file.' -ForegroundColor Green

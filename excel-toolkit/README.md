@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.17.0"
+version: "1.18.0"
 status: current
 audience:
   - users
@@ -18,7 +18,7 @@ last_updated: "2026-08-13"
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), guided **Process my data** menu (via sibling `kpi-analytics` for scoring), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.17.0  
+**Toolkit version:** 1.18.0  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
@@ -89,11 +89,11 @@ Excel Toolkit is a **local Windows** PowerShell **5.1** package for controlled d
 
 | Action | What it does |
 |--------|----------------|
-| **1 Full pipeline** | Score with `kpi-analytics` (optional **scoring profile** pick), export scored + summary **Excel deliverables** (`[WQ]_MM-DD-YYYY.xlsx`) under `output\` (optional workbook password). Intermediate scored CSV is still written. |
+| **1 Full pipeline** | Score with `kpi-analytics` (optional **scoring profile** pick), export scored + summary **Excel deliverables** (`[WQ]_MM-DD-YYYY.xlsx`) under `output\` (optional workbook password). Generated scored/summary/totals CSVs are **removed** after a successful Excel write. |
 | **2 Score only** | Scored + summary **CSV** artifacts only (optional **scoring profile** pick; no Excel) |
 | **3 Export only** | CSV → Excel deliverable without scoring (optional workbook password; no profile prompt) |
-| **4 Build worklist** | Score with `--group-preset` (and optional **scoring profile**), write `*_groups.csv`, export scored workbook with **Groups** + **Worklist** + **Totals** sheets (optional workbook password) |
-| **5 Express score** | After file pick: type **5**. Score `--output-mode slim` (no profile / password / Full-Slim pick). One Excel workbook with only **POI_Scores** (frozen column order; source + four POI scores). Summary CSV is still written; no summary xlsx. |
+| **4 Build worklist** | Score with `--group-preset` (and optional **scoring profile**), export scored workbook with **Groups** + **Worklist** + **Totals** sheets (optional workbook password). Generated scored/summary/groups/totals CSVs are **removed** after a successful Excel write. |
+| **5 Express score** | After file pick: type **5**. Score `--output-mode slim` (no profile / password / Full-Slim pick). One Excel workbook with only **POI_Scores** (`patient` after `invoice_num`, then frozen source + four scores). Generated CSVs are **removed** after a successful Excel write. |
 
 Excel selections are imported to CSV first (open-password prompt if the workbook is protected), then the same actions apply.
 

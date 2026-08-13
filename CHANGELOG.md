@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.25.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.18.0:** Express `POI_Scores` puts `patient` immediately after `invoice_num`. After a successful menu Excel write (Full pipeline / Worklist / Express), generated `output\` CSVs for that run are deleted. Score-only and Export-only keep CSVs. `import\` inputs are never deleted.
+
 ### [1.24.0] - 2026-08-13
 
 #### Changed

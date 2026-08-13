@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.18"
+version: "1.1.19"
 status: current
 audience:
   - ai-agents
@@ -80,9 +80,14 @@ last_updated: "2026-08-13"
 | P31 | Freeze Express column order | `done` | `586fae0` | slim-poi-output 1.4.0 |
 | P32 | One ordered copy list | `done` | `586fae0` | include if present |
 | P33 | L4 + CHANGELOG + cert | `done` | `586fae0` | excel 1.17.0 |
+| P34 | Freeze patient-after-invoice + CSV cleanup | `done` | — | slim-poi-output 1.5.0 |
+| P35 | Column order + menu delete generated CSVs | `done` | — | After Excel success only |
+| P36 | L4 + CHANGELOG + cert | `done` | — | excel 1.18.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-13 Shipped P34–P36 `patient` after `invoice_num`; menu CSV cleanup (excel 1.18.0).  
+- 2026-08-13 Opened P34–P36 `patient` after `invoice_num`; menu CSV cleanup after Excel.  
 - 2026-08-13 Shipped P31–P33 Express `POI_Scores` column order (`586fae0`; excel 1.17.0).  
 - 2026-08-13 Opened P31–P33 Express `POI_Scores` column order.  
 - 2026-08-13 Shipped P28–P30 Express context source columns (`b9c0959`; excel 1.16.0).  
@@ -143,4 +148,4 @@ last_updated: "2026-08-13"
 
 ---
 
-*Agents: P31–P33 shipped (Express column order). Next: P1 filters remain blocked; P9 deferred.*
+*Agents: P34–P36 shipped (patient column + CSV cleanup). Next: P1 filters remain blocked; P9 deferred.*

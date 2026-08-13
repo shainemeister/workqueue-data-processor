@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.17.0"
+version: "1.18.0"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-08-13"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.17.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.18.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -643,7 +643,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.17.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.18.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.18.0 notes:** Express column `patient` follows `invoice_num`. After a successful **menu** Excel write (Full pipeline / Worklist / Express), generated `output\` CSVs for that run are deleted. Score-only and Export-only keep CSVs. CLI `export-csv` does not delete inputs.
 
 **1.17.0 notes:** Express `POI_Scores` uses the frozen **column order** in [slim-poi-output.md](../docs/plan/slim-poi-output.md) (include if present). Row order is unchanged.
 
