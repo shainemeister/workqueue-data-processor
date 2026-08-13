@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.10.0'
+$script:ExcelToolkitVersion = '1.11.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'

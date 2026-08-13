@@ -1,7 +1,7 @@
 ---
 title: "Development Plan — Post-V1 Enhancement Concepts"
 description: "Living product backlog: Cluster 1 complete; optional base retune; Clusters 2–3 developing. Control surface in root PLAN.md; live multi-phase on docs/WORKBOARD.md; execution freezes in docs/plan/."
-version: "0.5.1"
+version: "0.5.2"
 status: current
 audience:
   - developers
@@ -27,7 +27,7 @@ last_updated: "2026-08-12"
 
 Living **product enhancement backlog** after V1 priority matrix, dynamic mapping, guided menu, gap-safety, scoring profiles, quality audit, certification Phase 2, and menu scoring-profile picker.
 
-**Document version:** 0.5.1  
+**Document version:** 0.5.2  
 **Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Clusters **2–3** still developing (not implementation-ready).  
 
 | Kit triple surface | Path |
@@ -59,6 +59,7 @@ Living **product enhancement backlog** after V1 priority matrix, dynamic mapping
 - Default path (no profile) unchanged vs 2.5.0 fixtures; full certification at ship.
 - See [CHANGELOG.md](../CHANGELOG.md) **[1.9.0]** and [CLI-GUIDE — scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
 - **excel-toolkit 1.9.0 / repo 1.13.0:** menu residual **1f** — Process my data scoring-profile picker + Advanced list/help (subprocess only).
+- **excel-toolkit 1.11.0 / repo 1.18.0:** Process my data **Build worklist** (`--group-preset` + Groups/Worklist sheets; composition only).
 
 ### Active backlog
 
@@ -417,7 +418,7 @@ Beyond the default priority-score ranking, offer explicit sort keys (balance, cl
 **Intent**  
 Add a second (or additional) worksheet to the summary Excel that identifies and summarizes common denial types / categories together with key metrics for each category (count, total outstanding, average priority, aging distribution, etc.).
 
-**Status:** **Groups + Worklist sheets shipped (excel-toolkit 1.10.0)** — `-GroupsCsv` / `-Worklist`. Extra denial-only metrics remain open.
+**Status:** **Groups + Worklist sheets shipped (excel-toolkit 1.10.0)** — `-GroupsCsv` / `-Worklist`. **Menu Build worklist shipped (1.11.0)** — composition of `--group-preset` + those sheets. Extra denial-only metrics remain open.
 
 **Open design points**
 - Category source column(s): `code_category`, `reason_code_list`, `remittance_code`, or a configurable role
@@ -438,14 +439,14 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 | 2 | **B1.1-retune** Base weights | **Pending** (optional) | Data / analyst gated |
 | 3 | Cluster **2.2–2.4** Naming, default xlsx, multi-file preview | Developing | Freeze before code |
 | 4 | Cluster **2.1** Cross-file / by-WQ totals | Developing | Needs WQ-identity freeze |
-| 5 | Cluster **3.2** Multi-sort | Developing | Low-risk post-score |
-| 6 | Cluster **3.1** Group qualifier | Developing | Privacy care |
-| 7 | Cluster **3.3** Denial analysis sheet | Developing | Reporting-only until V2 |
+| 5 | Cluster **3.2** Multi-sort | **Shipped** (kpi 2.8.0) | Low-risk post-score |
+| 6 | Cluster **3.1** Group qualifier | Partial (CSV 2.9.0; filters open) | Privacy care |
+| 7 | Cluster **3.3** Denial analysis sheet | Partial (Excel 1.10.0 + menu 1.11.0; extra metrics open) | Reporting-only until V2 |
 
 **Next recommended product slice**
 
 - Live order of operations: [WORKBOARD.md](./WORKBOARD.md) program **`post-v1-enhancement`** · annex [plan/post-v1-enhancement/](./plan/post-v1-enhancement/).  
-- Next board phase is **P1 Cluster 3 freeze** (worklists). Do **not** start Cluster 2/3 product code without that freeze.  
+- P3–P6 shipped (sort, groups CSV, Excel sheets, menu). Remaining: **P1** filters / patient-group policy (`blocked`); **P7–P8** Cluster 2 if groups must span files.  
 - Prefer **B1.1-retune** only with analyst evidence (deferred on the board).
 
 ---

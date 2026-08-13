@@ -42,6 +42,7 @@ Usual path: **CSV in → score (optional summary CSV) → Excel out.** A single 
 | **Share results with leadership** | Formatted `.xlsx` from a scored or summary CSV | [excel-toolkit](./excel-toolkit/README.md) |
 | **Score and Excel in one menu step** | Scored + summary workbooks under `output\` | `Start-ExcelMenu.cmd` → **Process my data** → Full pipeline |
 | **Score only (no Excel)** | Scored + summary CSV under `output\` | `Start-ExcelMenu.cmd` → **Process my data** → Score only |
+| **Grouped follow-up worklist** | Scored workbook with Groups + two-level Worklist sheets | `Start-ExcelMenu.cmd` → **Process my data** → Build worklist |
 | **First run on a locked-down PC** | Pass/fail environment certificates for IT | KPI or Excel `diagnostics` · [KPI security](./kpi-analytics/ENTERPRISE-SECURITY.md) · [Excel security](./excel-toolkit/ENTERPRISE-SECURITY.md) |
 | **Understand the data layout** | Field definitions and sample fact rows | [wq_schema.json](./wq_schema/wq_schema.json) · [wq_data.csv](./wq_schema/wq_data.csv) |
 

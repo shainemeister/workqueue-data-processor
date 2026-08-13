@@ -17,8 +17,10 @@
     headers score silently; incomplete/ambiguous headers open guided column
     mapping on an interactive console (or fail clearly when non-interactive).
     A sibling <stem>_mapping.json next to the CSV is auto-applied when present.
-    Full pipeline and Score only optionally pick a scoring profile (POI focus)
-    and pass it as kpi-analytics score --profile (no scoring math in PowerShell).
+    Full pipeline, Score only, and Build worklist optionally pick a scoring
+    profile (POI focus) and pass it as kpi-analytics score --profile.
+    Build worklist also picks a --group-preset and exports Data + Groups +
+    Worklist sheets (no scoring math in PowerShell).
 
     Column layout always comes from your data CSV. An optional schema (JSON or
     CSV) supplies display labels only. Nothing domain-specific is hard-coded.
@@ -435,6 +437,7 @@ function Invoke-ProcessMyData {
     Write-Host '  [1] Full pipeline (Score -> Excel)     <- recommended' -ForegroundColor DarkGray
     Write-Host '  [2] Score only (CSV results)' -ForegroundColor DarkGray
     Write-Host '  [3] Export only (CSV -> Excel, no scoring)' -ForegroundColor DarkGray
+    Write-Host '  [4] Build worklist (Score + Groups + Worklist Excel)' -ForegroundColor DarkGray
     $action = Read-Host ("Choice [{0}]" -f $defaultAction)
     if ([string]::IsNullOrWhiteSpace($action)) {
         $action = $defaultAction
@@ -456,6 +459,9 @@ function Invoke-ProcessMyData {
             else {
                 Invoke-MenuExportCsv -CsvPaths $pathsArray
             }
+        }
+        '4' {
+            Invoke-KpiScoreExportMenu -Worklist -InputPaths $pathsArray
         }
         default {
             Write-Host 'Unrecognized choice; cancelling.' -ForegroundColor Yellow
@@ -654,7 +660,7 @@ function Confirm-KpiKeepPartialRankOutputs {
 function Remove-KpiScoredOutputPair {
     <#
     .SYNOPSIS
-        Delete scored detail + summary CSV paths if they exist (partial rank decline).
+        Delete scored detail + summary + optional groups CSV paths (partial rank decline).
     #>
     [CmdletBinding()]
     param(
@@ -662,10 +668,13 @@ function Remove-KpiScoredOutputPair {
         [string]$ScoredCsv,
 
         [Parameter(Mandatory = $false)]
-        [string]$SummaryCsv
+        [string]$SummaryCsv,
+
+        [Parameter(Mandatory = $false)]
+        [string]$GroupsCsv
     )
 
-    foreach ($p in @($ScoredCsv, $SummaryCsv)) {
+    foreach ($p in @($ScoredCsv, $SummaryCsv, $GroupsCsv)) {
         if (-not [string]::IsNullOrWhiteSpace($p) -and (Test-Path -LiteralPath $p)) {
             Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue
             Write-Host ("  Removed: {0}" -f $p) -ForegroundColor DarkGray
@@ -1042,7 +1051,7 @@ function Show-KpiScoringProfilesHelp {
     Write-Host '  Package default = omit --profile (Balanced).' -ForegroundColor DarkGray
     Write-Host '  Do not put claim rows in profile JSON. Prefer user_*.json for local saves.' -ForegroundColor DarkGray
     Write-Host '  Full contract: kpi-analytics\CLI-GUIDE.md (Scoring profiles).' -ForegroundColor DarkGray
-    Write-Host '  Process my data (Full pipeline / Score only) can pick a profile interactively.' -ForegroundColor DarkGray
+    Write-Host '  Process my data (Full pipeline / Score only / Build worklist) can pick a profile interactively.' -ForegroundColor DarkGray
 }
 
 function Select-KpiScoreInvokeResult {
@@ -1135,6 +1144,12 @@ function Invoke-KpiAnalyticsScore {
         [string]$Profile,
 
         [Parameter(Mandatory = $false)]
+        [string]$GroupPreset,
+
+        [Parameter(Mandatory = $false)]
+        [string]$GroupsPath,
+
+        [Parameter(Mandatory = $false)]
         [switch]$DryRun,
 
         [Parameter(Mandatory = $false)]
@@ -1160,6 +1175,14 @@ function Invoke-KpiAnalyticsScore {
     if (-not [string]::IsNullOrWhiteSpace($Profile)) {
         $scoreArgs.Add('--profile')
         $scoreArgs.Add($Profile)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+        $scoreArgs.Add('--group-preset')
+        $scoreArgs.Add($GroupPreset)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
+        $scoreArgs.Add('--groups')
+        $scoreArgs.Add($GroupsPath)
     }
     if ($DryRun) {
         $scoreArgs.Add('--dry-run')
@@ -1325,6 +1348,7 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         4) If problems and host is non-interactive → fail with clear guidance (no hang).
         5) If clean → full score with redirects + JSON (unchanged automation-friendly path).
         Optional -Profile is passed through to every score invoke as --profile (no merge in PS).
+        Optional -GroupPreset / -GroupsPath are passed as --group-preset / --groups.
     #>
     [CmdletBinding()]
     param(
@@ -1338,7 +1362,13 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         [string]$SummaryPath,
 
         [Parameter(Mandatory = $false)]
-        [string]$Profile
+        [string]$Profile,
+
+        [Parameter(Mandatory = $false)]
+        [string]$GroupPreset,
+
+        [Parameter(Mandatory = $false)]
+        [string]$GroupsPath
     )
 
     $mappingPath = Get-KpiSiblingMappingPath -CsvPath $CsvPath
@@ -1347,6 +1377,9 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     }
     if (-not [string]::IsNullOrWhiteSpace($Profile)) {
         Write-Host ("  Scoring profile: {0}" -f $Profile) -ForegroundColor DarkGray
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+        Write-Host ("  Group preset: {0}" -f $GroupPreset) -ForegroundColor DarkGray
     }
 
     Write-Host '  Mapping preflight (dry-run)...' -ForegroundColor DarkGray
@@ -1361,6 +1394,12 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     }
     if (-not [string]::IsNullOrWhiteSpace($Profile)) {
         $preParams['Profile'] = $Profile
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+        $preParams['GroupPreset'] = $GroupPreset
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
+        $preParams['GroupsPath'] = $GroupsPath
     }
     $preflight = Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @preParams)
 
@@ -1403,6 +1442,12 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         }
         if (-not [string]::IsNullOrWhiteSpace($Profile)) {
             $runParams['Profile'] = $Profile
+        }
+        if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+            $runParams['GroupPreset'] = $GroupPreset
+        }
+        if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
+            $runParams['GroupsPath'] = $GroupsPath
         }
         return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @runParams))
     }
@@ -1470,7 +1515,44 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     if (-not [string]::IsNullOrWhiteSpace($Profile)) {
         $guideParams['Profile'] = $Profile
     }
+    if (-not [string]::IsNullOrWhiteSpace($GroupPreset)) {
+        $guideParams['GroupPreset'] = $GroupPreset
+    }
+    if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
+        $guideParams['GroupsPath'] = $GroupsPath
+    }
     return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @guideParams))
+}
+
+function Select-KpiGroupPreset {
+    <#
+    .SYNOPSIS
+        Interactive group-preset picker for menu worklist path.
+        Returns a kpi-analytics --group-preset name, or $null if cancelled.
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Host ''
+    Write-Host 'Group worklist by (kpi-analytics --group-preset):' -ForegroundColor Cyan
+    Write-Host '  [1] Payer + denial category     <- recommended' -ForegroundColor DarkGray
+    Write-Host '  [2] Payer only' -ForegroundColor DarkGray
+    Write-Host '  [3] Denial category only' -ForegroundColor DarkGray
+    Write-Host '  [4] Location' -ForegroundColor DarkGray
+    Write-Host '  [0] Cancel' -ForegroundColor DarkGray
+    $choice = Read-Host 'Choice [1]'
+    if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '1' }
+    switch ($choice.Trim()) {
+        '1' { return 'payer_category' }
+        '2' { return 'payer' }
+        '3' { return 'category' }
+        '4' { return 'location' }
+        '0' { return $null }
+        default {
+            Write-Host 'Unrecognized group choice; cancelling.' -ForegroundColor Yellow
+            return $null
+        }
+    }
 }
 
 function Get-ImportProcessableFiles {
@@ -1890,6 +1972,8 @@ function Invoke-KpiScoreExportMenu {
         interactive host, prompts once per batch (package default = no --profile).
     .PARAMETER SkipProfilePrompt
         When set, do not prompt for a scoring profile (use -Profile as-is, may be empty).
+    .PARAMETER Worklist
+        Score with --group-preset and export Data + Groups + Worklist sheets.
     #>
     [CmdletBinding()]
     param(
@@ -1903,14 +1987,25 @@ function Invoke-KpiScoreExportMenu {
 
         [string]$Profile,
 
-        [switch]$SkipProfilePrompt
+        [switch]$SkipProfilePrompt,
+
+        [switch]$Worklist
     )
+
+    if ($ScoreOnly -and $Worklist) {
+        throw '-ScoreOnly and -Worklist are mutually exclusive'
+    }
 
     Write-Host ''
     if ($ScoreOnly) {
         Write-Host 'Score only (KPI CSV)' -ForegroundColor Cyan
         Write-Host 'Runs kpi-analytics score; writes scored + summary CSVs under output\.' -ForegroundColor DarkGray
         Write-Host 'No Excel export on this path.' -ForegroundColor DarkGray
+    }
+    elseif ($Worklist) {
+        Write-Host 'Build worklist (Score -> Groups + Worklist Excel)' -ForegroundColor Cyan
+        Write-Host 'kpi-analytics scores and writes *_groups.csv; Excel COM adds Groups + Worklist sheets.' -ForegroundColor DarkGray
+        Write-Host 'No scoring math in PowerShell.' -ForegroundColor DarkGray
     }
     else {
         Write-Host 'Run full pipeline (Score CSV -> Excel)' -ForegroundColor Cyan
@@ -1967,6 +2062,16 @@ function Invoke-KpiScoreExportMenu {
         $resolvedProfile = Select-KpiScoringProfile
     }
 
+    $resolvedGroupPreset = $null
+    if ($Worklist) {
+        $resolvedGroupPreset = Select-KpiGroupPreset
+        if ([string]::IsNullOrWhiteSpace($resolvedGroupPreset)) {
+            Write-Host 'Worklist cancelled (no group preset).' -ForegroundColor Yellow
+            return
+        }
+        Write-Host ("Group preset: {0}" -f $resolvedGroupPreset) -ForegroundColor Cyan
+    }
+
     # Excel COM gate only when this action will export workbooks
     if (-not $ScoreOnly) {
         if (-not (Ensure-ExcelMenuDiagnosticsPass)) {
@@ -1997,14 +2102,23 @@ function Invoke-KpiScoreExportMenu {
 
             $plannedScoredCsv   = Join-Path $outputDir ('{0}_scored.csv' -f $stem)
             $plannedSummaryCsv  = Join-Path $outputDir ('{0}_scored_summary.csv' -f $stem)
+            $plannedGroupsCsv   = Join-Path $outputDir ('{0}_scored_groups.csv' -f $stem)
 
             $scoredCsvInfo  = Resolve-ExcelToolkitUniquePath -Path $plannedScoredCsv
             $summaryCsvInfo = Resolve-ExcelToolkitUniquePath -Path $plannedSummaryCsv
+            $groupsCsvInfo  = $null
+            if ($Worklist) {
+                $groupsCsvInfo = Resolve-ExcelToolkitUniquePath -Path $plannedGroupsCsv
+            }
 
-            if ($scoredCsvInfo.PathAdjusted -or $summaryCsvInfo.PathAdjusted) {
+            $groupsAdjusted = ($Worklist -and $null -ne $groupsCsvInfo -and $groupsCsvInfo.PathAdjusted)
+            if ($scoredCsvInfo.PathAdjusted -or $summaryCsvInfo.PathAdjusted -or $groupsAdjusted) {
                 Write-Host '  Unique CSV paths (avoided overwrite):' -ForegroundColor Yellow
                 Write-Host ("    Scored  : {0}" -f $scoredCsvInfo.Path)
                 Write-Host ("    Summary : {0}" -f $summaryCsvInfo.Path)
+                if ($Worklist -and $null -ne $groupsCsvInfo) {
+                    Write-Host ("    Groups  : {0}" -f $groupsCsvInfo.Path)
+                }
             }
             else {
                 Write-Host ("  Scored CSV  : {0}" -f $scoredCsvInfo.Path)
@@ -2019,6 +2133,11 @@ function Invoke-KpiScoreExportMenu {
             }
             if (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
                 $scoreMapParams['Profile'] = $resolvedProfile
+            }
+            if ($Worklist) {
+                $scoreMapParams['GroupPreset'] = $resolvedGroupPreset
+                $scoreMapParams['GroupsPath'] = $groupsCsvInfo.Path
+                Write-Host ("  Groups CSV  : {0}" -f $groupsCsvInfo.Path) -ForegroundColor DarkGray
             }
             $scoreResult = Select-KpiScoreInvokeResult -Raw (
                 Invoke-KpiAnalyticsScoreWithMapping @scoreMapParams
@@ -2080,7 +2199,14 @@ function Invoke-KpiScoreExportMenu {
             elseif (-not [string]::IsNullOrWhiteSpace($resolvedProfile)) {
                 $profileNote = (" profile={0}" -f $resolvedProfile)
             }
-            Write-Host ("  Score OK.{0}{1}" -f $rowNote, $profileNote) -ForegroundColor Green
+            $groupNote = ''
+            if ($Worklist -and $null -ne $scoreJson) {
+                $sjNames = @($scoreJson.PSObject.Properties.Name)
+                if ($sjNames -contains 'GroupCount') {
+                    $groupNote = (" groups={0}" -f $scoreJson.GroupCount)
+                }
+            }
+            Write-Host ("  Score OK.{0}{1}{2}" -f $rowNote, $profileNote, $groupNote) -ForegroundColor Green
 
             # H2: surface partial ranks; require confirm before keeping / Excel export.
             $rankIsFull = Test-KpiScoreRankIsFull -ScoreJson $scoreJson
@@ -2088,7 +2214,18 @@ function Invoke-KpiScoreExportMenu {
                 Show-KpiPartialRankBanner -ScoreJson $scoreJson
                 if (-not (Confirm-KpiKeepPartialRankOutputs)) {
                     Write-Host '  Partial rank declined; removing scored CSVs for this file.' -ForegroundColor Yellow
-                    Remove-KpiScoredOutputPair -ScoredCsv $actualScoredCsv -SummaryCsv $actualSummaryCsv
+                    $removeParams = @{
+                        ScoredCsv  = $actualScoredCsv
+                        SummaryCsv = $actualSummaryCsv
+                    }
+                    if ($Worklist) {
+                        $declineGroups = $groupsCsvInfo.Path
+                        if ($null -ne $scoreJson -and $scoreJson.GroupsPath) {
+                            $declineGroups = [string]$scoreJson.GroupsPath
+                        }
+                        $removeParams['GroupsCsv'] = $declineGroups
+                    }
+                    Remove-KpiScoredOutputPair @removeParams
                     $failCount++
                     continue
                 }
@@ -2114,6 +2251,20 @@ function Invoke-KpiScoreExportMenu {
                 CsvPath    = $actualScoredCsv
                 OutputPath = $plannedScoredXlsx
             }
+            if ($Worklist) {
+                $actualGroupsCsv = $groupsCsvInfo.Path
+                if ($null -ne $scoreJson -and $scoreJson.GroupsPath) {
+                    $actualGroupsCsv = [string]$scoreJson.GroupsPath
+                }
+                if (-not (Test-Path -LiteralPath $actualGroupsCsv)) {
+                    Write-Host ("  FAIL groups CSV missing: {0}" -f $actualGroupsCsv) -ForegroundColor Red
+                    $failCount++
+                    continue
+                }
+                $ex1Params['GroupsCsv'] = $actualGroupsCsv
+                $ex1Params['Worklist'] = $true
+                Write-Host ("  Groups CSV  : {0}" -f $actualGroupsCsv) -ForegroundColor DarkGray
+            }
             if ($null -ne $exportPassword -and $exportPassword.Length -gt 0) {
                 $ex1Params['Password'] = $exportPassword
             }
@@ -2125,6 +2276,12 @@ function Invoke-KpiScoreExportMenu {
                 continue
             }
             Write-Host ("  Scored XLSX : {0}" -f $ex1.OutputPath) -ForegroundColor Green
+            if ($Worklist) {
+                $exNames = @($ex1.PSObject.Properties.Name)
+                if ($exNames -contains 'WorklistRowCount') {
+                    Write-Host ("  Worklist rows: {0}" -f $ex1.WorklistRowCount) -ForegroundColor DarkGray
+                }
+            }
 
             Write-Host '  Exporting summary workbook...' -ForegroundColor Cyan
             if (-not (Test-Path -LiteralPath $actualSummaryCsv)) {
@@ -2148,7 +2305,12 @@ function Invoke-KpiScoreExportMenu {
             }
             Write-Host ("  Summary XLSX: {0}" -f $ex2.OutputPath) -ForegroundColor Green
 
-            Write-Host '  Pipeline complete for this file.' -ForegroundColor Green
+            if ($Worklist) {
+                Write-Host '  Worklist complete for this file.' -ForegroundColor Green
+            }
+            else {
+                Write-Host '  Pipeline complete for this file.' -ForegroundColor Green
+            }
             $okCount++
         }
         catch {

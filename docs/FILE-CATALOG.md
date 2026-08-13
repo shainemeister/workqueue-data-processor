@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.9"
+version: "1.10.10"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.9  
+**Document version:** 1.10.10  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -204,7 +204,7 @@ Tracked **input** files for scoring demos and local runs. Prefer synthetic or de
 | [diagnostics/README.md](../excel-toolkit/diagnostics/README.md) | doc | Pass certificate + first-run gate; distinct from root `certification/` (json/txt gitignored). |
 | [excel-toolkit.cmd](../excel-toolkit/excel-toolkit.cmd) | launcher | Windows shim: process-scoped `-ExecutionPolicy Bypass` → `ExcelToolkit.ps1`. |
 | [Start-ExcelMenu.cmd](../excel-toolkit/Start-ExcelMenu.cmd) | launcher | Double-click launcher for the interactive menu (process-scoped Bypass only). |
-| [Start-ExcelMenu.ps1](../excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export, mapping preflight + guided column mapping via kpi-analytics TTY, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
+| [Start-ExcelMenu.ps1](../excel-toolkit/Start-ExcelMenu.ps1) | script | Interactive menu: Process my data (unified CSV/Excel discovery, print-style ranges, pipeline/score/export/build worklist, mapping preflight + guided column mapping via kpi-analytics TTY, optional export password) and Advanced tools; unique output paths (`name_N.ext`) by default. |
 | [Export-CsvToExcel.ps1](../excel-toolkit/Export-CsvToExcel.ps1) | script | Thin menu/legacy wrapper around `Export-ExcelFromCsv` in the high-level module. |
 | [Export-WqDataToExcel.ps1](../excel-toolkit/Export-WqDataToExcel.ps1) | script | Compatibility forwarder to `Export-CsvToExcel.ps1` (legacy entry name). |
 | [Test-ExcelCom.ps1](../excel-toolkit/Test-ExcelCom.ps1) | script | Dry-run and full smoke tests for COM readiness and workbook operations. |
@@ -371,6 +371,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.10 | excel-toolkit 1.11.0 menu Build worklist notes |
 | 1.10.9 | excel-toolkit 1.10.0 Groups/Worklist export notes |
 | 1.10.8 | kpi-analytics 2.9.0 `group_summary.py`; `__version__` row 2.9.0 |
 | 1.10.7 | kpi-analytics 2.8.0 `output_sort.py`; `__version__` row 2.8.0 |

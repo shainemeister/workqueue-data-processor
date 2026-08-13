@@ -1,7 +1,7 @@
 ---
 title: Cluster 3 — grouping, sorting, and denial analysis sheet
 description: Design-freeze checklist for post-score analysis; keep reporting-only vs V2 boundary explicit.
-version: "1.3.0"
+version: "1.3.1"
 status: developing
 audience:
   - developers
@@ -19,8 +19,8 @@ last_updated: "2026-08-12"
 
 # Cluster 3 — grouping, sorting, and denial analysis sheet
 
-**Document version:** 1.3.0  
-**Status:** developing (3.1 CSV + 3.2 sort + 3.3 Groups/Worklist sheets frozen; 3.1 filters still open).  
+**Document version:** 1.3.1  
+**Status:** developing (3.1 CSV + 3.2 sort + 3.3 Groups/Worklist sheets frozen; menu Build worklist shipped; 3.1 filters still open).  
 **Primary surface:** post-score reporting (both toolkits as needed).  
 **Product backlog owner:** [docs/PLAN.md](../PLAN.md) § Cluster 3.  
 **Root stage:** [PLAN.md](../../PLAN.md) **S4**.  
@@ -107,6 +107,7 @@ If analysis begins to feed priority weights, re-scope under [WQ_Priority_Matrix_
 
 | Version | Notes |
 |---------|--------|
+| 1.3.1 | Menu Build worklist composition shipped (excel-toolkit 1.11.0); freeze unchanged |
 | 1.3.0 | Frozen 3.3 Groups + Worklist Excel sheets (copy/match only) |
 | 1.2.0 | Frozen 3.1 group CSV (`--group-by` / presets); filters and Excel sheet still open |
 | 1.1.0 | Frozen 3.2 sort contract only (`--sort` / presets); 3.1 / 3.3 still developing |

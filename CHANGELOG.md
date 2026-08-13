@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.18.0] - 2026-08-12
+
+#### Added
+
+- **excel-toolkit 1.11.0:** Process my data **Build worklist** scores with `kpi-analytics --group-preset` / `--groups`, then `export-csv -GroupsCsv -Worklist`. Composition only (no scoring math in PowerShell).
+
 ### [1.17.0] - 2026-08-12
 
 #### Added
