@@ -53,6 +53,10 @@ param(
     [switch]$UseDisplayNames,
     [string]$DisplayNameProperty = '',
     [string]$SheetName = 'Data',
+    [string]$GroupsCsv = '',
+    [string]$GroupsSheetName = 'Groups',
+    [switch]$Worklist,
+    [string]$WorklistSheetName = 'Worklist',
     [string]$Password = '',
     [switch]$Visible,
     [switch]$DryRun,
@@ -128,6 +132,10 @@ export-csv options:
   -UseDisplayNames        Apply schema display labels
   -DisplayNameProperty    Preferred schema label property
   -SheetName <name>       Worksheet name (default Data)
+  -GroupsCsv <path>       Optional kpi-analytics groups CSV (Groups sheet)
+  -GroupsSheetName <name> Groups tab (default Groups)
+  -Worklist               Two-level GROUP/CLAIM sheet (requires -GroupsCsv)
+  -WorklistSheetName <name> Worklist tab (default Worklist)
   -Password <text>        Optional workbook open password (not logged)
   -Visible                Show Excel UI
   -DryRun                 Validate only; do not write
@@ -338,13 +346,21 @@ try {
             Write-CliHost ("export-csv: {0} -> {1}" -f $CsvPath, $OutputPath) Cyan
 
             $exportParams = @{
-                CsvPath      = $CsvPath
-                OutputPath   = $OutputPath
-                SchemaFormat = $SchemaFormat
-                SheetName    = $SheetName
-                DryRun       = $DryRun
-                Visible      = $Visible
-                Force        = $Force
+                CsvPath           = $CsvPath
+                OutputPath        = $OutputPath
+                SchemaFormat      = $SchemaFormat
+                SheetName         = $SheetName
+                DryRun            = $DryRun
+                Visible           = $Visible
+                Force             = $Force
+                GroupsSheetName   = $GroupsSheetName
+                WorklistSheetName = $WorklistSheetName
+            }
+            if (-not [string]::IsNullOrWhiteSpace($GroupsCsv)) {
+                $exportParams['GroupsCsv'] = $GroupsCsv
+            }
+            if ($Worklist) {
+                $exportParams['Worklist'] = $true
             }
             if (-not [string]::IsNullOrWhiteSpace($SchemaPath)) {
                 $exportParams['SchemaPath'] = $SchemaPath
@@ -373,6 +389,12 @@ try {
                 Message             = $r.Message
                 HeadersSample       = @($r.HeadersSample)
                 SheetName           = $r.SheetName
+                GroupsCsv           = $r.GroupsCsv
+                GroupsSheetName     = $r.GroupsSheetName
+                GroupsRowCount      = $r.GroupsRowCount
+                Worklist            = [bool]$r.Worklist
+                WorklistSheetName   = $r.WorklistSheetName
+                WorklistRowCount    = $r.WorklistRowCount
             }
             $null = Add-ExcelToolkitGateFields -Target $payloadHt -Gate $gate
             $payload = [pscustomobject]$payloadHt

@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.9.0'
+$script:ExcelToolkitVersion = '1.10.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -222,6 +222,165 @@ function New-ExcelToolkitHeaderMap {
 
 #region Export
 
+function Read-ExcelToolkitCsvTable {
+    <#
+    .SYNOPSIS
+        Load a CSV into headers + row objects (header-only files allowed).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw ("CSV not found: {0}" -f $Path)
+    }
+
+    $rows = @(Import-Csv -LiteralPath $Path)
+    $headers = @()
+    if ($rows.Count -gt 0) {
+        $headers = @($rows[0].PSObject.Properties | ForEach-Object { $_.Name })
+    }
+    else {
+        $headerLine = Get-Content -LiteralPath $Path -TotalCount 1
+        if (-not [string]::IsNullOrWhiteSpace($headerLine)) {
+            $dummy = $headerLine + [Environment]::NewLine + $headerLine
+            $hdrObj = @($dummy | ConvertFrom-Csv) | Select-Object -First 1
+            if ($null -ne $hdrObj) {
+                $headers = @($hdrObj.PSObject.Properties | ForEach-Object { $_.Name })
+            }
+        }
+    }
+    if ($headers.Count -lt 1) {
+        throw ("No columns found in CSV: {0}" -f $Path)
+    }
+    return [pscustomobject]@{
+        Headers = $headers
+        Rows    = $rows
+    }
+}
+
+function Get-ExcelToolkitGroupKeyColumns {
+    param([string[]]$Headers)
+    $agg = @(
+        'claim_count',
+        'sum_out_ins_amt',
+        'sum_billed_amount',
+        'sum_kpi_q_share_total_ar_pct',
+        'max_v1_priority_score',
+        'min_days_until_appeal_deadline',
+        'max_v1_raw_claim_age_days',
+        'max_denial_count',
+        'max_v1_raw_days_since_last_worked'
+    )
+    $skip = @('group_key') + $agg
+    return @($Headers | Where-Object { $skip -notcontains $_ })
+}
+
+function New-ExcelToolkitWorklistRows {
+    <#
+    .SYNOPSIS
+        Build GROUP then CLAIM rows by matching group key columns (no scoring math).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $DetailRows,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$DetailHeaders,
+
+        [Parameter(Mandatory = $true)]
+        $GroupRows,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$GroupHeaders
+    )
+
+    $keyCols = @(Get-ExcelToolkitGroupKeyColumns -Headers $GroupHeaders)
+    if ($keyCols.Count -lt 1) {
+        throw 'Groups CSV has no key columns besides group_key and aggregates.'
+    }
+    foreach ($key in $keyCols) {
+        if ($DetailHeaders -notcontains $key) {
+            throw ("Worklist key column missing on detail CSV: {0}" -f $key)
+        }
+    }
+
+    $outHeaders = @(
+        'row_type',
+        'group_key',
+        'group_claim_count',
+        'group_sum_out_ins_amt'
+    ) + $DetailHeaders
+
+    $out = New-Object System.Collections.Generic.List[object]
+    foreach ($g in @($GroupRows)) {
+        $gKey = [string]$g.group_key
+        $header = [ordered]@{
+            row_type               = 'GROUP'
+            group_key              = $gKey
+            group_claim_count      = [string]$g.claim_count
+            group_sum_out_ins_amt  = [string]$g.sum_out_ins_amt
+        }
+        foreach ($h in $DetailHeaders) { $header[$h] = '' }
+        foreach ($key in $keyCols) {
+            $header[$key] = [string]$g.$key
+        }
+        $out.Add([pscustomobject]$header) | Out-Null
+
+        foreach ($d in @($DetailRows)) {
+            $match = $true
+            foreach ($key in $keyCols) {
+                $cell = [string]$d.$key
+                if ([string]::IsNullOrWhiteSpace($cell)) { $cell = '(blank)' }
+                else { $cell = $cell.Trim() }
+                if ($cell -ne ([string]$g.$key).Trim()) {
+                    $match = $false
+                    break
+                }
+            }
+            if (-not $match) { continue }
+            $claim = [ordered]@{
+                row_type               = 'CLAIM'
+                group_key              = $gKey
+                group_claim_count      = ''
+                group_sum_out_ins_amt  = ''
+            }
+            foreach ($h in $DetailHeaders) {
+                $claim[$h] = [string]$d.$h
+            }
+            $out.Add([pscustomobject]$claim) | Out-Null
+        }
+    }
+    return [pscustomobject]@{
+        Headers = $outHeaders
+        Rows    = @($out.ToArray())
+    }
+}
+
+function Write-ExcelToolkitCsvSheet {
+    param(
+        $Worksheet,
+        $Rows,
+        [string[]]$Headers
+    )
+    if ($Rows.Count -eq 0) {
+        Set-ExcelRange -Worksheet $Worksheet -StartAddress 'A1' -Values @(, @($Headers))
+        $colCount = $Headers.Count
+        $rowCount = 0
+    }
+    else {
+        $importInfo = Import-CsvToWorksheet -Worksheet $Worksheet -InputObject $Rows -StartAddress 'A1'
+        $colCount = $importInfo.ColumnCount
+        $rowCount = $importInfo.RowCount
+    }
+    Set-ExcelHeaderStyle -Worksheet $Worksheet -HeaderRow 1 -ColumnCount $colCount -Freeze
+    Set-ExcelAutoFit -Worksheet $Worksheet -ColumnCount $colCount
+    return [pscustomobject]@{ RowCount = $rowCount; ColumnCount = $colCount }
+}
+
 function Export-ExcelFromCsv {
     <#
     .SYNOPSIS
@@ -277,6 +436,18 @@ function Export-ExcelFromCsv {
         Overwrite the exact OutputPath if it already exists. Without -Force, an
         existing path is not replaced: a free sibling path is chosen (name_1.ext, ...).
 
+    .PARAMETER GroupsCsv
+        Optional kpi-analytics groups CSV. Written as a second sheet (no scoring math).
+
+    .PARAMETER GroupsSheetName
+        Tab name for -GroupsCsv. Default: Groups
+
+    .PARAMETER Worklist
+        When -GroupsCsv is set, also write a two-level Worklist sheet (GROUP then CLAIM rows).
+
+    .PARAMETER WorklistSheetName
+        Tab name for -Worklist. Default: Worklist
+
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -SchemaPath .\schema.json -UseDisplayNames -OutputPath .\out.xlsx -DryRun
     #>
@@ -307,7 +478,15 @@ function Export-ExcelFromCsv {
 
         [switch]$Force,
 
-        [switch]$PassThru
+        [switch]$PassThru,
+
+        [string]$GroupsCsv = '',
+
+        [string]$GroupsSheetName = 'Groups',
+
+        [switch]$Worklist,
+
+        [string]$WorklistSheetName = 'Worklist'
     )
 
     $result = [pscustomobject]@{
@@ -322,6 +501,12 @@ function Export-ExcelFromCsv {
         HeadersSample      = @()
         SchemaFormat       = $null
         SheetName          = $SheetName
+        GroupsCsv          = $null
+        GroupsSheetName    = $null
+        GroupsRowCount     = 0
+        Worklist           = [bool]$Worklist
+        WorklistSheetName  = $null
+        WorklistRowCount   = 0
     }
 
     try {
@@ -374,6 +559,35 @@ function Export-ExcelFromCsv {
 
         if ($propertyNames.Count -lt 1) {
             throw ("No columns found in CSV: {0}" -f $CsvPath)
+        }
+
+        $groupsTable = $null
+        if (-not [string]::IsNullOrWhiteSpace($GroupsCsv)) {
+            $GroupsCsv = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($GroupsCsv)
+            $groupsTable = Read-ExcelToolkitCsvTable -Path $GroupsCsv
+            $result.GroupsCsv = $GroupsCsv
+            $result.GroupsSheetName = $GroupsSheetName
+            $result.GroupsRowCount = @($groupsTable.Rows).Count
+        }
+        elseif ($Worklist) {
+            throw '-Worklist requires -GroupsCsv'
+        }
+        if (-not [string]::IsNullOrWhiteSpace($GroupsCsv) -and $GroupsSheetName -eq $SheetName) {
+            throw '-GroupsSheetName must differ from -SheetName'
+        }
+        if ($Worklist -and ($WorklistSheetName -eq $SheetName -or $WorklistSheetName -eq $GroupsSheetName)) {
+            throw '-WorklistSheetName must differ from Data and Groups sheet names'
+        }
+
+        $worklistTable = $null
+        if ($Worklist -and $null -ne $groupsTable) {
+            $worklistTable = New-ExcelToolkitWorklistRows `
+                -DetailRows $csvRows `
+                -DetailHeaders $propertyNames `
+                -GroupRows $groupsTable.Rows `
+                -GroupHeaders $groupsTable.Headers
+            $result.WorklistSheetName = $WorklistSheetName
+            $result.WorklistRowCount = @($worklistTable.Rows).Count
         }
 
         $headerMap = $null
@@ -434,6 +648,19 @@ function Export-ExcelFromCsv {
 
             Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
             Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
+
+            if ($null -ne $groupsTable) {
+                $wsGroups = Add-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName -After $ws
+                $null = Write-ExcelToolkitCsvSheet -Worksheet $wsGroups -Rows $groupsTable.Rows -Headers $groupsTable.Headers
+            }
+            if ($null -ne $worklistTable) {
+                $afterSheet = $ws
+                if ($null -ne $groupsTable) {
+                    $afterSheet = Get-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName
+                }
+                $wsWork = Add-ExcelWorksheet -Workbook $workbook -Name $WorklistSheetName -After $afterSheet
+                $null = Write-ExcelToolkitCsvSheet -Worksheet $wsWork -Rows $worklistTable.Rows -Headers $worklistTable.Headers
+            }
 
             $saveParams = @{
                 Workbook = $workbook
