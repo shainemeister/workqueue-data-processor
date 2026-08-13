@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.2"
+version: "1.10.3"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.2  
+**Document version:** 1.10.3  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -131,6 +131,7 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
 | [research/README.md](./research/README.md) | doc | Research index: investigations and spikes. |
 | [research/2026-08-12-rules-compliance-gaps.md](./research/2026-08-12-rules-compliance-gaps.md) | doc | RULES.md gap audit; P1 + local P2 applied 2026-08-12 (see CHANGELOG 1.14.1). |
+| [research/2026-08-12-worklist-grouping-and-industry-metrics.md](./research/2026-08-12-worklist-grouping-and-industry-metrics.md) | doc | Planning: column inventory vs industry RCM metrics; grouped worklist options (not a Cluster 3 freeze). |
 | [plan/README.md](./plan/README.md) | doc | Execution plans index (kit dual surface). |
 | [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | doc | Completed execution record for repo-kit 2.3.1 upgrade. |
 | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 design-freeze checklist (developing). |
@@ -361,6 +362,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.3 | Research note: worklist grouping and industry-metric fit |
 | 1.10.2 | Research note for RULES gap audit; fix kpi-analytics.cmd catalog link; `__version__` row 2.7.0 |
 | 1.10.1 | Plan dual-surface compliance: docs/plan freezes (cluster 2/3, B1.1, upgrade complete); root PLAN stages; docs/PLAN 0.5.0; resources index |
 | 1.10.0 | repo-kit **2.3.1**: root PLAN + agents + ai-docs-workspace; docs workspace modules; baseline/catalog refresh |

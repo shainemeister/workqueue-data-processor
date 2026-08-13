@@ -57,6 +57,7 @@ Standards and portable law remain under **`kit/`**. Product contracts stay in to
 | Note | Status |
 |------|--------|
 | [research/2026-08-12-rules-compliance-gaps.md](./research/2026-08-12-rules-compliance-gaps.md) | current — RULES gaps; P1/P2 applied 2026-08-12 |
+| [research/2026-08-12-worklist-grouping-and-industry-metrics.md](./research/2026-08-12-worklist-grouping-and-industry-metrics.md) | draft — columns vs industry metrics; grouped worklists |
 
 ---
 

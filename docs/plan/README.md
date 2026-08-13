@@ -43,7 +43,7 @@ When a freeze becomes product law, promote to toolkit contracts / schema / CHANG
 |------|--------|---------|
 | [repo-kit-upgrade-2.3.1.md](./repo-kit-upgrade-2.3.1.md) | **complete** | Standards upgrade 2.0.1 → 2.3.1 (Agent Instruct + docs workspace) |
 | [cluster-2-multi-file.md](./cluster-2-multi-file.md) | **developing** | Design freeze checklist for multi-file / naming / default xlsx |
-| [cluster-3-analysis.md](./cluster-3-analysis.md) | **developing** | Design freeze checklist for group/sort/denial analysis (reporting-only) |
+| [cluster-3-analysis.md](./cluster-3-analysis.md) | **developing** | Design freeze checklist for group/sort/denial analysis (reporting-only). Options: [research/worklist grouping](../research/2026-08-12-worklist-grouping-and-industry-metrics.md) |
 | [b1.1-base-weight-retune.md](./b1.1-base-weight-retune.md) | **pending** | Optional evidence-based base weight / chaos retune |
 
 ---

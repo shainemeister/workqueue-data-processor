@@ -16,3 +16,4 @@ Investigations, spikes, and findings for workqueue-data-processor.
 | Note | Status | Summary |
 |------|--------|---------|
 | [2026-08-12-rules-compliance-gaps.md](./2026-08-12-rules-compliance-gaps.md) | current | RULES audit; P1 + local P2 applied 2026-08-12; kit-adopter 404s and backlog still open |
+| [2026-08-12-worklist-grouping-and-industry-metrics.md](./2026-08-12-worklist-grouping-and-industry-metrics.md) | draft | Schema vs industry RCM metrics; grouped worklist options (Cluster 3 planning; not a freeze) |

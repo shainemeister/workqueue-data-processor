@@ -377,6 +377,7 @@ After file discovery and before the operator chooses Full pipeline / Score only 
 
 **Status:** developing concept  
 **Execution freeze checklist:** [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md)  
+**Research (options, not a freeze):** [research/2026-08-12-worklist-grouping-and-industry-metrics.md](./research/2026-08-12-worklist-grouping-and-industry-metrics.md)  
 **Primary surface:** both toolkits (post-score reporting preferred)  
 **Risk to existing contracts:** higher — closest to V2 design territory
 

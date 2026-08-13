@@ -1,7 +1,7 @@
 ---
 title: Cluster 3 — grouping, sorting, and denial analysis sheet
 description: Design-freeze checklist for post-score analysis; keep reporting-only vs V2 boundary explicit.
-version: "1.0.0"
+version: "1.0.1"
 status: developing
 audience:
   - developers
@@ -13,16 +13,19 @@ related:
   - ../WQ_Priority_Matrix_Concept.md
   - ../../kpi-analytics/SCORE-METHODOLOGY.md
   - ../../kit/RULES.md
-last_updated: "2026-08-10"
+  - ../research/2026-08-12-worklist-grouping-and-industry-metrics.md
+last_updated: "2026-08-12"
 ---
 
 # Cluster 3 — grouping, sorting, and denial analysis sheet
 
+**Document version:** 1.0.1  
 **Status:** developing (not implementation-ready).  
 **Primary surface:** post-score reporting (both toolkits as needed).  
 **Product backlog owner:** [docs/PLAN.md](../PLAN.md) § Cluster 3.  
 **Root stage:** [PLAN.md](../../PLAN.md) **S4**.  
-**V2 design (not this cluster):** [WQ_Priority_Matrix_Concept.md](../WQ_Priority_Matrix_Concept.md).
+**V2 design (not this cluster):** [WQ_Priority_Matrix_Concept.md](../WQ_Priority_Matrix_Concept.md).  
+**Column / industry / worklist options (not a freeze):** [research/2026-08-12-worklist-grouping-and-industry-metrics.md](../research/2026-08-12-worklist-grouping-and-industry-metrics.md).
 
 ---
 
@@ -103,4 +106,5 @@ If analysis begins to feed priority weights, re-scope under [WQ_Priority_Matrix_
 
 | Version | Notes |
 |---------|--------|
+| 1.0.1 | Pointer to worklist / industry-metric research; still developing |
 | 1.0.0 | Extracted freeze checklist from docs/PLAN Cluster 3 for kit docs/plan surface |
