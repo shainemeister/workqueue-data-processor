@@ -21,6 +21,7 @@ authority_paths:
   - kit/MARKDOWN-STANDARD.md
   - kit/rules/authoring-and-style.md
   - kit/rules/contracts.md
+  - kit/rules/workboard.md
   - kit/templates/
 references:
   - path: kit/MARKDOWN-STANDARD.md
@@ -59,6 +60,7 @@ compose_with:
 - Co-update canonical owners when docs are the contract surface.
 - When Instruct is in use: follow [OPS](../OPS.md).
 - Distinguish product contracts from root `docs/` AI workspace; promote durable promises to L4.
+- Keep workboard / annex / archive indexes honest when multi-phase docs change ([workboard](../../rules/workboard.md)).
 
 ## Must not
 
@@ -81,6 +83,7 @@ compose_with:
 - `kit/rules/authoring-and-style.md` — style gates
 - `kit/rules/contracts.md` — ownership and co-updates
 - `kit/rules/ai-docs-workspace.md` — AI docs workspace
+- `kit/rules/workboard.md` — workboard / annex / archive indexes
 - `kit/templates/` — document skeletons (including `templates/docs/`)
 - `kit/agents/OPS.md` — utilization when Instruct is in use
 - `docs/` — AI workspace when used

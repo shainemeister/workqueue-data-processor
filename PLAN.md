@@ -1,7 +1,7 @@
 ---
 title: Project control surface — Work Queue Data Processor
 description: Durable mission, stages, non-goals, and Agent Instruct control surface; product backlog and execution plans live under docs/.
-version: "1.1.0"
+version: "1.2.0"
 status: current
 audience:
   - developers
@@ -16,18 +16,21 @@ related:
   - kit/agents/OPS.md
   - kit/agents/PLAN-HOOK.md
   - kit/rules/ai-docs-workspace.md
-last_updated: "2026-08-10"
+  - kit/rules/workboard.md
+  - docs/WORKBOARD.md
+last_updated: "2026-08-12"
 ---
 
 # Project control surface — Work Queue Data Processor
 
 Durable **control surface** for repository mission, stages, and **Agent Instruct**.  
 Product enhancement backlog: [docs/PLAN.md](./docs/PLAN.md).  
+Live multi-phase execution: [docs/WORKBOARD.md](./docs/WORKBOARD.md).  
 Detailed execution plans: [docs/plan/](./docs/plan/).
 
-**Document version:** 1.1.0  
+**Document version:** 1.2.0  
 
-**Related:** [README.md](./README.md) · [docs/PLAN.md](./docs/PLAN.md) · [docs/plan/](./docs/plan/) · [kit/RULES.md](./kit/RULES.md) · [kit/agents/OPS.md](./kit/agents/OPS.md) · [ai-docs-workspace](./kit/rules/ai-docs-workspace.md)
+**Related:** [README.md](./README.md) · [docs/PLAN.md](./docs/PLAN.md) · [docs/WORKBOARD.md](./docs/WORKBOARD.md) · [docs/plan/](./docs/plan/) · [kit/RULES.md](./kit/RULES.md) · [kit/agents/OPS.md](./kit/agents/OPS.md) · [ai-docs-workspace](./kit/rules/ai-docs-workspace.md) · [workboard](./kit/rules/workboard.md)
 
 ---
 
@@ -39,21 +42,27 @@ Detailed execution plans: [docs/plan/](./docs/plan/).
 | Toolkits | **kpi-analytics** (Python 3.13 stdlib) · **excel-toolkit** (PowerShell 5.1 + Excel COM) |
 | Shared contract | `wq_schema/` |
 | Product backlog | [docs/PLAN.md](./docs/PLAN.md) — Cluster 1 complete; Clusters 2–3 developing |
+| Execution board | [docs/WORKBOARD.md](./docs/WORKBOARD.md) — what is open / next / SHA |
 | Execution plans | [docs/plan/](./docs/plan/) |
-| Maintenance hub | [kit/RULES.md](./kit/RULES.md) (repo-kit **2.3.1**) |
+| Maintenance hub | [kit/RULES.md](./kit/RULES.md) (repo-kit **2.3.1**; adopting **2.4.0**) |
 | AI docs workspace | [docs/README.md](./docs/README.md) |
 
-### Plan document map (kit dual surface)
+### Plan document map (kit triple surface)
 
 | Surface | Path | Owns |
 |---------|------|------|
 | **Control** | This file (`PLAN.md`) | Mission, stages, non-goals, **Agent models** |
+| **Workboard** | [docs/WORKBOARD.md](./docs/WORKBOARD.md) | Live multi-phase execution (open / next / SHA) |
 | **Product backlog** | [docs/PLAN.md](./docs/PLAN.md) | Clusters 1–3, product sequencing, open questions |
 | **Execution plans** | [docs/plan/](./docs/plan/) | Multi-step freeze/implement notes (not Agent models) |
 | **Design concept** | [docs/WQ_Priority_Matrix_Concept.md](./docs/WQ_Priority_Matrix_Concept.md) | V1–V3 priority matrix vision (V1 live) |
 | **Law** | [kit/RULES.md](./kit/RULES.md) | Maintenance policy; L4 wins over packs and workspace notes |
 
-Do **not** store Agent models only under `docs/`. Do **not** put project research under `kit/`.
+Do **not** store Agent models only under `docs/`. Do **not** put project research under `kit/`. Do **not** paste live phase tables into this file — use the workboard.
+
+### Workboard
+
+Live “what is open” lives on [docs/WORKBOARD.md](./docs/WORKBOARD.md) ([kit/rules/workboard.md](./kit/rules/workboard.md)). This file stays doctrine (mission, stages, Agent models). Register multi-phase work on the board **before** phase code. Optional annex under `docs/plan/<id>/` only when the board cannot hold the OOO.
 
 ---
 
@@ -113,8 +122,9 @@ Canonical detail: [kit/rules/architecture.md](./kit/rules/architecture.md) · to
 3. [Stages](#stages)
 4. [Non-goals](#non-goals)
 5. [Architecture constraints](#architecture-constraints)
-6. [Agent models](#agent-models)
-7. [Document history](#document-history)
+6. [Workboard](#workboard)
+7. [Agent models](#agent-models)
+8. [Document history](#document-history)
 
 ---
 
@@ -169,7 +179,7 @@ Canonical detail: [kit/rules/architecture.md](./kit/rules/architecture.md) · to
   - Do not force-kill Excel or permanently change ExecutionPolicy
   - Do not start Cluster 2/3 product code until design freeze in docs/plan/
 - always_on_extra: []
-- notes: "Dual PLAN surface: this file = Agent models + mission/stages; docs/PLAN.md = product backlog; docs/plan/ = execution detail."
+- notes: "Triple PLAN surface: this file = Agent models + mission/stages; docs/WORKBOARD.md = live multi-phase; docs/PLAN.md = product backlog; docs/plan/ = execution detail."
 
 ### Regenerate when
 
@@ -182,7 +192,7 @@ Canonical detail: [kit/rules/architecture.md](./kit/rules/architecture.md) · to
 
 ### Last generated
 
-- 2026-08-12 (pack YAML repair; PLAN must_not_extra including Cluster 2/3 freeze)
+- 2026-08-12 (repo-kit 2.4.0 workboard/continuity; kit seeds regen; Cluster 2/3 freeze retained)
 
 ---
 
@@ -190,5 +200,6 @@ Canonical detail: [kit/rules/architecture.md](./kit/rules/architecture.md) · to
 
 | Version | Notes |
 |---------|--------|
+| 1.2.0 | Triple surface: pointer to docs/WORKBOARD.md; no live phase tables (kit 2.4.0) |
 | 1.1.0 | Kit dual-surface compliance: mission, stages, non-goals, plan map, stage gates; links to docs/plan execution plans |
 | 1.0.0 | Initial control surface + Agent models for repo-kit 2.3.1 / Agent Instruct adoption |

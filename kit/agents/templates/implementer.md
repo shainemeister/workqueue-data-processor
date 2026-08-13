@@ -22,6 +22,8 @@ authority_paths:
   - kit/rules/architecture.md
   - kit/rules/contracts.md
   - kit/rules/verification-and-ops.md
+  - kit/rules/workboard.md
+  - kit/rules/continuity.md
   - PLAN.md
 references:
   - path: kit/rules/architecture.md
@@ -63,6 +65,8 @@ compose_with:
 - When Instruct is in use: follow [OPS](../OPS.md); open expertise before inventing paths/tools.
 - On new feature/package/surface: update authority map paths as needed; trigger PLAN/BUILD lifecycle if agents must evolve.
 - For non-trivial implementation: maintain `docs/project_build/` context when it helps future sessions ([ai-docs-workspace](../../rules/ai-docs-workspace.md)).
+- When shipping a multi-phase phase: update `docs/WORKBOARD.md` (status + SHA) in the same change set ([workboard](../../rules/workboard.md)).
+- When a continuity overlay names protected surfaces: surgical edits only.
 
 ## Must not
 

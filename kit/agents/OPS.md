@@ -1,7 +1,7 @@
 ---
 title: Agent Instruct Order of Operations
 description: Required utilization procedure when Agent Instruct is adopted—match, expertise, co-maintain docs/rules, lifecycle BUILD.
-version: "1.1.0"
+version: "1.2.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,8 @@ related:
   - ../rules/verification-and-ops.md
   - ../rules/contracts.md
   - ../rules/ai-docs-workspace.md
-last_updated: "2026-08-10"
+  - ../rules/workboard.md
+last_updated: "2026-08-12"
 ---
 
 # Agent Instruct Order of Operations
@@ -28,7 +29,7 @@ Canonical **order of operations (O3)** for AI and humans when **Agent Instruct i
 
 Standing hub checklist (all maintenance turns): [RULES — Operator enforcement](../RULES.md#operator-enforcement).
 
-**Document version:** 1.1.0  
+**Document version:** 1.2.0  
 
 **Related:** [README.md](./README.md) · [RUNTIME.md](./RUNTIME.md) · [FRAMEWORK.md](./FRAMEWORK.md) · [PARAMS.md](./PARAMS.md) · [BUILD.md](./BUILD.md) · [PLAN-HOOK.md](./PLAN-HOOK.md) · [RULES.md](../RULES.md) · [verification-and-ops](../rules/verification-and-ops.md) · [contracts](../rules/contracts.md)
 
@@ -94,7 +95,7 @@ Detect Instruct early (step 0). Do not force O3 on bare adopters.
 5  COMPOSE: load compose_with only if task clearly needs a second concern
 6  LOAD Expertise map: authority_paths + references (repo + external citations)
 7  EXECUTE pack Procedure under L4; on conflict L4 wins
-8  CO-MAINTAIN: update canonical L4 owner docs/rules; maintain root docs/ when research/plan/build applies
+8  CO-MAINTAIN: update canonical L4 owner docs/rules; maintain root docs/ when research/plan/build applies; update docs/WORKBOARD.md when multi-phase work advances
 9  LIFECYCLE: if feature/surface/language/task-class growth → PLAN delta + BUILD
 10 VERIFY: pack verify[] + declared Domain A/B; STOP if fail/skip
 11 REPORT: primary id, compose, docs touched, BUILD y/n, gates
@@ -151,6 +152,7 @@ When Instruct is in use, document and rule maintenance is **part of every task**
 |---------|----------------------|
 | Behavior or public surface change | Update **canonical** owner in authority map ([contracts](../rules/contracts.md)) same change set |
 | Research / multi-step plan / build notes | Scaffold/update root `docs/` modules ([ai-docs-workspace](../rules/ai-docs-workspace.md)); keep index honest |
+| Multi-phase program / phase ship | Register or update `docs/WORKBOARD.md` same change set ([workboard](../rules/workboard.md)); annex only if linked from the board |
 | Finding becomes product promise | Promote from `docs/` to L4 owner; leave pointer if useful |
 | Path add/remove/rename | Update inventory/catalog if maintained; authority map if owner paths change |
 | Language added/removed | Update language surface inventory + verification rows |
@@ -244,6 +246,7 @@ More: [examples/anti-patterns.md](./examples/anti-patterns.md).
 
 | Version | Notes |
 |---------|--------|
+| 1.2.0 | Co-maintain workboard on multi-phase ship (kit 2.4.0) |
 | 1.1.0 | Co-maintain root docs/ AI workspace when research/plan/build applies (kit 2.3.0) |
 | 1.0.1 | Report shape ties to RULES Progress Tracker / operator enforcement (kit 2.2.1) |
 | 1.0.0 | Initial O3 utilization authority (kit 2.2.0): match, expertise, co-maintain, lifecycle |

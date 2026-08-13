@@ -1,7 +1,7 @@
 ---
 title: PLAN.md Agent Models Hook
 description: Durable control surface contract for Agent Instruct in adopter PLAN.md.
-version: "1.2.0"
+version: "1.3.0"
 status: current
 audience:
   - developers
@@ -16,14 +16,14 @@ related:
   - examples/PLAN-agent-models-snippet.md
   - ../SETUP.md
   - ../UPGRADE.md
-last_updated: "2026-08-10"
+last_updated: "2026-08-12"
 ---
 
 # PLAN.md Agent Models Hook
 
 When a project uses **Agent Instruct**, root **PLAN.md** is the **durable control surface**. It references the Instruct docs and declares which agent models are active, disabled, overlaid, and tuned. Mid-project adjustments happen here; AI then re-runs BUILD. Session utilization follows **[OPS.md](./OPS.md)**.
 
-**Document version:** 1.2.0  
+**Document version:** 1.3.0  
 
 **Related:** [README.md](./README.md) · [OPS.md](./OPS.md) · [BUILD.md](./BUILD.md) · [CATALOG.md](./CATALOG.md) · [PARAMS.md](./PARAMS.md) · [examples/PLAN-agent-models-snippet.md](./examples/PLAN-agent-models-snippet.md) · [SETUP.md](../SETUP.md) · [UPGRADE.md](../UPGRADE.md)
 
@@ -242,6 +242,7 @@ Full utilization and co-maintain: [OPS.md](./OPS.md).
 | Verification policy | verify[] alignment |
 | Architecture pointers | implementer authority_paths |
 | “Must not invent” lists | Injected into implementer + reviewer |
+| Live phase / todo tables | **Do not belong in PLAN.** Use `docs/WORKBOARD.md` + optional `docs/plan/<id>/` annex ([workboard](../rules/workboard.md)). PLAN may **point** at the board in one short subsection. |
 
 BUILD reads these sections when filling templates; it does not delete them.
 
@@ -259,6 +260,7 @@ BUILD reads these sections when filling templates; it does not delete them.
 
 | Version | Notes |
 |---------|--------|
+| 1.3.0 | PLAN is not the todo board; point at workboard (kit 2.4.0) |
 | 1.2.0 | OPS in Instruct authority; feature/core-task lifecycle; regenerate_when surface growth (kit 2.2.0) |
 | 1.1.1 | Markdown-native empty Active models (zero bullets / `*(none)*`); `[]` = BUILD shorthand only |
 | 1.1.0 | active_models unset vs empty; use_catalog_defaults; trust boundary; overlay shadow |

@@ -1,7 +1,7 @@
 ---
 title: Agent Catalog
 description: Default portable seed agents for repo-kit Agent Instruct.
-version: "1.1.0"
+version: "1.2.0"
 status: current
 audience:
   - developers
@@ -14,14 +14,14 @@ related:
   - BUILD.md
   - PLAN-HOOK.md
   - templates/
-last_updated: "2026-08-10"
+last_updated: "2026-08-12"
 ---
 
 # Agent Catalog
 
 Upstream repo-kit ships a **small catalog of portable seed agents**. Adopters enable/disable them via PLAN. Product-specific agents are **overlays or project-generated packs**, not rows in this default table. Seeds ship with **expertise** (in-repo + optional external citations) so BUILD emits expert packs.
 
-**Document version:** 1.1.0  
+**Document version:** 1.2.0  
 
 **Related:** [README.md](./README.md) · [OPS.md](./OPS.md) · [PARAMS.md](./PARAMS.md) · [BUILD.md](./BUILD.md) · [PLAN-HOOK.md](./PLAN-HOOK.md) · [templates/](./templates/)
 
@@ -79,12 +79,12 @@ Exact enablement is filled by BUILD from PLAN + inventory ([BUILD.md](./BUILD.md
 | **layer** | playbook |
 | **portability** | kit |
 | **activation** | catalog_match |
-| **description** | Draft or revise project PLAN.md from project interest: goals, non-goals, stages, agent models section. |
-| **triggers** | plan, PLAN.md, project interest, roadmap, stages, non-goals |
+| **description** | Draft or revise project PLAN.md from project interest: goals, non-goals, stages, agent models section. Register multi-phase work on the workboard; do not paste live phase tables into PLAN. |
+| **triggers** | plan, PLAN.md, project interest, roadmap, stages, non-goals, workboard, multi-phase, OOO |
 | **negative_triggers** | pure code bugfix with no plan impact |
-| **authority_paths** | `PLAN.md`, `kit/agents/PLAN-HOOK.md`, `kit/MARKDOWN-STANDARD.md`, root README |
+| **authority_paths** | `PLAN.md`, `kit/agents/PLAN-HOOK.md`, `kit/rules/workboard.md`, `kit/MARKDOWN-STANDARD.md`, root README |
 | **compose_with** | `docs-author` |
-| **verify** | PLAN has mission-level summary; Agent models section present per PLAN-HOOK **when using Agent Instruct** (omit for bare adopt); stages consistent if used |
+| **verify** | PLAN has mission-level summary; Agent models section present per PLAN-HOOK **when using Agent Instruct** (omit for bare adopt); stages consistent if used; multi-phase work on `docs/WORKBOARD.md` when applicable |
 | **template** | [templates/plan-author.md](./templates/plan-author.md) |
 
 ### `adopter`
@@ -258,6 +258,7 @@ Templates under [templates/](./templates/) carry the full Expertise map. Summary
 
 | Version | Notes |
 |---------|--------|
+| 1.2.0 | plan-author workboard triggers, authority, verify (kit 2.4.0) |
 | 1.1.0 | Project expert pack bar; seed expertise themes; OPS lifecycle (kit 2.2.0) |
 | 1.0.1 | plan-author verify dual-path; security Domain A focus |
 | 1.0.0 | Initial seven seed agents (kit 2.1.0) |

@@ -66,6 +66,7 @@ Portable way for AI (and humans) to **build and maintain modular expert agent pe
 | You want to… | Open |
 |--------------|------|
 | **Run a task with agents (utilization)** | **[OPS.md](./OPS.md)** |
+| Track multi-phase work (workboard) | [../rules/workboard.md](../rules/workboard.md) |
 | Understand layers and hard rules | [FRAMEWORK.md](./FRAMEWORK.md) |
 | See AgentPack schema / expertise validation | [PARAMS.md](./PARAMS.md) |
 | List default seed agents | [CATALOG.md](./CATALOG.md) |
