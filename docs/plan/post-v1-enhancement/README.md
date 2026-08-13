@@ -1,7 +1,7 @@
 ---
 title: post-v1-enhancement — program annex
 description: Deep order-of-operations for grouped POI worklists and later Cluster 2/B1.1. Active only while linked from the workboard.
-version: "1.0.5"
+version: "1.0.6"
 status: active
 audience:
   - ai-agents
@@ -16,7 +16,7 @@ related:
   - ../cluster-2-multi-file.md
   - ../../research/2026-08-12-worklist-grouping-and-industry-metrics.md
   - ../../../kit/rules/workboard.md
-last_updated: "2026-08-12"
+last_updated: "2026-08-13"
 ---
 
 # post-v1-enhancement
@@ -30,7 +30,7 @@ last_updated: "2026-08-12"
 |-------|--------|
 | **Program id** | `post-v1-enhancement` |
 | **Status** | `active` |
-| **Next phase** | **P1** filters / patient-group policy remain `blocked`; **P9** B1.1 deferred |
+| **Next phase** | **P1** filters / patient-group policy remain `blocked`; **P9** B1.1 deferred. Express P20–P23 shipped. |
 | **L4 owners to update on ship** | After product phases: toolkit CLI-GUIDE / README / SCORE-METHODOLOGY as applicable; `CHANGELOG.md`; FILE-CATALOG |
 
 ## Contents of this annex
@@ -58,6 +58,7 @@ See [ooo.md § P1 straw men](./ooo.md#p1-straw-men-not-frozen) and [cluster-3-an
 
 | Version | Notes |
 |---------|--------|
+| 1.0.6 | P20–P23 Express POI_Scores Excel (excel 1.14.0) |
 | 1.0.5 | P11–P14 audit-fix OOO (Worklist case match, PLAN wording, kpi security version) |
 | 1.0.4 | P8 Cluster 2 implement shipped (excel 1.12.0) |
 | 1.0.3 | P7 Cluster 2 freeze signed; next P8 implement |

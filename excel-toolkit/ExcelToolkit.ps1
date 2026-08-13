@@ -59,6 +59,8 @@ param(
     [string]$WorklistSheetName = 'Worklist',
     [string]$TotalsCsv = '',
     [string]$TotalsSheetName = 'Totals',
+    [switch]$PoiScoreSheetOnly,
+    [string]$PoiScoreSheetName = 'POI_Scores',
     [string]$Password = '',
     [switch]$Visible,
     [switch]$DryRun,
@@ -140,6 +142,8 @@ export-csv options:
   -WorklistSheetName <name> Worklist tab (default Worklist)
   -TotalsCsv <path>       Optional file-level totals CSV (Totals sheet)
   -TotalsSheetName <name> Totals tab (default Totals)
+  -PoiScoreSheetOnly      Write only POI_Scores (identity + four slim scores)
+  -PoiScoreSheetName <name> POI sheet tab (default POI_Scores)
   -Password <text>        Optional workbook open password (not logged)
   -Visible                Show Excel UI
   -DryRun                 Validate only; do not write
@@ -360,6 +364,7 @@ try {
                 GroupsSheetName   = $GroupsSheetName
                 WorklistSheetName = $WorklistSheetName
                 TotalsSheetName   = $TotalsSheetName
+                PoiScoreSheetName = $PoiScoreSheetName
             }
             if (-not [string]::IsNullOrWhiteSpace($GroupsCsv)) {
                 $exportParams['GroupsCsv'] = $GroupsCsv
@@ -369,6 +374,9 @@ try {
             }
             if (-not [string]::IsNullOrWhiteSpace($TotalsCsv)) {
                 $exportParams['TotalsCsv'] = $TotalsCsv
+            }
+            if ($PoiScoreSheetOnly) {
+                $exportParams['PoiScoreSheetOnly'] = $true
             }
             if (-not [string]::IsNullOrWhiteSpace($SchemaPath)) {
                 $exportParams['SchemaPath'] = $SchemaPath
@@ -406,6 +414,9 @@ try {
                 TotalsCsv           = $r.TotalsCsv
                 TotalsSheetName     = $r.TotalsSheetName
                 TotalsRowCount      = $r.TotalsRowCount
+                PoiScoreSheetOnly   = [bool]$r.PoiScoreSheetOnly
+                PoiScoreSheet       = $r.PoiScoreSheet
+                PoiScoreRowCount    = $r.PoiScoreRowCount
             }
             $null = Add-ExcelToolkitGateFields -Target $payloadHt -Gate $gate
             $payload = [pscustomobject]$payloadHt
@@ -422,6 +433,9 @@ try {
                     }
                     Write-Host ("  Rows   : {0}" -f $r.RowCount)
                     Write-Host ("  Cols   : {0}" -f $r.ColumnCount)
+                    if ($r.PoiScoreSheetOnly) {
+                        Write-Host ("  Sheet  : {0}" -f $r.PoiScoreSheet)
+                    }
                     if ($r.HeadersSample -and $r.HeadersSample.Count -gt 0) {
                         Write-Host ("  Headers: {0}" -f ($r.HeadersSample -join ', '))
                     }
@@ -435,7 +449,7 @@ try {
                 $exitCode = 0
             }
             else {
-                if ($r.Message -match 'not found|required|No columns|preflight|Schema file|password|free output path') {
+                if ($r.Message -match 'not found|required|No columns|preflight|Schema file|password|free output path|PoiScore|cannot be combined|POI score') {
                     $exitCode = 1
                 }
                 else {

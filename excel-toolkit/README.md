@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.13.0"
+version: "1.14.0"
 status: current
 audience:
   - users
@@ -11,19 +11,19 @@ related:
   - README.md
   - CLI-GUIDE.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-08-12"
+last_updated: "2026-08-13"
 ---
 
 # Excel Toolkit (`excel-toolkit`)
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), guided **Process my data** menu (via sibling `kpi-analytics` for scoring), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.13.0  
+**Toolkit version:** 1.14.0  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
-**Column layout for export is always driven by your CSV file.** An optional JSON schema can supply display labels. No column names are hard-coded in the engine. Import reads the worksheet used range as-is.
+**Column layout for the Data sheet is driven by your CSV file.** An optional JSON schema can supply display labels. Worklist and **POI_Scores** copy a frozen header set (no scoring math). Import reads the worksheet used range as-is.
 
 **Collision policy:** existing destinations are **not** overwritten by default. A free sibling path with a numerical suffix is used (`name.csv` → `name_1.csv`). Pass `-Force` only when automation must replace an exact path.
 
@@ -93,10 +93,11 @@ Excel Toolkit is a **local Windows** PowerShell **5.1** package for controlled d
 | **2 Score only** | Scored + summary **CSV** artifacts only (optional **scoring profile** pick; no Excel) |
 | **3 Export only** | CSV → Excel deliverable without scoring (optional workbook password; no profile prompt) |
 | **4 Build worklist** | Score with `--group-preset` (and optional **scoring profile**), write `*_groups.csv`, export scored workbook with **Groups** + **Worklist** + **Totals** sheets (optional workbook password) |
+| **5 Express score** | Score `--output-mode slim` (no profile / password / Full-Slim pick). One Excel workbook with only **POI_Scores** (identity + four POI scores). Summary CSV is still written; no summary xlsx. |
 
 Excel selections are imported to CSV first (open-password prompt if the workbook is protected), then the same actions apply.
 
-**Score output pick:** **Full** (default) keeps today’s scored CSV (`v1_*` audit + `kpi_q_*`) and then the scoring-profile pick. **Slim** writes WQ columns plus one V1 score per shipped POI (`--output-mode slim`) and **skips** the profile pick. No scoring math in PowerShell.
+**Score output pick:** **Full** (default) keeps today’s scored CSV (`v1_*` audit + `kpi_q_*`) and then the scoring-profile pick. **Slim** writes WQ columns plus one V1 score per shipped POI (`--output-mode slim`) and **skips** the profile pick. **Express** forces slim and skips this pick. No scoring math in PowerShell.
 
 **Scoring profile pick (Full only):** after files are selected, choose **Balanced (package default)** or a named POI focus preset (e.g. `maximize_cash`). The menu passes `kpi-analytics.cmd score --profile …` only. This is separate from a **column mapping** file (`*_mapping.json`). Full CLI contract: [kpi-analytics/CLI-GUIDE.md — Scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
 
@@ -269,8 +270,11 @@ if (-not $in.Success) { throw $in.Message }
 | `DryRun` | bool | `$true` if no file was written |
 | `Message` | string | Human-readable status or error |
 | `HeadersSample` | string[] | First few header labels (display or technical) |
-| `SheetName` | string | Worksheet tab name |
+| `SheetName` | string | Worksheet tab name (the only sheet when `-PoiScoreSheetOnly`) |
 | `SchemaFormat` | string | Resolved schema format when applicable |
+| `PoiScoreSheetOnly` | bool | `$true` when the workbook is the Express POI sheet only |
+| `PoiScoreSheet` | string | POI sheet tab name when `-PoiScoreSheetOnly` |
+| `PoiScoreRowCount` | int | Data rows on the POI sheet |
 
 ### `Import-CsvFromExcel` result object
 

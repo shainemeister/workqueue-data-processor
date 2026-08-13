@@ -20,16 +20,20 @@
     Full pipeline, Score only, and Build worklist optionally pick a scoring
     profile (POI focus) and pass it as kpi-analytics score --profile.
     Build worklist also picks a --group-preset and exports Data + Groups +
-    Worklist sheets (no scoring math in PowerShell). Multi-file preview
-    (2+ files) shows name, WQ stem, row count, max out_ins_amt without scoring.
-    Excel deliverable names use [WQ]_MM-DD-YYYY.xlsx. File-level Totals sheet
-    copies existing scored columns (count / dollar sums / max priority / min appeal).
+    Worklist sheets (no scoring math in PowerShell). Express score skips
+    profile / password / Full-Slim picks, scores --output-mode slim, and
+    writes one POI_Scores sheet (identity + four scores; copy only).
+    Multi-file preview (2+ files) shows name, WQ stem, row count, max
+    out_ins_amt without scoring. Excel deliverable names use
+    [WQ]_MM-DD-YYYY.xlsx. File-level Totals sheet copies existing scored
+    columns (count / dollar sums / max priority / min appeal).
 
-    Column layout always comes from your data CSV. An optional schema (JSON or
-    CSV) supplies display labels only. Nothing domain-specific is hard-coded.
+    Column layout for the Data sheet comes from your data CSV. Worklist and
+    POI_Scores use frozen composition headers (copy only; no scoring math).
+    An optional schema (JSON or CSV) supplies display labels only.
     Existing output files are not overwritten: a free path with a numerical
     suffix (name_1.ext) is chosen instead. Optional workbook open password is
-    offered on every menu path that produces Excel.
+    offered on Excel paths except Express (unprotected POI_Scores only).
 
 .NOTES
     Launch via Start-ExcelMenu.cmd so the process uses -ExecutionPolicy Bypass
@@ -444,6 +448,7 @@ function Invoke-ProcessMyData {
     Write-Host '  [2] Score only (CSV artifacts)' -ForegroundColor DarkGray
     Write-Host '  [3] Export only (CSV -> Excel deliverable, no scoring)' -ForegroundColor DarkGray
     Write-Host '  [4] Build worklist (Score + Groups + Worklist Excel)' -ForegroundColor DarkGray
+    Write-Host '  [5] Express score (all POI -> one sheet)' -ForegroundColor DarkGray
     $action = Read-Host ("Choice [{0}]" -f $defaultAction)
     if ([string]::IsNullOrWhiteSpace($action)) {
         $action = $defaultAction
@@ -468,6 +473,9 @@ function Invoke-ProcessMyData {
         }
         '4' {
             Invoke-KpiScoreExportMenu -Worklist -InputPaths $pathsArray
+        }
+        '5' {
+            Invoke-KpiScoreExportMenu -Express -InputPaths $pathsArray
         }
         default {
             Write-Host 'Unrecognized choice; cancelling.' -ForegroundColor Yellow
@@ -2388,6 +2396,9 @@ function Invoke-KpiScoreExportMenu {
         When set, do not prompt for a scoring profile (use -Profile as-is, may be empty).
     .PARAMETER Worklist
         Score with --group-preset and export Data + Groups + Worklist sheets.
+    .PARAMETER Express
+        Score --output-mode slim; export one POI_Scores sheet (identity + four scores).
+        Skips profile, password, and Full/Slim picks. No summary xlsx.
     #>
     [CmdletBinding()]
     param(
@@ -2403,11 +2414,14 @@ function Invoke-KpiScoreExportMenu {
 
         [switch]$SkipProfilePrompt,
 
-        [switch]$Worklist
+        [switch]$Worklist,
+
+        [switch]$Express
     )
 
-    if ($ScoreOnly -and $Worklist) {
-        throw '-ScoreOnly and -Worklist are mutually exclusive'
+    $modeFlags = @($ScoreOnly, $Worklist, $Express) | Where-Object { $_ }
+    if (@($modeFlags).Count -gt 1) {
+        throw '-ScoreOnly, -Worklist, and -Express are mutually exclusive'
     }
 
     Write-Host ''
@@ -2419,6 +2433,12 @@ function Invoke-KpiScoreExportMenu {
     elseif ($Worklist) {
         Write-Host 'Build worklist (Score -> Groups + Worklist Excel)' -ForegroundColor Cyan
         Write-Host 'kpi-analytics scores and writes *_groups.csv; Excel COM adds Groups + Worklist + Totals sheets.' -ForegroundColor DarkGray
+        Write-Host 'Excel is the human deliverable ([WQ]_MM-DD-YYYY.xlsx). No scoring math in PowerShell.' -ForegroundColor DarkGray
+    }
+    elseif ($Express) {
+        Write-Host 'Express score (all POI -> one POI_Scores sheet)' -ForegroundColor Cyan
+        Write-Host 'kpi-analytics scores --output-mode slim; Excel COM copies identity + four scores.' -ForegroundColor DarkGray
+        Write-Host 'No profile pick, password, or Full/Slim pick. Summary CSV is kept; no summary Excel.' -ForegroundColor DarkGray
         Write-Host 'Excel is the human deliverable ([WQ]_MM-DD-YYYY.xlsx). No scoring math in PowerShell.' -ForegroundColor DarkGray
     }
     else {
@@ -2464,9 +2484,16 @@ function Invoke-KpiScoreExportMenu {
     }
     Write-Host ''
 
-    $resolvedOutputMode = Select-KpiOutputMode
-    if ($resolvedOutputMode -eq 'slim') {
-        Write-Host 'Slim output: WQ columns + one score per shipped POI (no --profile).' -ForegroundColor Cyan
+    $resolvedOutputMode = 'full'
+    if ($Express) {
+        $resolvedOutputMode = 'slim'
+        Write-Host 'Express: slim scores (all shipped POI) -> one POI_Scores sheet.' -ForegroundColor Cyan
+    }
+    else {
+        $resolvedOutputMode = Select-KpiOutputMode
+        if ($resolvedOutputMode -eq 'slim') {
+            Write-Host 'Slim output: WQ columns + one score per shipped POI (no --profile).' -ForegroundColor Cyan
+        }
     }
 
     # One scoring profile for the whole batch (composition only; no merge in PowerShell).
@@ -2511,7 +2538,7 @@ function Invoke-KpiScoreExportMenu {
     }
 
     $exportPassword = $null
-    if (-not $ScoreOnly) {
+    if (-not $ScoreOnly -and -not $Express) {
         if ($SkipPasswordPrompt) {
             $exportPassword = $Password
         }
@@ -2691,12 +2718,20 @@ function Invoke-KpiScoreExportMenu {
             if (-not $rankIsFull) {
                 Write-Host '  Exporting PARTIAL-rank workbooks...' -ForegroundColor Yellow
             }
-            Write-Host '  Exporting scored workbook...' -ForegroundColor Cyan
+            if ($Express) {
+                Write-Host '  Exporting POI_Scores workbook...' -ForegroundColor Cyan
+            }
+            else {
+                Write-Host '  Exporting scored workbook...' -ForegroundColor Cyan
+            }
             $ex1Params = @{
                 CsvPath    = $actualScoredCsv
                 OutputPath = $plannedScoredXlsx
             }
-            if (@($fileTotals).Count -gt 0) {
+            if ($Express) {
+                $ex1Params['PoiScoreSheetOnly'] = $true
+            }
+            elseif (@($fileTotals).Count -gt 0) {
                 $plannedTotalsCsv = Join-Path $outputDir ('{0}_scored_totals.csv' -f $stem)
                 $totalsCsvInfo = Resolve-ExcelToolkitUniquePath -Path $plannedTotalsCsv
                 try {
@@ -2734,6 +2769,9 @@ function Invoke-KpiScoreExportMenu {
             }
             Write-Host ("  Scored XLSX : {0}" -f $ex1.OutputPath) -ForegroundColor Green
             $exNames = @($ex1.PSObject.Properties.Name)
+            if ($Express -and $exNames -contains 'PoiScoreRowCount') {
+                Write-Host ("  POI_Scores rows: {0}" -f $ex1.PoiScoreRowCount) -ForegroundColor DarkGray
+            }
             if ($exNames -contains 'TotalsRowCount' -and $ex1.TotalsRowCount -gt 0) {
                 Write-Host ("  Totals rows : {0}" -f $ex1.TotalsRowCount) -ForegroundColor DarkGray
             }
@@ -2743,30 +2781,38 @@ function Invoke-KpiScoreExportMenu {
                 }
             }
 
-            Write-Host '  Exporting summary workbook...' -ForegroundColor Cyan
-            if (-not (Test-Path -LiteralPath $actualSummaryCsv)) {
-                Write-Host ("  FAIL summary CSV missing: {0}" -f $actualSummaryCsv) -ForegroundColor Red
-                $failCount++
-                continue
+            if (-not $Express) {
+                Write-Host '  Exporting summary workbook...' -ForegroundColor Cyan
+                if (-not (Test-Path -LiteralPath $actualSummaryCsv)) {
+                    Write-Host ("  FAIL summary CSV missing: {0}" -f $actualSummaryCsv) -ForegroundColor Red
+                    $failCount++
+                    continue
+                }
+                $ex2Params = @{
+                    CsvPath    = $actualSummaryCsv
+                    OutputPath = $plannedSummaryXlsx
+                }
+                if ($null -ne $exportPassword -and $exportPassword.Length -gt 0) {
+                    $ex2Params['Password'] = $exportPassword
+                }
+                $ex2 = Export-ExcelFromCsv @ex2Params
+                if (-not $ex2.Success) {
+                    Write-Host ("  FAIL summary Excel: {0}" -f $ex2.Message) -ForegroundColor Red
+                    Write-Host ("  Summary CSV still at: {0}" -f $actualSummaryCsv) -ForegroundColor Yellow
+                    $failCount++
+                    continue
+                }
+                Write-Host ("  Summary XLSX: {0}" -f $ex2.OutputPath) -ForegroundColor Green
             }
-            $ex2Params = @{
-                CsvPath    = $actualSummaryCsv
-                OutputPath = $plannedSummaryXlsx
+            else {
+                Write-Host ("  Summary CSV : {0}" -f $actualSummaryCsv) -ForegroundColor DarkGray
             }
-            if ($null -ne $exportPassword -and $exportPassword.Length -gt 0) {
-                $ex2Params['Password'] = $exportPassword
-            }
-            $ex2 = Export-ExcelFromCsv @ex2Params
-            if (-not $ex2.Success) {
-                Write-Host ("  FAIL summary Excel: {0}" -f $ex2.Message) -ForegroundColor Red
-                Write-Host ("  Summary CSV still at: {0}" -f $actualSummaryCsv) -ForegroundColor Yellow
-                $failCount++
-                continue
-            }
-            Write-Host ("  Summary XLSX: {0}" -f $ex2.OutputPath) -ForegroundColor Green
 
             if ($Worklist) {
                 Write-Host '  Worklist complete for this file.' -ForegroundColor Green
+            }
+            elseif ($Express) {
+                Write-Host '  Express complete for this file.' -ForegroundColor Green
             }
             else {
                 Write-Host '  Pipeline complete for this file.' -ForegroundColor Green

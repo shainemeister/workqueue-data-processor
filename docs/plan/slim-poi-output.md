@@ -1,7 +1,7 @@
 ---
 title: Slim multi-POI score output — design freeze
 description: Opt-in detail CSV with WQ columns plus one V1 score per shipped POI preset.
-version: "1.0.0"
+version: "1.1.0"
 status: current
 audience:
   - developers
@@ -14,15 +14,15 @@ related:
   - ../../kpi-analytics/SCORE-METHODOLOGY.md
   - ../../kpi-analytics/CLI-GUIDE.md
   - ./post-v1-enhancement/ooo.md
-last_updated: "2026-08-12"
+last_updated: "2026-08-13"
 ---
 
 # Slim multi-POI score output
 
-**Document version:** 1.0.0  
-**Status:** **shipped** (kpi 2.10.0 / excel 1.13.0).  
-**Board:** [WORKBOARD](../WORKBOARD.md) P15–P19.  
-**Signed:** 2026-08-12.
+**Document version:** 1.1.0  
+**Status:** **shipped** — slim CSV (kpi 2.10.0) and Express `POI_Scores` Excel (excel 1.14.0).  
+**Board:** [WORKBOARD](../WORKBOARD.md) P15–P23.  
+**Signed:** 2026-08-12 (slim CSV); Express addendum 2026-08-13.
 
 ---
 
@@ -56,11 +56,24 @@ Shipped presets = `kpi-analytics/profiles/poi_*.json` only. Summary CSV is still
 | `slim` + `--profile` or `--config` | Error |
 | `slim` + `--sort` / `--group-by` | Allowed; group max priority uses balanced `v1_priority_score` |
 | Menu | Full (default, profile pick) or Slim (no profile pick; `--output-mode slim`) |
+| **Express [5]** | Score `--output-mode slim`; Excel workbook is **only** sheet `POI_Scores` (identity + four scores). No profile / password / Full-Slim pick. Summary **CSV** still written; no summary **xlsx**. |
 
-JSON: `OutputMode`, `SlimScoreColumns` (slim only).
+JSON: `OutputMode`, `SlimScoreColumns` (slim only). Excel: `PoiScoreSheet`, `PoiScoreSheetOnly`, `PoiScoreRowCount`.
+
+## Frozen Express `POI_Scores` columns
+
+Excel copies values only (no scoring math). Identity columns are included **when present** on the slim CSV, in this order. All four score columns are **required** (slim always writes them).
+
+| Kind | Columns |
+|------|---------|
+| Identity (if present) | `account`, `invoice_num`, `patient`, `follow_up_record_id`, `service_date`, `payer` |
+| Scores (required) | `v1_priority_score`, `v1_score_protect_writeoffs`, `v1_score_maximize_cash`, `v1_score_suppress_aging` |
+
+Workbook has **one** sheet (`POI_Scores` unless `-PoiScoreSheetName` is set). Not combined with Groups / Worklist / Totals. `-PoiScoreSheetOnly` on a full-detail CSV fails (missing `v1_score_*`).
 
 ## Document history
 
 | Version | Notes |
 |---------|--------|
+| 1.1.0 | P20 Express: one POI_Scores Excel sheet; skip extra prompts |
 | 1.0.0 | P15 freeze |

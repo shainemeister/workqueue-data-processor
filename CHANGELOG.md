@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.21.0] - 2026-08-13
+
+#### Added
+
+- **excel-toolkit 1.14.0:** Process my data **Express score** scores `--output-mode slim` and writes one Excel sheet `POI_Scores` (identity + four POI scores). Skips profile, password, and Full/Slim picks. Summary CSV stays; no summary xlsx. CLI: `export-csv -PoiScoreSheetOnly` (copy only; no scoring math).
+
 ### [1.20.1] - 2026-08-12
 
 #### Added

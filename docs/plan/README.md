@@ -1,7 +1,7 @@
 ---
 title: docs/plan — execution plans index
 description: Multi-step execution and design-freeze notes; complements root PLAN and product docs/PLAN.
-version: "1.1.2"
+version: "1.1.3"
 status: current
 audience:
   - developers
@@ -14,7 +14,7 @@ related:
   - ../../kit/rules/ai-docs-workspace.md
   - ../../kit/rules/workboard.md
   - ../WORKBOARD.md
-last_updated: "2026-08-12"
+last_updated: "2026-08-13"
 ---
 
 # docs/plan/ — execution plans
@@ -49,7 +49,7 @@ When a freeze becomes product law, promote to toolkit contracts / schema / CHANG
 | [repo-kit-upgrade-2.3.1.md](./repo-kit-upgrade-2.3.1.md) | **complete** | Standards upgrade 2.0.1 → 2.3.1 (Agent Instruct + docs workspace) |
 | [post-v1-enhancement/](./post-v1-enhancement/) | **open annex** | Linked from WORKBOARD; master OOO for worklists then optional Cluster 2 |
 | [cluster-2-multi-file.md](./cluster-2-multi-file.md) | **shipped** | Multi-file preview / naming / file-level totals (excel 1.12.0) |
-| [slim-poi-output.md](./slim-poi-output.md) | **shipped** | Opt-in slim detail: WQ + one score per shipped POI |
+| [slim-poi-output.md](./slim-poi-output.md) | **shipped** | Slim detail CSV + Express one-sheet POI_Scores Excel |
 | [cluster-3-analysis.md](./cluster-3-analysis.md) | **developing** | Design freeze checklist for group/sort/denial analysis (reporting-only). Options: [research/worklist grouping](../research/2026-08-12-worklist-grouping-and-industry-metrics.md) |
 | [b1.1-base-weight-retune.md](./b1.1-base-weight-retune.md) | **pending** | Optional evidence-based base weight / chaos retune |
 
@@ -69,6 +69,7 @@ When a freeze becomes product law, promote to toolkit contracts / schema / CHANG
 
 | Version | Notes |
 |---------|--------|
+| 1.1.3 | Slim + Express POI_Scores shipped |
 | 1.1.2 | Cluster 2 freeze signed |
 | 1.1.1 | Open annex `post-v1-enhancement/` (workboard-linked) |
 | 1.1.0 | Workboard pointer; 2.4.0 upgrade record |

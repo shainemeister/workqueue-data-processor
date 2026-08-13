@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.13.0'
+$script:ExcelToolkitVersion = '1.14.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -380,6 +380,75 @@ function New-ExcelToolkitWorklistRows {
     }
 }
 
+function Get-ExcelToolkitPoiScoreIdentityColumns {
+    <#
+    .SYNOPSIS
+        Preferred claim-identity headers for the POI_Scores sheet (include if present).
+    #>
+    return @(
+        'account',
+        'invoice_num',
+        'patient',
+        'follow_up_record_id',
+        'service_date',
+        'payer'
+    )
+}
+
+function Get-ExcelToolkitPoiScoreValueColumns {
+    <#
+    .SYNOPSIS
+        Frozen slim score headers required on the POI_Scores sheet.
+    #>
+    return @(
+        'v1_priority_score',
+        'v1_score_protect_writeoffs',
+        'v1_score_maximize_cash',
+        'v1_score_suppress_aging'
+    )
+}
+
+function New-ExcelToolkitPoiScoreRows {
+    <#
+    .SYNOPSIS
+        Project identity + four POI scores from a slim scored CSV (copy only; no math).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $DetailRows,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$DetailHeaders
+    )
+
+    $scoreCols = @(Get-ExcelToolkitPoiScoreValueColumns)
+    $missing = @($scoreCols | Where-Object { $DetailHeaders -notcontains $_ })
+    if ($missing.Count -gt 0) {
+        throw ('POI score sheet requires slim score columns ({0}). Missing: {1}' -f ($scoreCols -join ', '), ($missing -join ', '))
+    }
+
+    $identityCols = @(
+        Get-ExcelToolkitPoiScoreIdentityColumns | Where-Object { $DetailHeaders -contains $_ }
+    )
+    $outHeaders = @($identityCols + $scoreCols)
+    $keep = @($outHeaders)
+
+    $out = New-Object System.Collections.Generic.List[object]
+    foreach ($d in @($DetailRows)) {
+        $row = [ordered]@{}
+        foreach ($h in $keep) {
+            $row[$h] = [string]$d.$h
+        }
+        $out.Add([pscustomobject]$row) | Out-Null
+    }
+
+    return [pscustomobject]@{
+        Headers = $outHeaders
+        Rows    = @($out.ToArray())
+    }
+}
+
 function Write-ExcelToolkitCsvSheet {
     param(
         $Worksheet,
@@ -474,6 +543,13 @@ function Export-ExcelFromCsv {
     .PARAMETER TotalsSheetName
         Tab name for -TotalsCsv. Default: Totals
 
+    .PARAMETER PoiScoreSheetOnly
+        Write only a POI_Scores sheet (identity + four slim scores). Copy only; no math.
+        Cannot be combined with -GroupsCsv, -Worklist, or -TotalsCsv.
+
+    .PARAMETER PoiScoreSheetName
+        Tab name when -PoiScoreSheetOnly is set. Default: POI_Scores
+
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -SchemaPath .\schema.json -UseDisplayNames -OutputPath .\out.xlsx -DryRun
     #>
@@ -516,7 +592,11 @@ function Export-ExcelFromCsv {
 
         [string]$TotalsCsv = '',
 
-        [string]$TotalsSheetName = 'Totals'
+        [string]$TotalsSheetName = 'Totals',
+
+        [switch]$PoiScoreSheetOnly,
+
+        [string]$PoiScoreSheetName = 'POI_Scores'
     )
 
     $result = [pscustomobject]@{
@@ -540,6 +620,9 @@ function Export-ExcelFromCsv {
         TotalsCsv          = $null
         TotalsSheetName    = $null
         TotalsRowCount     = 0
+        PoiScoreSheetOnly  = [bool]$PoiScoreSheetOnly
+        PoiScoreSheet      = $null
+        PoiScoreRowCount   = 0
     }
 
     try {
@@ -594,6 +677,15 @@ function Export-ExcelFromCsv {
             throw ("No columns found in CSV: {0}" -f $CsvPath)
         }
 
+        if ($PoiScoreSheetOnly) {
+            if (-not [string]::IsNullOrWhiteSpace($GroupsCsv) -or $Worklist -or -not [string]::IsNullOrWhiteSpace($TotalsCsv)) {
+                throw '-PoiScoreSheetOnly cannot be combined with -GroupsCsv, -Worklist, or -TotalsCsv'
+            }
+            if ([string]::IsNullOrWhiteSpace($PoiScoreSheetName)) {
+                throw '-PoiScoreSheetName is required when -PoiScoreSheetOnly is set'
+            }
+        }
+
         $groupsTable = $null
         if (-not [string]::IsNullOrWhiteSpace($GroupsCsv)) {
             $GroupsCsv = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($GroupsCsv)
@@ -638,12 +730,27 @@ function Export-ExcelFromCsv {
             $result.WorklistRowCount = @($worklistTable.Rows).Count
         }
 
+        $poiScoreTable = $null
+        if ($PoiScoreSheetOnly) {
+            $poiScoreTable = New-ExcelToolkitPoiScoreRows `
+                -DetailRows $csvRows `
+                -DetailHeaders $propertyNames
+            $result.PoiScoreSheet = $PoiScoreSheetName
+            $result.PoiScoreRowCount = @($poiScoreTable.Rows).Count
+            $result.SheetName = $PoiScoreSheetName
+        }
+
         $headerMap = $null
         $displayHeaders = @($propertyNames)
         if ($UseDisplayNames) {
             $headerMap = New-ExcelToolkitHeaderMap -Path $SchemaPath -PreferredProperty $DisplayNameProperty -Format $resolvedFormat
             $displayHeaders = foreach ($p in $propertyNames) {
                 if ($headerMap.ContainsKey($p)) { $headerMap[$p] } else { $p }
+            }
+        }
+        if ($PoiScoreSheetOnly -and $null -ne $poiScoreTable) {
+            $displayHeaders = foreach ($p in @($poiScoreTable.Headers)) {
+                if ($null -ne $headerMap -and $headerMap.ContainsKey($p)) { $headerMap[$p] } else { $p }
             }
         }
 
@@ -655,6 +762,10 @@ function Export-ExcelFromCsv {
         $result.OutputPath = $OutputPath
         $result.RowCount = $rowCount
         $result.ColumnCount = $propertyNames.Count
+        if ($PoiScoreSheetOnly -and $null -ne $poiScoreTable) {
+            $result.RowCount = @($poiScoreTable.Rows).Count
+            $result.ColumnCount = @($poiScoreTable.Headers).Count
+        }
         $result.HeadersSample = @($displayHeaders | Select-Object -First 5)
 
         if ($DryRun) {
@@ -672,48 +783,84 @@ function Export-ExcelFromCsv {
         $workbook = $null
         try {
             $app = New-ExcelApplication -Visible:$Visible
-            $workbook = New-ExcelWorkbook -Application $app -SheetName $SheetName
+            $firstSheetName = $SheetName
+            if ($PoiScoreSheetOnly) {
+                $firstSheetName = $PoiScoreSheetName
+            }
+            $workbook = New-ExcelWorkbook -Application $app -SheetName $firstSheetName
             $ws = Get-ExcelWorksheet -Workbook $workbook -Index 1
 
-            if ($csvRows.Count -eq 0) {
-                Set-ExcelRange -Worksheet $ws -StartAddress 'A1' -Values @(, @($displayHeaders))
-                $importInfo = [pscustomobject]@{
-                    RowCount    = 0
-                    ColumnCount = $propertyNames.Count
+            if ($PoiScoreSheetOnly -and $null -ne $poiScoreTable) {
+                $poiRows = @($poiScoreTable.Rows)
+                $poiHeaders = @($displayHeaders)
+                if ($poiRows.Count -eq 0) {
+                    Set-ExcelRange -Worksheet $ws -StartAddress 'A1' -Values @(, @($poiHeaders))
+                    $importInfo = [pscustomobject]@{
+                        RowCount    = 0
+                        ColumnCount = $poiHeaders.Count
+                    }
                 }
+                else {
+                    $poiWriteRows = $poiRows
+                    if ($null -ne $headerMap) {
+                        $poiWriteRows = @(
+                            foreach ($pr in $poiRows) {
+                                $mapped = [ordered]@{}
+                                foreach ($h in @($poiScoreTable.Headers)) {
+                                    $label = $h
+                                    if ($headerMap.ContainsKey($h)) { $label = $headerMap[$h] }
+                                    $mapped[$label] = [string]$pr.$h
+                                }
+                                [pscustomobject]$mapped
+                            }
+                        )
+                    }
+                    $importInfo = Write-ExcelToolkitCsvSheet -Worksheet $ws -Rows $poiWriteRows -Headers $poiHeaders
+                }
+                Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
+                Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
             }
             else {
-                $importParams = @{
-                    Worksheet    = $ws
-                    InputObject  = $csvRows
-                    StartAddress = 'A1'
+                if ($csvRows.Count -eq 0) {
+                    Set-ExcelRange -Worksheet $ws -StartAddress 'A1' -Values @(, @($displayHeaders))
+                    $importInfo = [pscustomobject]@{
+                        RowCount    = 0
+                        ColumnCount = $propertyNames.Count
+                    }
                 }
-                if ($null -ne $headerMap) {
-                    $importParams['HeaderMap'] = $headerMap
+                else {
+                    $importParams = @{
+                        Worksheet    = $ws
+                        InputObject  = $csvRows
+                        StartAddress = 'A1'
+                    }
+                    if ($null -ne $headerMap) {
+                        $importParams['HeaderMap'] = $headerMap
+                    }
+                    $importInfo = Import-CsvToWorksheet @importParams
                 }
-                $importInfo = Import-CsvToWorksheet @importParams
-            }
 
-            Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
-            Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
+                Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
+                Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
 
-            $afterSheet = $ws
-            if ($null -ne $totalsTable) {
-                $wsTotals = Add-ExcelWorksheet -Workbook $workbook -Name $TotalsSheetName -After $afterSheet
-                $null = Write-ExcelToolkitCsvSheet -Worksheet $wsTotals -Rows $totalsTable.Rows -Headers $totalsTable.Headers
-                $afterSheet = $wsTotals
-            }
-            if ($null -ne $groupsTable) {
-                $wsGroups = Add-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName -After $afterSheet
-                $null = Write-ExcelToolkitCsvSheet -Worksheet $wsGroups -Rows $groupsTable.Rows -Headers $groupsTable.Headers
-            }
-            if ($null -ne $worklistTable) {
                 $afterSheet = $ws
-                if ($null -ne $groupsTable) {
-                    $afterSheet = Get-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName
+                if ($null -ne $totalsTable) {
+                    $wsTotals = Add-ExcelWorksheet -Workbook $workbook -Name $TotalsSheetName -After $afterSheet
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsTotals -Rows $totalsTable.Rows -Headers $totalsTable.Headers
+                    $afterSheet = $wsTotals
                 }
-                $wsWork = Add-ExcelWorksheet -Workbook $workbook -Name $WorklistSheetName -After $afterSheet
-                $null = Write-ExcelToolkitCsvSheet -Worksheet $wsWork -Rows $worklistTable.Rows -Headers $worklistTable.Headers
+                if ($null -ne $groupsTable) {
+                    $wsGroups = Add-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName -After $afterSheet
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsGroups -Rows $groupsTable.Rows -Headers $groupsTable.Headers
+                }
+                if ($null -ne $worklistTable) {
+                    $afterSheet = $ws
+                    if ($null -ne $groupsTable) {
+                        $afterSheet = Get-ExcelWorksheet -Workbook $workbook -Name $GroupsSheetName
+                    }
+                    $wsWork = Add-ExcelWorksheet -Workbook $workbook -Name $WorklistSheetName -After $afterSheet
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsWork -Rows $worklistTable.Rows -Headers $worklistTable.Headers
+                }
             }
 
             $saveParams = @{

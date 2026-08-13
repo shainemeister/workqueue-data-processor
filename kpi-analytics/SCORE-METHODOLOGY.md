@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.10.0"
+version: "2.10.1"
 status: current
 audience:
   - users
@@ -13,7 +13,7 @@ related:
   - CLI-GUIDE.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-30"
+last_updated: "2026-08-13"
 ---
 
 # KPI Analytics — Score Methodology & Validation
@@ -297,7 +297,7 @@ Optional **detail** shape for follow-up work. Default remains **full**.
 
 **How slim scores are computed:** one raw-metric + normalize pass (same as full). Each POI column uses that same norm vector times the shipped profile’s weight vector (`effective_weights` after that profile’s multipliers). Chaos is queue-level and applies to all four scores. Do **not** treat slim as four independent batches.
 
-The vertical **summary CSV is still written** (portfolio KPI + explanations). Slim + `--profile` / `--config` is rejected. Golden: `fixtures/slim_poi_expected.json`.
+The vertical **summary CSV is still written** (portfolio KPI + explanations). Slim + `--profile` / `--config` is rejected. Golden: `fixtures/slim_poi_expected.json`. Excel **Express** (excel-toolkit 1.14.0) copies identity plus these four score columns onto a single `POI_Scores` sheet — presentation only; no new math.
 
 ---
 
@@ -558,5 +558,6 @@ Checks include:
 | 2.4.0 | Rank completeness + `--strict roles\|full` fail-closed optional |
 | 2.5.0 | Privacy header aliases; default patient `token_digits` **4** (`DOE0001`) |
 | 2.6.0 | Scoring profiles + three POI focus presets (multipliers only; base weights/formulas unchanged) |
+| 2.10.1 | Express Excel copies slim identity + four scores (no formula change) |
 | 2.10.0 | Slim detail: one V1 score per shipped POI; one norm pass; default remains full |
 | 2.7.0 | Honor `amount_field`; implement `adc_mode` (`auto`/`config`/`estimate`); non-clobber score/generate outputs + `--force`; strict `credit_policy` validation |
