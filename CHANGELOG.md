@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.21.1] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.14.1:** Process my data action list after file pick prints the toolkit version and highlights **[5] Express score** (Cyan). Type `5` — Enter still runs Full pipeline. Close and relaunch the menu after upgrade.
+
 ### [1.21.0] - 2026-08-13
 
 #### Added

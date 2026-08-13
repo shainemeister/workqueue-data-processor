@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.14.0"
+version: "1.14.1"
 status: current
 audience:
   - security
@@ -20,8 +20,8 @@ last_updated: "2026-08-13"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.14.0  
-**Document version:** 1.14.0  
+**Toolkit version:** 1.14.1  
+**Document version:** 1.14.1  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
@@ -262,3 +262,4 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.12.1 | Worklist key compare is case-sensitive (`-cne` after trim / `(blank)`); no trust-boundary change |
 | 1.13.0 | Menu Score output Full/Slim composes sibling `--output-mode slim`; no trust-boundary change |
 | 1.14.0 | Menu Express + `-PoiScoreSheetOnly` copy slim identity/score columns to one sheet; no trust-boundary change |
+| 1.14.1 | Menu [5] Express highlighted (Cyan) + version stamp; no trust-boundary change |

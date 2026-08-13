@@ -94,6 +94,24 @@ function Ensure-ExcelMenuDiagnosticsPass {
     return $true
 }
 
+function Get-ExcelMenuToolkitVersion {
+    <#
+    .SYNOPSIS
+        excel-toolkit version for menu banners (same source as Get-ExcelToolkitVersion).
+    #>
+    [CmdletBinding()]
+    param()
+
+    if (Get-Command -Name Get-ExcelToolkitVersion -ErrorAction SilentlyContinue) {
+        return [string](Get-ExcelToolkitVersion)
+    }
+    if (-not (Test-Path -LiteralPath $toolkitModulePath)) {
+        return 'unknown'
+    }
+    Import-Module -Name $toolkitModulePath -Force -ErrorAction Stop
+    return [string](Get-ExcelToolkitVersion)
+}
+
 function Wait-ForEnter {
     param([string]$Prompt = 'Press Enter to return to the menu...')
     Write-Host ''
@@ -441,14 +459,17 @@ function Invoke-ProcessMyData {
 
     # Defaults: full pipeline for CSV work; if selection was pure Excel, still offer pipeline first after import
     $defaultAction = '1'
+    $menuVersion = Get-ExcelMenuToolkitVersion
     Write-Host ''
     Write-Host 'What should I do with the selected file(s)?' -ForegroundColor Cyan
+    Write-Host ("excel-toolkit {0}" -f $menuVersion) -ForegroundColor DarkGray
     Write-Host 'Excel is the human deliverable; scored CSV is still written under output\.' -ForegroundColor DarkGray
     Write-Host '  [1] Full pipeline (Score -> Excel deliverable)     <- recommended' -ForegroundColor DarkGray
     Write-Host '  [2] Score only (CSV artifacts)' -ForegroundColor DarkGray
     Write-Host '  [3] Export only (CSV -> Excel deliverable, no scoring)' -ForegroundColor DarkGray
     Write-Host '  [4] Build worklist (Score + Groups + Worklist Excel)' -ForegroundColor DarkGray
-    Write-Host '  [5] Express score (all POI -> one sheet)' -ForegroundColor DarkGray
+    Write-Host '  [5] Express score (all POI -> one sheet)  <- all POI scores, one sheet' -ForegroundColor Cyan
+    Write-Host 'Express = [5] (skips profile / password / Full-Slim).' -ForegroundColor Cyan
     $action = Read-Host ("Choice [{0}]" -f $defaultAction)
     if ([string]::IsNullOrWhiteSpace($action)) {
         $action = $defaultAction

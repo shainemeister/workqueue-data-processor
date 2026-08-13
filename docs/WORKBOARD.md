@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.14"
+version: "1.1.15"
 status: current
 audience:
   - ai-agents
@@ -70,9 +70,12 @@ last_updated: "2026-08-13"
 | P21 | Menu [5] Express score | `done` | `cb20bb0` | slim; skip profile/password |
 | P22 | export-csv -PoiScoreSheetOnly | `done` | `cb20bb0` | Copy columns; no math |
 | P23 | L4 + CHANGELOG + cert | `done` | `cb20bb0` | excel 1.14.0 |
+| P24 | Menu [5] Express visibility | `done` | — | Cyan + version stamp; lock in Test-SelectionRange |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-13 Shipped P24 Express action-list visibility (excel 1.14.1).  
+- 2026-08-13 Opened P24 Express action-list visibility (operator could not see [5]).  
 - 2026-08-13 Shipped P20–P23 Express score (`cb20bb0`; excel 1.14.0).  
 - 2026-08-13 Opened P20–P23 Express score (all POI → one Excel sheet).  
 - 2026-08-12 Shipped P15–P19 slim multi-POI detail (`114ac02`; kpi 2.10.0 / excel 1.13.0).  
@@ -124,4 +127,4 @@ last_updated: "2026-08-13"
 
 ---
 
-*Agents: P20–P23 Express shipped. Next: P1 filters remain blocked; P9 deferred.*
+*Agents: P24 shipped (Express [5] visibility). Next: P1 filters remain blocked; P9 deferred.*

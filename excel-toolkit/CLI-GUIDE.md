@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.14.0"
+version: "1.14.1"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-08-13"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.14.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.14.1 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -643,7 +643,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.14.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.14.1** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.14.1 notes:** Process my data action list prints toolkit version and highlights **[5] Express score** (Cyan). Numbers [1]–[5] unchanged. Close and relaunch the menu after upgrade.
 
 **1.14.0 notes:** `export-csv -PoiScoreSheetOnly` writes one **POI_Scores** sheet (identity + four slim scores; copy only). Process my data **Express score** composes `score --output-mode slim` then this switch (no profile / password / Full-Slim pick; no summary xlsx). JSON: `PoiScoreSheetOnly`, `PoiScoreSheet`, `PoiScoreRowCount`.
 
