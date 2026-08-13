@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.26.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.19.0:** Express workbook is **POI_Scores** plus a **Summary** sheet (copy of the kpi summary CSV). `service_date` and `last_worked_date` use Excel format `mm/dd/yyyy` so they do not display as serials. CLI: `export-csv -SummaryCsv`.
+
 ### [1.25.0] - 2026-08-13
 
 #### Changed

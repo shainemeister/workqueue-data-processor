@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.18.0'
+$script:ExcelToolkitVersion = '1.19.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -429,6 +429,51 @@ function Get-ExcelToolkitPoiScoreCopyColumns {
     )
 }
 
+function Get-ExcelToolkitPoiScoreDateColumns {
+    <#
+    .SYNOPSIS
+        Frozen date headers on POI_Scores (format as mm/dd/yyyy; not day-count fields).
+    #>
+    return @(
+        'service_date',
+        'last_worked_date'
+    )
+}
+
+function Set-ExcelToolkitDateColumnFormats {
+    <#
+    .SYNOPSIS
+        Apply mm/dd/yyyy to frozen date columns so Excel does not show serials.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $Worksheet,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Headers,
+
+        [int]$DataRowCount
+    )
+
+    if ($DataRowCount -lt 1 -or $Headers.Count -lt 1) {
+        return
+    }
+    $dateNames = @(Get-ExcelToolkitPoiScoreDateColumns)
+    for ($i = 0; $i -lt $Headers.Count; $i++) {
+        $name = [string]$Headers[$i]
+        if ($dateNames -notcontains $name) {
+            continue
+        }
+        $col = $i + 1
+        $lastRow = $DataRowCount + 1
+        $start = $Worksheet.Cells.Item(2, $col)
+        $end = $Worksheet.Cells.Item($lastRow, $col)
+        $rng = $Worksheet.Range($start, $end)
+        $rng.NumberFormat = 'mm/dd/yyyy'
+    }
+}
+
 function New-ExcelToolkitPoiScoreRows {
     <#
     .SYNOPSIS
@@ -565,10 +610,16 @@ function Export-ExcelFromCsv {
 
     .PARAMETER PoiScoreSheetOnly
         Write only a POI_Scores sheet (identity + score-input + context source columns + four slim scores). Copy only; no math.
-        Cannot be combined with -GroupsCsv, -Worklist, or -TotalsCsv.
+        Cannot be combined with -GroupsCsv, -Worklist, or -TotalsCsv. May be combined with -SummaryCsv.
 
     .PARAMETER PoiScoreSheetName
         Tab name when -PoiScoreSheetOnly is set. Default: POI_Scores
+
+    .PARAMETER SummaryCsv
+        Optional kpi-analytics summary CSV. Written as a Summary sheet (copy only).
+
+    .PARAMETER SummarySheetName
+        Tab name for -SummaryCsv. Default: Summary
 
     .EXAMPLE
         Export-ExcelFromCsv -CsvPath .\data.csv -SchemaPath .\schema.json -UseDisplayNames -OutputPath .\out.xlsx -DryRun
@@ -616,7 +667,11 @@ function Export-ExcelFromCsv {
 
         [switch]$PoiScoreSheetOnly,
 
-        [string]$PoiScoreSheetName = 'POI_Scores'
+        [string]$PoiScoreSheetName = 'POI_Scores',
+
+        [string]$SummaryCsv = '',
+
+        [string]$SummarySheetName = 'Summary'
     )
 
     $result = [pscustomobject]@{
@@ -643,6 +698,9 @@ function Export-ExcelFromCsv {
         PoiScoreSheetOnly  = [bool]$PoiScoreSheetOnly
         PoiScoreSheet      = $null
         PoiScoreRowCount   = 0
+        SummaryCsv         = $null
+        SummarySheetName   = $null
+        SummaryRowCount    = 0
     }
 
     try {
@@ -760,6 +818,23 @@ function Export-ExcelFromCsv {
             $result.SheetName = $PoiScoreSheetName
         }
 
+        $summaryTable = $null
+        if (-not [string]::IsNullOrWhiteSpace($SummaryCsv)) {
+            $SummaryCsv = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($SummaryCsv)
+            $summaryTable = Read-ExcelToolkitCsvTable -Path $SummaryCsv
+            $result.SummaryCsv = $SummaryCsv
+            $result.SummarySheetName = $SummarySheetName
+            $result.SummaryRowCount = @($summaryTable.Rows).Count
+            $firstName = $SheetName
+            if ($PoiScoreSheetOnly) {
+                $firstName = $PoiScoreSheetName
+            }
+            $reserved = @($firstName, $GroupsSheetName, $WorklistSheetName, $TotalsSheetName)
+            if ($reserved -contains $SummarySheetName) {
+                throw '-SummarySheetName must differ from Data, POI_Scores, Groups, Worklist, and Totals sheet names'
+            }
+        }
+
         $headerMap = $null
         $displayHeaders = @($propertyNames)
         if ($UseDisplayNames) {
@@ -839,6 +914,11 @@ function Export-ExcelFromCsv {
                 }
                 Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
                 Set-ExcelAutoFit -Worksheet $ws -ColumnCount $importInfo.ColumnCount
+                Set-ExcelToolkitDateColumnFormats -Worksheet $ws -Headers $poiHeaders -DataRowCount $importInfo.RowCount
+                if ($null -ne $summaryTable) {
+                    $wsSummary = Add-ExcelWorksheet -Workbook $workbook -Name $SummarySheetName -After $ws
+                    $null = Write-ExcelToolkitCsvSheet -Worksheet $wsSummary -Rows $summaryTable.Rows -Headers $summaryTable.Headers
+                }
             }
             else {
                 if ($csvRows.Count -eq 0) {

@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit Enterprise Security
 description: Security review notes, unacceptable patterns, and execution restrictions for the Excel Toolkit on controlled corporate PCs.
-version: "1.18.0"
+version: "1.19.0"
 status: current
 audience:
   - security
@@ -20,8 +20,8 @@ last_updated: "2026-08-13"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate PCs.
 
-**Toolkit version:** 1.18.0  
-**Document version:** 1.18.0  
+**Toolkit version:** 1.19.0  
+**Document version:** 1.19.0  
 **Toolkit folder:** `excel-toolkit\`  
 **Related smoke tests:** `sample-test\` (execution probes only)
 
@@ -268,3 +268,4 @@ Canonical toolkit location is **`excel-toolkit\` only** (legacy `scripts\` path 
 | 1.16.0 | Express `POI_Scores` copies context source columns (plan / codes / billing); no trust-boundary change |
 | 1.17.0 | Express `POI_Scores` frozen column order; no trust-boundary change |
 | 1.18.0 | Menu deletes generated output CSVs after successful Excel; no trust-boundary change |
+| 1.19.0 | Express Summary sheet + date format on service_date / last_worked_date; no trust-boundary change |

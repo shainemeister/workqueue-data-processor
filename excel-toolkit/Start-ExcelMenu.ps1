@@ -2801,6 +2801,9 @@ function Invoke-KpiScoreExportMenu {
             $totalsCsvPath = $null
             if ($Express) {
                 $ex1Params['PoiScoreSheetOnly'] = $true
+                if (Test-Path -LiteralPath $actualSummaryCsv) {
+                    $ex1Params['SummaryCsv'] = $actualSummaryCsv
+                }
             }
             elseif (@($fileTotals).Count -gt 0) {
                 $plannedTotalsCsv = Join-Path $outputDir ('{0}_scored_totals.csv' -f $stem)
@@ -2843,6 +2846,9 @@ function Invoke-KpiScoreExportMenu {
             $exNames = @($ex1.PSObject.Properties.Name)
             if ($Express -and $exNames -contains 'PoiScoreRowCount') {
                 Write-Host ("  POI_Scores rows: {0}" -f $ex1.PoiScoreRowCount) -ForegroundColor DarkGray
+            }
+            if ($Express -and $exNames -contains 'SummaryRowCount' -and $ex1.SummaryRowCount -gt 0) {
+                Write-Host ("  Summary rows : {0}" -f $ex1.SummaryRowCount) -ForegroundColor DarkGray
             }
             if ($exNames -contains 'TotalsRowCount' -and $ex1.TotalsRowCount -gt 0) {
                 Write-Host ("  Totals rows : {0}" -f $ex1.TotalsRowCount) -ForegroundColor DarkGray

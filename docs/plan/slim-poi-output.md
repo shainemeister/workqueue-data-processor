@@ -1,7 +1,7 @@
 ---
 title: Slim multi-POI score output — design freeze
 description: Opt-in detail CSV with WQ columns plus one V1 score per shipped POI preset.
-version: "1.5.0"
+version: "1.6.0"
 status: current
 audience:
   - developers
@@ -19,9 +19,9 @@ last_updated: "2026-08-13"
 
 # Slim multi-POI score output
 
-**Document version:** 1.5.0  
-**Status:** **shipped** — `patient` after `invoice_num`; menu deletes generated CSVs after Excel (excel 1.18.0).  
-**Board:** [WORKBOARD](../WORKBOARD.md) P15–P36.  
+**Document version:** 1.6.0  
+**Status:** **shipped** — Express `POI_Scores` + `Summary`; dates `mm/dd/yyyy` (excel 1.19.0).  
+**Board:** [WORKBOARD](../WORKBOARD.md) P15–P39.  
 **Signed:** 2026-08-12 (slim CSV); Express addenda 2026-08-13.
 
 ---
@@ -56,7 +56,7 @@ Shipped presets = `kpi-analytics/profiles/poi_*.json` only. Summary CSV is still
 | `slim` + `--profile` or `--config` | Error |
 | `slim` + `--sort` / `--group-by` | Allowed; group max priority uses balanced `v1_priority_score` |
 | Menu | Full (default, profile pick) or Slim (no profile pick; `--output-mode slim`) |
-| **Express [5]** | Score `--output-mode slim`; Excel workbook is **only** sheet `POI_Scores`. No profile / password / Full-Slim pick. After a **successful** Excel write, the menu **deletes** generated `output\` CSVs for that run (scored / summary). Score-only keeps CSVs. Never delete `import\` inputs. |
+| **Express [5]** | Score `--output-mode slim`; Excel workbook is **`POI_Scores` + `Summary`**. No profile / password / Full-Slim pick. After a **successful** Excel write, the menu **deletes** generated `output\` CSVs for that run. Score-only keeps CSVs. Never delete `import\` inputs. |
 
 JSON: `OutputMode`, `SlimScoreColumns` (slim only). Excel: `PoiScoreSheet`, `PoiScoreSheetOnly`, `PoiScoreRowCount`.
 
@@ -92,12 +92,15 @@ Excel copies values only (no scoring math). Include a header **when present** on
 26. `v1_score_maximize_cash`  
 27. `v1_score_suppress_aging`
 
-Workbook has **one** sheet (`POI_Scores` unless `-PoiScoreSheetName` is set). Not combined with Groups / Worklist / Totals. `-PoiScoreSheetOnly` on a full-detail CSV fails (missing `v1_score_*`).
+Workbook sheets: **`POI_Scores`** then **`Summary`** (copy of the kpi summary CSV). Not combined with Groups / Worklist / Totals. `-PoiScoreSheetOnly` on a full-detail CSV fails (missing `v1_score_*`).
+
+Date columns `service_date` and `last_worked_date` (when present) use Excel number format `mm/dd/yyyy` so they do not display as serials. `days_until_*` / `days_on_wq_tab` stay numbers.
 
 ## Document history
 
 | Version | Notes |
 |---------|--------|
+| 1.6.0 | P37: Express Summary sheet; date format on service_date / last_worked_date |
 | 1.5.0 | P34: `patient` after `invoice_num`; menu deletes generated CSVs after Excel |
 | 1.4.0 | P31 Express: operator column order (copy if present) |
 | 1.3.0 | P28 Express: context source columns (`cpt_codes`, plan, codes, billing) |

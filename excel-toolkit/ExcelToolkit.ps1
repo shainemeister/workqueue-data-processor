@@ -61,6 +61,8 @@ param(
     [string]$TotalsSheetName = 'Totals',
     [switch]$PoiScoreSheetOnly,
     [string]$PoiScoreSheetName = 'POI_Scores',
+    [string]$SummaryCsv = '',
+    [string]$SummarySheetName = 'Summary',
     [string]$Password = '',
     [switch]$Visible,
     [switch]$DryRun,
@@ -144,6 +146,8 @@ export-csv options:
   -TotalsSheetName <name> Totals tab (default Totals)
   -PoiScoreSheetOnly      Write only POI_Scores (identity + source + context + four scores)
   -PoiScoreSheetName <name> POI sheet tab (default POI_Scores)
+  -SummaryCsv <path>      Optional kpi-analytics summary CSV (Summary sheet)
+  -SummarySheetName <name> Summary tab (default Summary)
   -Password <text>        Optional workbook open password (not logged)
   -Visible                Show Excel UI
   -DryRun                 Validate only; do not write
@@ -365,6 +369,7 @@ try {
                 WorklistSheetName = $WorklistSheetName
                 TotalsSheetName   = $TotalsSheetName
                 PoiScoreSheetName = $PoiScoreSheetName
+                SummarySheetName  = $SummarySheetName
             }
             if (-not [string]::IsNullOrWhiteSpace($GroupsCsv)) {
                 $exportParams['GroupsCsv'] = $GroupsCsv
@@ -377,6 +382,9 @@ try {
             }
             if ($PoiScoreSheetOnly) {
                 $exportParams['PoiScoreSheetOnly'] = $true
+            }
+            if (-not [string]::IsNullOrWhiteSpace($SummaryCsv)) {
+                $exportParams['SummaryCsv'] = $SummaryCsv
             }
             if (-not [string]::IsNullOrWhiteSpace($SchemaPath)) {
                 $exportParams['SchemaPath'] = $SchemaPath
@@ -417,6 +425,9 @@ try {
                 PoiScoreSheetOnly   = [bool]$r.PoiScoreSheetOnly
                 PoiScoreSheet       = $r.PoiScoreSheet
                 PoiScoreRowCount    = $r.PoiScoreRowCount
+                SummaryCsv          = $r.SummaryCsv
+                SummarySheetName    = $r.SummarySheetName
+                SummaryRowCount     = $r.SummaryRowCount
             }
             $null = Add-ExcelToolkitGateFields -Target $payloadHt -Gate $gate
             $payload = [pscustomobject]$payloadHt

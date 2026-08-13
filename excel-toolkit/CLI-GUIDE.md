@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.18.0"
+version: "1.19.0"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-08-13"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.18.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.19.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -300,6 +300,7 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
     [-Worklist] [-WorklistSheetName <name>]
     [-TotalsCsv <path>] [-TotalsSheetName <name>]
     [-PoiScoreSheetOnly] [-PoiScoreSheetName <name>]
+    [-SummaryCsv <path>] [-SummarySheetName <name>]
     [-Visible] [-DryRun]
     [-Json] [-Quiet]
 ```
@@ -319,8 +320,10 @@ ExcelToolkit.ps1 export-csv -CsvPath <path> [-OutputPath <path>]
 | `-WorklistSheetName` | No | `Worklist` | Worklist tab name |
 | `-TotalsCsv` | No | — | Optional file-level totals CSV (`metric`,`value`). Adds a **Totals** sheet (copy only; no scoring math). |
 | `-TotalsSheetName` | No | `Totals` | Totals tab name (must differ from Data / Groups / Worklist) |
-| `-PoiScoreSheetOnly` | No | off | Write **only** a `POI_Scores` sheet: identity + score-input + context **source** columns (if present) + four slim scores. Copy only; no scoring math. Cannot combine with `-GroupsCsv` / `-Worklist` / `-TotalsCsv`. Requires slim score columns. |
+| `-PoiScoreSheetOnly` | No | off | Write a `POI_Scores` sheet: frozen source columns (if present) + four slim scores. Copy only; no scoring math. Cannot combine with `-GroupsCsv` / `-Worklist` / `-TotalsCsv`. May combine with `-SummaryCsv`. Requires slim score columns. Date columns `service_date` / `last_worked_date` use `mm/dd/yyyy`. |
 | `-PoiScoreSheetName` | No | `POI_Scores` | Tab name when `-PoiScoreSheetOnly` is set |
+| `-SummaryCsv` | No | — | Optional kpi-analytics summary CSV. Adds a **Summary** sheet (copy only). |
+| `-SummarySheetName` | No | `Summary` | Summary tab name |
 | `-Visible` | No | off | Show Excel UI (debug) |
 | `-Password` | No | — | Optional workbook **open** password when saving `.xlsx` (not logged; not in JSON) |
 | `-Force` | No | off | Replace the **exact** `-OutputPath` if it exists. Default: **do not overwrite** — write to a free sibling path with a numerical suffix (`export_1.xlsx`, …) |
@@ -643,7 +646,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.18.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.19.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.19.0 notes:** Express / `-PoiScoreSheetOnly` may add a **Summary** sheet (`-SummaryCsv`). Date columns `service_date` / `last_worked_date` use Excel format `mm/dd/yyyy`.
 
 **1.18.0 notes:** Express column `patient` follows `invoice_num`. After a successful **menu** Excel write (Full pipeline / Worklist / Express), generated `output\` CSVs for that run are deleted. Score-only and Export-only keep CSVs. CLI `export-csv` does not delete inputs.
 
