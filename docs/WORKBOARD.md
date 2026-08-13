@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.17"
+version: "1.1.18"
 status: current
 audience:
   - ai-agents
@@ -77,9 +77,14 @@ last_updated: "2026-08-13"
 | P28 | Freeze Express context source columns | `done` | `b9c0959` | slim-poi-output 1.3.0 |
 | P29 | Copy context columns on POI_Scores | `done` | `b9c0959` | plan / codes / billing; `cpt_codes` |
 | P30 | L4 + CHANGELOG + cert | `done` | `b9c0959` | excel 1.16.0 |
+| P31 | Freeze Express column order | `done` | — | slim-poi-output 1.4.0 |
+| P32 | One ordered copy list | `done` | — | include if present |
+| P33 | L4 + CHANGELOG + cert | `done` | — | excel 1.17.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-13 Shipped P31–P33 Express `POI_Scores` column order (excel 1.17.0).  
+- 2026-08-13 Opened P31–P33 Express `POI_Scores` column order.  
 - 2026-08-13 Shipped P28–P30 Express context source columns (`b9c0959`; excel 1.16.0).  
 - 2026-08-13 Opened P28–P30 Express context source columns (plan / codes / billing).  
 - 2026-08-13 Shipped P25–P27 Express score-input source columns (`2c13194`; excel 1.15.0).  
@@ -138,4 +143,4 @@ last_updated: "2026-08-13"
 
 ---
 
-*Agents: P28–P30 shipped (Express context source columns). Next: P1 filters remain blocked; P9 deferred.*
+*Agents: P31–P33 shipped (Express column order). Next: P1 filters remain blocked; P9 deferred.*

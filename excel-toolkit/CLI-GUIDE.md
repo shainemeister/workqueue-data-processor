@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.16.0"
+version: "1.17.0"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-08-13"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.16.0 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.17.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -643,7 +643,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.16.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.17.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.17.0 notes:** Express `POI_Scores` uses the frozen **column order** in [slim-poi-output.md](../docs/plan/slim-poi-output.md) (include if present). Row order is unchanged.
 
 **1.16.0 notes:** Express `POI_Scores` also copies context source columns when present (`plan`, `reason_code_list`, `remittance_code`, `cpt_codes`, `modifiers`, `diagnosis_codes`, `billing_provider`, `department`, `billing_provider_tax_id`, `billing_provider_npi`). Schema name is `cpt_codes`.
 

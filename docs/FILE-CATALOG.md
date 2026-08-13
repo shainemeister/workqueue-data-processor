@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.21"
+version: "1.10.22"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-13"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.21  
+**Document version:** 1.10.22  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -140,7 +140,7 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 | [plan/repo-kit-upgrade-2.4.0.md](./plan/repo-kit-upgrade-2.4.0.md) | doc | Completed execution record for repo-kit 2.4.0 upgrade. |
 | [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | doc | Completed execution record for repo-kit 2.3.1 upgrade. |
 | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 freeze + P8 ship notes: per-file score, filename/`wq_label` identity, preview/naming/Totals. |
-| [plan/slim-poi-output.md](./plan/slim-poi-output.md) | doc | Freeze: slim detail CSV + Express `POI_Scores` (identity + score-input + context source + four scores). |
+| [plan/slim-poi-output.md](./plan/slim-poi-output.md) | doc | Freeze: slim detail CSV + Express `POI_Scores` (frozen column order). |
 | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) | doc | Cluster 3 design-freeze checklist (developing; V2 boundary). |
 | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) | doc | Optional B1.1 base-weight retune checklist (pending). |
 | [plan/post-v1-enhancement/README.md](./plan/post-v1-enhancement/README.md) | doc | Open annex index; active only while WORKBOARD Optional annex points here. |
@@ -386,6 +386,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.22 | excel-toolkit 1.17.0 Express column order |
 | 1.10.21 | excel-toolkit 1.16.0 Express context source columns |
 | 1.10.20 | excel-toolkit 1.15.0 Express score-input source columns |
 | 1.10.19 | excel-toolkit 1.14.2 [5] Express score label |

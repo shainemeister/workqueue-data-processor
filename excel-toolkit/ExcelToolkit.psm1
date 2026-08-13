@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.16.0'
+$script:ExcelToolkitVersion = '1.17.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -380,56 +380,6 @@ function New-ExcelToolkitWorklistRows {
     }
 }
 
-function Get-ExcelToolkitPoiScoreIdentityColumns {
-    <#
-    .SYNOPSIS
-        Preferred claim-identity headers for the POI_Scores sheet (include if present).
-    #>
-    return @(
-        'account',
-        'invoice_num',
-        'patient',
-        'follow_up_record_id',
-        'service_date',
-        'payer'
-    )
-}
-
-function Get-ExcelToolkitPoiScoreSourceColumns {
-    <#
-    .SYNOPSIS
-        Original WQ headers that feed V1 metrics (include if present; skip if already listed).
-    #>
-    return @(
-        'out_ins_amt',
-        'billed_amount',
-        'days_until_appeal_deadline',
-        'days_until_replacement_deadline',
-        'days_on_wq_tab',
-        'denial_count',
-        'last_worked_date'
-    )
-}
-
-function Get-ExcelToolkitPoiScoreContextColumns {
-    <#
-    .SYNOPSIS
-        Original WQ follow-up context headers (include if present; skip if already listed).
-    #>
-    return @(
-        'plan',
-        'reason_code_list',
-        'remittance_code',
-        'cpt_codes',
-        'modifiers',
-        'diagnosis_codes',
-        'billing_provider',
-        'department',
-        'billing_provider_tax_id',
-        'billing_provider_npi'
-    )
-}
-
 function Get-ExcelToolkitPoiScoreValueColumns {
     <#
     .SYNOPSIS
@@ -443,10 +393,46 @@ function Get-ExcelToolkitPoiScoreValueColumns {
     )
 }
 
+function Get-ExcelToolkitPoiScoreCopyColumns {
+    <#
+    .SYNOPSIS
+        Frozen POI_Scores column order (include a header when present on the slim CSV).
+    #>
+    return @(
+        'invoice_num',
+        'service_date',
+        'last_worked_date',
+        'out_ins_amt',
+        'billed_amount',
+        'payer',
+        'plan',
+        'reason_code_list',
+        'remittance_code',
+        'cpt_codes',
+        'modifiers',
+        'diagnosis_codes',
+        'days_until_appeal_deadline',
+        'days_until_replacement_deadline',
+        'days_on_wq_tab',
+        'denial_count',
+        'billing_provider',
+        'department',
+        'billing_provider_tax_id',
+        'billing_provider_npi',
+        'follow_up_record_id',
+        'account',
+        'patient',
+        'v1_priority_score',
+        'v1_score_protect_writeoffs',
+        'v1_score_maximize_cash',
+        'v1_score_suppress_aging'
+    )
+}
+
 function New-ExcelToolkitPoiScoreRows {
     <#
     .SYNOPSIS
-        Project identity + score-input + context source columns + four POI scores (copy only; no math).
+        Project frozen POI_Scores columns from a slim scored CSV (copy only; no math).
     #>
     [CmdletBinding()]
     param(
@@ -463,22 +449,9 @@ function New-ExcelToolkitPoiScoreRows {
         throw ('POI score sheet requires slim score columns ({0}). Missing: {1}' -f ($scoreCols -join ', '), ($missing -join ', '))
     }
 
-    $identityCols = @(
-        Get-ExcelToolkitPoiScoreIdentityColumns | Where-Object { $DetailHeaders -contains $_ }
+    $outHeaders = @(
+        Get-ExcelToolkitPoiScoreCopyColumns | Where-Object { $DetailHeaders -contains $_ }
     )
-    $listed = @($identityCols)
-    $sourceCols = @(
-        Get-ExcelToolkitPoiScoreSourceColumns | Where-Object {
-            ($DetailHeaders -contains $_) -and ($listed -notcontains $_)
-        }
-    )
-    $listed = @($listed + $sourceCols)
-    $contextCols = @(
-        Get-ExcelToolkitPoiScoreContextColumns | Where-Object {
-            ($DetailHeaders -contains $_) -and ($listed -notcontains $_)
-        }
-    )
-    $outHeaders = @($identityCols + $sourceCols + $contextCols + $scoreCols)
     $keep = @($outHeaders)
 
     $out = New-Object System.Collections.Generic.List[object]

@@ -1,7 +1,7 @@
 ---
 title: Slim multi-POI score output — design freeze
 description: Opt-in detail CSV with WQ columns plus one V1 score per shipped POI preset.
-version: "1.3.0"
+version: "1.4.0"
 status: current
 audience:
   - developers
@@ -19,9 +19,9 @@ last_updated: "2026-08-13"
 
 # Slim multi-POI score output
 
-**Document version:** 1.3.0  
-**Status:** **shipped** — Express `POI_Scores` includes context source columns (excel 1.16.0).  
-**Board:** [WORKBOARD](../WORKBOARD.md) P15–P30.  
+**Document version:** 1.4.0  
+**Status:** **shipped** — Express `POI_Scores` frozen column order (excel 1.17.0).  
+**Board:** [WORKBOARD](../WORKBOARD.md) P15–P33.  
 **Signed:** 2026-08-12 (slim CSV); Express addenda 2026-08-13.
 
 ---
@@ -62,14 +62,35 @@ JSON: `OutputMode`, `SlimScoreColumns` (slim only). Excel: `PoiScoreSheet`, `Poi
 
 ## Frozen Express `POI_Scores` columns
 
-Excel copies values only (no scoring math). Identity and score-input **source** columns are included **when present** on the slim CSV, in this order (no duplicates). All four score columns are **required** (slim always writes them). Do **not** copy `v1_raw_*` / `v1_norm_*` / `kpi_q_*`.
+Excel copies values only (no scoring math). Include a header **when present** on the slim CSV, in this **column** order (not a row sort). The four score columns are **required**. Do **not** copy `v1_raw_*` / `v1_norm_*` / `kpi_q_*`.
 
-| Kind | Columns |
-|------|---------|
-| Identity (if present) | `account`, `invoice_num`, `patient`, `follow_up_record_id`, `service_date`, `payer` |
-| Score-input source (if present, skip if already listed) | `out_ins_amt`, `billed_amount`, `days_until_appeal_deadline`, `days_until_replacement_deadline`, `days_on_wq_tab`, `denial_count`, `last_worked_date` |
-| Context source (if present, skip if already listed) | `plan`, `reason_code_list`, `remittance_code`, `cpt_codes`, `modifiers`, `diagnosis_codes`, `billing_provider`, `department`, `billing_provider_tax_id`, `billing_provider_npi` |
-| Scores (required) | `v1_priority_score`, `v1_score_protect_writeoffs`, `v1_score_maximize_cash`, `v1_score_suppress_aging` |
+1. `invoice_num`  
+2. `service_date`  
+3. `last_worked_date`  
+4. `out_ins_amt`  
+5. `billed_amount`  
+6. `payer`  
+7. `plan`  
+8. `reason_code_list`  
+9. `remittance_code`  
+10. `cpt_codes`  
+11. `modifiers`  
+12. `diagnosis_codes`  
+13. `days_until_appeal_deadline`  
+14. `days_until_replacement_deadline`  
+15. `days_on_wq_tab`  
+16. `denial_count`  
+17. `billing_provider`  
+18. `department`  
+19. `billing_provider_tax_id`  
+20. `billing_provider_npi`  
+21. `follow_up_record_id`  
+22. `account`  
+23. `patient`  
+24. `v1_priority_score`  
+25. `v1_score_protect_writeoffs`  
+26. `v1_score_maximize_cash`  
+27. `v1_score_suppress_aging`
 
 Workbook has **one** sheet (`POI_Scores` unless `-PoiScoreSheetName` is set). Not combined with Groups / Worklist / Totals. `-PoiScoreSheetOnly` on a full-detail CSV fails (missing `v1_score_*`).
 
@@ -77,6 +98,7 @@ Workbook has **one** sheet (`POI_Scores` unless `-PoiScoreSheetName` is set). No
 
 | Version | Notes |
 |---------|--------|
+| 1.4.0 | P31 Express: operator column order (copy if present) |
 | 1.3.0 | P28 Express: context source columns (`cpt_codes`, plan, codes, billing) |
 | 1.2.0 | P25 Express: copy score-input source columns (not `v1_*` audit) |
 | 1.1.0 | P20 Express: one POI_Scores Excel sheet; skip extra prompts |

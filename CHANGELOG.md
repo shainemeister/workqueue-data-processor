@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.24.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.17.0:** Express / `-PoiScoreSheetOnly` writes `POI_Scores` columns in the frozen operator order (invoice / dates / amounts / payer-plan / codes / deadlines / billing / account-patient / four scores). Include if present. Row order unchanged.
+
 ### [1.23.0] - 2026-08-13
 
 #### Changed
