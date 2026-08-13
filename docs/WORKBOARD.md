@@ -49,7 +49,7 @@ last_updated: "2026-08-12"
 | P0 | Register board + annex | `done` | `67b5c2a` | Annex + indexes |
 | P1 | Cluster 3 design freeze (worklists / groups / sort / sheet) | `blocked` | — | Needs group key, output shape, privacy. [cluster-3-analysis.md](./plan/cluster-3-analysis.md) |
 | P2 | Optional Excel rehearsal (option A) | `done` | `cb78d08` | Findings: [p2-rehearsal.md](./plan/post-v1-enhancement/p2-rehearsal.md) |
-| P3 | Implement 3.2 multi-sort | `done` | — | kpi 2.8.0 `--sort` / `--sort-preset`. SHA after commit |
+| P3 | Implement 3.2 multi-sort | `done` | `b3759d6` | kpi 2.8.0 `--sort` / `--sort-preset` (docs `bf66b2d`) |
 | P4 | Group summary CSV (option B) | `open` | — | kpi-analytics |
 | P5 | Excel groups / two-level worklist (C+D) | `open` | — | No scoring math in PowerShell |
 | P6 | Menu Build worklist (E) | `open` | — | After P4–P5 |
