@@ -46,7 +46,7 @@ last_updated: "2026-08-12"
 
 | ID | Work | Status | Commit | Notes |
 |----|------|--------|--------|-------|
-| P0 | Register board + annex | `done` | — | SHA when committed |
+| P0 | Register board + annex | `done` | `67b5c2a` | Annex + indexes |
 | P1 | Cluster 3 design freeze (worklists / groups / sort / sheet) | `blocked` | — | Needs group key, output shape, privacy. [cluster-3-analysis.md](./plan/cluster-3-analysis.md) |
 | P2 | Optional Excel rehearsal (option A) | `open` | — | After P1 |
 | P3 | Implement 3.2 multi-sort | `open` | — | First product code; after P1 |
