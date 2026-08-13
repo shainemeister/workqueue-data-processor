@@ -403,6 +403,8 @@ Allow the operator to partition or highlight rows that pass simple group-level f
 **Intent**  
 Beyond the default priority-score ranking, offer explicit sort keys (balance, claim age, dual-deadline urgency, denial count, etc.) on the scored output or the Excel export.
 
+**Status:** **Frozen + shipped (kpi-analytics 2.8.0)** — `score --sort` / `--sort-preset`; default input order; Excel keeps CSV order.
+
 **Open design points**
 - Stable secondary keys and deterministic ordering
 - Whether the original input order is also preserved as an option

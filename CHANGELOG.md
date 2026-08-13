@@ -13,6 +13,16 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.15.0] - 2026-08-12
+
+#### Added
+
+- **kpi-analytics 2.8.0:** `score --sort` and `--sort-preset` (`priority` / `deadline` / `cash`) reorder the **detail** CSV only. Default remains input order. V1 formulas and `kpi_q_*` unchanged. JSON: `SortSpec`, `SortPreset`, `SortApplied`.
+
+#### Changed
+
+- Cluster 3.2 **sort keys** frozen (post-score; stable input-index last). Grouping (3.1) and analysis sheet (3.3) still developing.
+
 ### [1.14.2] - 2026-08-12
 
 #### Changed

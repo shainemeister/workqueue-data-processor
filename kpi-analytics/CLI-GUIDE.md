@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.7.0"
+version: "2.8.0"
 status: current
 audience:
   - developers
@@ -12,14 +12,14 @@ related:
   - SCORE-METHODOLOGY.md
   - RCM_KPI_Claim_Impact_Methodology.md
   - ENTERPRISE-SECURITY.md
-last_updated: "2026-07-30"
+last_updated: "2026-08-12"
 ---
 
 # KPI Analytics — CLI Reference
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.7.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.8.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -260,6 +260,7 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
     [--strict roles|full]
     [--summary <path>] [--no-summary]
     [--privacy | --no-privacy]
+    [--sort <spec> | --sort-preset priority|deadline|cash]
     [--force] [--dry-run] [--json] [--quiet]
 ```
 
@@ -277,6 +278,8 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--privacy` | No | (config) | Force PHI field masking on scored output |
 | `--no-privacy` | No | (config) | Disable PHI field masking on scored output |
 | `--force` | No | off | Overwrite the exact `--output` path if it exists. **Default (off):** write to a free path with a numerical suffix (`name_1.csv`), matching excel-toolkit collision policy. |
+| `--sort` | No | none | Post-score **detail** row order: `column[:asc\|:desc],...` (default **asc**). **Input order** when omitted. Mutually exclusive with `--sort-preset`. Does not change V1 / `kpi_q_*` values. Missing cells sort last. Original input index is the last stable key. |
+| `--sort-preset` | No | none | `priority` (`v1_priority_score:desc,out_ins_amt:desc`) · `deadline` (`days_until_appeal_deadline:asc,v1_priority_score:desc`) · `cash` (`out_ins_amt:desc,v1_priority_score:desc`). Mutually exclusive with `--sort`. |
 | `--dry-run` | No | off | No file writes (still reports resolved unique paths) |
 | `--force-diagnostics` | No | off | Refresh diagnostics certificate first |
 | `--skip-diagnostics-gate` | No | off | Emergency bypass of diagnostics gate |
@@ -288,6 +291,8 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 **Score JSON additions (2.6.0+):** `ProfilePath`, `ProfileName` (null when no `--profile`), `MappingSource` (`cli` \| `profile_inline` \| `profile_path` \| `none`). `PoiName` continues to reflect `point_of_interest.name` from the effective config.
 
 **Output collision (2.7.0+):** without `--force`, existing destinations are not overwritten. JSON includes `OutputPath` (write target), `RequestedOutputPath`, `OutputPathAdjusted`, and matching `SummaryPath*` fields when a summary is written. `Force` echoes the CLI flag.
+
+**Detail sort (2.8.0+):** JSON includes `SortSpec` (resolved spec string or null), `SortPreset` (name or null), and `SortApplied` (`[{Column, Direction}, ...]`). The vertical summary CSV is **not** reordered. Excel `export-csv` keeps CSV row order.
 
 **Column mapping**
 
@@ -661,4 +666,4 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and package version are aligned at **2.0.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, or `kpi_q_*` / summary contracts.
+CLI and package version are aligned at **2.8.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, `kpi_q_*` / summary contracts, or the score `--sort` contract.
