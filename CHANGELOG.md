@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.21.2] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.14.2:** Process my data **[5]** label is **Express score** only, same DarkGray as [1]–[4]. Extra Express hint line removed. All five actions remain.
+
 ### [1.21.1] - 2026-08-13
 
 #### Changed

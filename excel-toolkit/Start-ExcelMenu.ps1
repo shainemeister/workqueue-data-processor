@@ -468,8 +468,7 @@ function Invoke-ProcessMyData {
     Write-Host '  [2] Score only (CSV artifacts)' -ForegroundColor DarkGray
     Write-Host '  [3] Export only (CSV -> Excel deliverable, no scoring)' -ForegroundColor DarkGray
     Write-Host '  [4] Build worklist (Score + Groups + Worklist Excel)' -ForegroundColor DarkGray
-    Write-Host '  [5] Express score (all POI -> one sheet)  <- all POI scores, one sheet' -ForegroundColor Cyan
-    Write-Host 'Express = [5] (skips profile / password / Full-Slim).' -ForegroundColor Cyan
+    Write-Host '  [5] Express score' -ForegroundColor DarkGray
     $action = Read-Host ("Choice [{0}]" -f $defaultAction)
     if ([string]::IsNullOrWhiteSpace($action)) {
         $action = $defaultAction

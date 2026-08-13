@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.18"
+version: "1.10.19"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-13"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.18  
+**Document version:** 1.10.19  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -386,6 +386,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.19 | excel-toolkit 1.14.2 [5] Express score label |
 | 1.10.18 | excel-toolkit 1.14.1 menu [5] Express visibility lock |
 | 1.10.17 | excel-toolkit 1.14.0 Express / `-PoiScoreSheetOnly` |
 | 1.10.16 | `scripts/Remove-MaintainerDocs.ps1` + root cmd |

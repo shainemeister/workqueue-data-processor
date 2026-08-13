@@ -74,6 +74,7 @@ last_updated: "2026-08-13"
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-13 Menu [5] label simplified to Express score (same highlight as [1]–[4]).  
 - 2026-08-13 Shipped P24 Express action-list visibility (`dcd1d1e`; excel 1.14.1).  
 - 2026-08-13 Opened P24 Express action-list visibility (operator could not see [5]).  
 - 2026-08-13 Shipped P20–P23 Express score (`cb20bb0`; excel 1.14.0).  
