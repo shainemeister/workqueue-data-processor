@@ -1234,6 +1234,35 @@ function Set-ExcelColumnWidth {
     }
 }
 
+function Enable-ExcelAutoFilter {
+    <#
+    .SYNOPSIS
+        Turn on AutoFilter for the header row across the given column count.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        $Worksheet,
+
+        [ValidateRange(1, 1048576)]
+        [int]$HeaderRow = 1,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateRange(1, 16384)]
+        [int]$ColumnCount
+    )
+
+    $endLetter = ConvertTo-ExcelColumnLetter -Column $ColumnCount
+    $addr = ('A{0}:{1}{0}' -f $HeaderRow, $endLetter)
+    $range = $Worksheet.Range($addr)
+    try {
+        $range.AutoFilter() | Out-Null
+    }
+    finally {
+        Release-ComObjectSafe -ComObject $range
+    }
+}
+
 function Invoke-ExcelWorksheetActivate {
     <#
     .SYNOPSIS
@@ -1650,6 +1679,7 @@ Export-ModuleMember -Function @(
     'Set-ExcelHeaderStyle',
     'Set-ExcelAutoFit',
     'Set-ExcelColumnWidth',
+    'Enable-ExcelAutoFilter',
     'Invoke-ExcelWorksheetActivate',
     'Import-CsvToWorksheet',
     'Export-WorksheetToCsv',

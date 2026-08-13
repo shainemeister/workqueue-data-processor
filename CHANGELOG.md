@@ -13,6 +13,12 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.28.0] - 2026-08-13
+
+#### Changed
+
+- **excel-toolkit 1.21.0:** Express `POI_Scores` has AutoFilter on every column. Summary is unchanged.
+
 ### [1.27.0] - 2026-08-13
 
 #### Changed

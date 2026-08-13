@@ -1,7 +1,7 @@
 ---
 title: Slim multi-POI score output — design freeze
 description: Opt-in detail CSV with WQ columns plus one V1 score per shipped POI preset.
-version: "1.7.0"
+version: "1.8.0"
 status: current
 audience:
   - developers
@@ -19,9 +19,9 @@ last_updated: "2026-08-13"
 
 # Slim multi-POI score output
 
-**Document version:** 1.7.0  
-**Status:** **shipped** — Express opens on `POI_Scores`; column width 12 (excel 1.20.0).  
-**Board:** [WORKBOARD](../WORKBOARD.md) P15–P42.  
+**Document version:** 1.8.0  
+**Status:** **shipped** — AutoFilter on Express `POI_Scores` (excel 1.21.0).  
+**Board:** [WORKBOARD](../WORKBOARD.md) P15–P45.  
 **Signed:** 2026-08-12 (slim CSV); Express addenda 2026-08-13.
 
 ---
@@ -98,10 +98,13 @@ Date columns `service_date` and `last_worked_date` (when present) use Excel numb
 
 Before save, **activate `POI_Scores`** so it is the sheet shown when the workbook opens. Express sheets use a fixed **column width of 12** (not AutoFit).
 
+`POI_Scores` has **AutoFilter** on every header column. **Summary** does not.
+
 ## Document history
 
 | Version | Notes |
 |---------|--------|
+| 1.8.0 | P43: AutoFilter on POI_Scores headers |
 | 1.7.0 | P40: open on POI_Scores; Express column width 12 |
 | 1.6.0 | P37: Express Summary sheet; date format on service_date / last_worked_date |
 | 1.5.0 | P34: `patient` after `invoice_num`; menu deletes generated CSVs after Excel |

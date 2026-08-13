@@ -19,7 +19,7 @@
 
 Set-StrictMode -Version Latest
 
-$script:ExcelToolkitVersion = '1.20.0'
+$script:ExcelToolkitVersion = '1.21.0'
 $script:ExcelToolkitDiagnosticsReportVersion = 1
 
 $excelComPath = Join-Path $PSScriptRoot 'ExcelCom.psm1'
@@ -922,6 +922,9 @@ function Export-ExcelFromCsv {
                 Set-ExcelHeaderStyle -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount -Freeze
                 Set-ExcelColumnWidth -Worksheet $ws -Width 12 -ColumnCount $importInfo.ColumnCount
                 Set-ExcelToolkitDateColumnFormats -Worksheet $ws -Headers $poiHeaders -DataRowCount $importInfo.RowCount
+                if ($importInfo.ColumnCount -gt 0) {
+                    Enable-ExcelAutoFilter -Worksheet $ws -HeaderRow 1 -ColumnCount $importInfo.ColumnCount
+                }
                 if ($null -ne $summaryTable) {
                     $wsSummary = Add-ExcelWorksheet -Workbook $workbook -Name $SummarySheetName -After $ws
                     $null = Write-ExcelToolkitCsvSheet -Worksheet $wsSummary -Rows $summaryTable.Rows -Headers $summaryTable.Headers -FixedColumnWidth 12
@@ -1408,6 +1411,7 @@ function Invoke-ExcelToolkitReadinessChecks {
         'Set-ExcelHeaderStyle',
         'Set-ExcelAutoFit',
         'Set-ExcelColumnWidth',
+        'Enable-ExcelAutoFilter',
         'Invoke-ExcelWorksheetActivate',
         'Import-CsvToWorksheet',
         'Export-WorksheetToCsv',
