@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.5"
+version: "1.10.6"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.5  
+**Document version:** 1.10.6  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -141,6 +141,7 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) | doc | Optional B1.1 base-weight retune checklist (pending). |
 | [plan/post-v1-enhancement/README.md](./plan/post-v1-enhancement/README.md) | doc | Open annex index; active only while WORKBOARD Optional annex points here. |
 | [plan/post-v1-enhancement/ooo.md](./plan/post-v1-enhancement/ooo.md) | doc | Master OOO for grouped POI worklists and later optional Cluster 2 / B1.1. |
+| [plan/post-v1-enhancement/p2-rehearsal.md](./plan/post-v1-enhancement/p2-rehearsal.md) | doc | P2 synthetic group-key rehearsal (option A); not a freeze. |
 | [project_build/README.md](./project_build/README.md) | doc | Scaffold: implementation build notes. |
 | [resources/README.md](./resources/README.md) | doc | Curated in-repo and external pointers for AI/maintainers. |
 
@@ -368,6 +369,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.6 | P2 rehearsal note under post-v1-enhancement annex |
 | 1.10.5 | Annex `plan/post-v1-enhancement/` (workboard-linked OOO) |
 | 1.10.4 | repo-kit **2.4.0**: WORKBOARD, workboard/continuity modules, upgrade 2.4.0 note |
 | 1.10.3 | Research note: worklist grouping and industry-metric fit |

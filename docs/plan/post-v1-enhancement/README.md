@@ -1,7 +1,7 @@
 ---
 title: post-v1-enhancement — program annex
 description: Deep order-of-operations for grouped POI worklists and later Cluster 2/B1.1. Active only while linked from the workboard.
-version: "1.0.0"
+version: "1.0.1"
 status: active
 audience:
   - ai-agents
@@ -30,7 +30,7 @@ last_updated: "2026-08-12"
 |-------|--------|
 | **Program id** | `post-v1-enhancement` |
 | **Status** | `active` |
-| **Next phase** | **P1** Cluster 3 design freeze (`blocked` — needs operator decisions) |
+| **Next phase** | **P1** Cluster 3 design freeze (`blocked` — user deferred; P2 rehearsal done) |
 | **L4 owners to update on ship** | After product phases: toolkit CLI-GUIDE / README / SCORE-METHODOLOGY as applicable; `CHANGELOG.md`; FILE-CATALOG |
 
 ## Contents of this annex
@@ -39,6 +39,7 @@ last_updated: "2026-08-12"
 |------|------|
 | This README | Status, next phase, link **back** to the board |
 | [ooo.md](./ooo.md) | Goals, non-goals, invariants, master OOO, verify, risks |
+| [p2-rehearsal.md](./p2-rehearsal.md) | P2 option A findings (synthetic group keys) |
 
 ## Rules
 
@@ -57,4 +58,5 @@ See [ooo.md § P1 straw men](./ooo.md#p1-straw-men-not-frozen) and [cluster-3-an
 
 | Version | Notes |
 |---------|--------|
+| 1.0.1 | P2 rehearsal note; next phase still P1 freeze |
 | 1.0.0 | Opened with workboard registration |

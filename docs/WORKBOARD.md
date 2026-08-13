@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.0"
+version: "1.1.1"
 status: current
 audience:
   - ai-agents
@@ -48,7 +48,7 @@ last_updated: "2026-08-12"
 |----|------|--------|--------|-------|
 | P0 | Register board + annex | `done` | `67b5c2a` | Annex + indexes |
 | P1 | Cluster 3 design freeze (worklists / groups / sort / sheet) | `blocked` | — | Needs group key, output shape, privacy. [cluster-3-analysis.md](./plan/cluster-3-analysis.md) |
-| P2 | Optional Excel rehearsal (option A) | `open` | — | After P1 |
+| P2 | Optional Excel rehearsal (option A) | `done` | — | Findings: [p2-rehearsal.md](./plan/post-v1-enhancement/p2-rehearsal.md). SHA after commit |
 | P3 | Implement 3.2 multi-sort | `open` | — | First product code; after P1 |
 | P4 | Group summary CSV (option B) | `open` | — | kpi-analytics |
 | P5 | Excel groups / two-level worklist (C+D) | `open` | — | No scoring math in PowerShell |
@@ -60,6 +60,7 @@ last_updated: "2026-08-12"
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-12 P2 rehearsal on synthetic scored workbook; P1 remains `blocked` (user deferred freeze).  
 - 2026-08-12 Registered **post-v1-enhancement**; P0 annex written; P1 `blocked` on freeze questions.  
 - 2026-08-12 Closed **repo-kit-upgrade-2.4.0** (workboard + continuity policy; PLAN triple surface).  
 - 2026-08-12 Parked Cluster 3 research as a separate docs commit (`cb93513`).
@@ -99,4 +100,4 @@ last_updated: "2026-08-12"
 
 ---
 
-*Agents: continue P1 freeze questions only. Do not start Cluster 2/3 product code.*
+*Agents: P2 is done. P1 freeze is still `blocked`. Do not start Cluster 2/3 product code (P3+).*
