@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.6"
+version: "1.1.7"
 status: current
 audience:
   - ai-agents
@@ -53,13 +53,14 @@ last_updated: "2026-08-12"
 | P4 | Group summary CSV (option B) | `done` | `a2e3601` | kpi 2.9.0 `--group-by` / `--group-preset` (docs `db334da`) |
 | P5 | Excel groups / two-level worklist (C+D) | `done` | `cf14c23` | excel 1.10.0 `-GroupsCsv` / `-Worklist` (docs `20868cb`) |
 | P6 | Menu Build worklist (E) | `done` | `926ed01` | excel 1.11.0 menu [4]; composition only |
-| P7 | Cluster 2 design freeze | `open` | — | Only if groups span files |
+| P7 | Cluster 2 design freeze | `done` | `d151313` | Per-file score; no cross-file groups; [cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) |
 | P8 | Cluster 2 implement | `open` | — | After P7 |
 | P9 | B1.1 base-weight retune | `deferred` | — | Analyst-gated |
 | P10 | V2/V3 in-score category metrics | `cancelled` | — | Not this program (S5) |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-12 P7 signed Cluster 2 freeze (per-file score; groups do not span files); P8 implement `open`.  
 - 2026-08-12 P6 shipped excel-toolkit 1.11.0 menu Build worklist; P1 filters still `blocked`.  
 - 2026-08-12 P5 shipped excel-toolkit 1.10.0 Groups + Worklist sheets; P1 filters still `blocked`.  
 - 2026-08-12 P4 shipped kpi-analytics 2.9.0 groups CSV; 3.1 CSV frozen; P1 filters/patient freeze still `blocked`.  
@@ -75,7 +76,6 @@ last_updated: "2026-08-12"
 
 | ID | Note |
 |----|------|
-| cluster-2-multi-file | Design freeze before S3 product code unless P7 opens it. [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) |
 | b1.1-base-weight-retune | Optional; analyst-gated (P9). [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) |
 | continuity-overlay | Optional filled overlay (`docs/project_build/continuity.md`); not opened |
 | kit-adopter-404s | SETUP / kit CHANGELOG links; wait upstream repo-kit |
@@ -104,4 +104,4 @@ last_updated: "2026-08-12"
 
 ---
 
-*Agents: P6 done. Next open is P7 (Cluster 2 freeze) only if groups must span files. P1 remaining: row filters / patient-group policy.*
+*Agents: P7 done. Next open is P8 (Cluster 2 implement: preview → naming → wording → file-level totals). P1 remaining: row filters / patient-group policy.*
