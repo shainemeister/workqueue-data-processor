@@ -74,13 +74,13 @@ last_updated: "2026-08-13"
 | P25 | Freeze Express score-input source columns | `done` | `2c13194` | slim-poi-output 1.2.0 |
 | P26 | Copy source-input columns on POI_Scores | `done` | `2c13194` | Present if present; no math |
 | P27 | L4 + CHANGELOG + cert | `done` | `2c13194` | excel 1.15.0 |
-| P28 | Freeze Express context source columns | `done` | — | slim-poi-output 1.3.0 |
-| P29 | Copy context columns on POI_Scores | `done` | — | plan / codes / billing; `cpt_codes` |
-| P30 | L4 + CHANGELOG + cert | `done` | — | excel 1.16.0 |
+| P28 | Freeze Express context source columns | `done` | `b9c0959` | slim-poi-output 1.3.0 |
+| P29 | Copy context columns on POI_Scores | `done` | `b9c0959` | plan / codes / billing; `cpt_codes` |
+| P30 | L4 + CHANGELOG + cert | `done` | `b9c0959` | excel 1.16.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
-- 2026-08-13 Shipped P28–P30 Express context source columns (excel 1.16.0).  
+- 2026-08-13 Shipped P28–P30 Express context source columns (`b9c0959`; excel 1.16.0).  
 - 2026-08-13 Opened P28–P30 Express context source columns (plan / codes / billing).  
 - 2026-08-13 Shipped P25–P27 Express score-input source columns (`2c13194`; excel 1.15.0).  
 - 2026-08-13 Opened P25–P27 Express score-input source columns on `POI_Scores`.  
