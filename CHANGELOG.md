@@ -13,6 +13,16 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.14.2] - 2026-08-12
+
+#### Changed
+
+- Upgraded repo-kit baseline to **2.4.0** (workboard + optional continuity; PLAN triple surface)
+  - Portable policy: `kit/rules/workboard.md`, `kit/rules/continuity.md`; UPGRADE 1.6.0 preserve list
+  - Adopted filled `docs/WORKBOARD.md`; Agent Instruct packs regen for workboard co-maintain
+  - Root PLAN **1.2.0** points at the board; no live phase tables
+  - FILE-CATALOG **1.10.4**; product packages unchanged (kpi **2.7.0** / excel **1.9.0**)
+
 ### [1.14.1] - 2026-08-12
 
 #### Changed

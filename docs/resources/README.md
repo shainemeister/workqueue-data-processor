@@ -1,7 +1,7 @@
 ---
 title: docs/resources — curated pointers
 description: Curated in-repo and external citations for AI and maintainers.
-version: "1.0.0"
+version: "1.0.1"
 status: current
 audience:
   - developers
@@ -12,7 +12,7 @@ related:
   - ../../PLAN.md
   - ../PLAN.md
   - ../../kit/RULES.md
-last_updated: "2026-08-10"
+last_updated: "2026-08-12"
 ---
 
 # docs/resources/
@@ -26,6 +26,7 @@ Curated pointers for AI and maintainers. External links are **guidance only**—
 | Topic | Path |
 |-------|------|
 | Control + Agent models | [PLAN.md](../../PLAN.md) |
+| Live multi-phase | [WORKBOARD.md](../WORKBOARD.md) |
 | Product backlog | [PLAN.md](../PLAN.md) |
 | Execution plans | [plan/](../plan/) |
 | Maintenance law | [kit/RULES.md](../../kit/RULES.md) |
@@ -50,4 +51,5 @@ Curated pointers for AI and maintainers. External links are **guidance only**—
 
 | Version | Notes |
 |---------|--------|
+| 1.0.1 | Workboard pointer (kit 2.4.0) |
 | 1.0.0 | Initial curated map after plan dual-surface alignment |

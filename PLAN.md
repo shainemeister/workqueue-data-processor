@@ -44,7 +44,7 @@ Detailed execution plans: [docs/plan/](./docs/plan/).
 | Product backlog | [docs/PLAN.md](./docs/PLAN.md) — Cluster 1 complete; Clusters 2–3 developing |
 | Execution board | [docs/WORKBOARD.md](./docs/WORKBOARD.md) — what is open / next / SHA |
 | Execution plans | [docs/plan/](./docs/plan/) |
-| Maintenance hub | [kit/RULES.md](./kit/RULES.md) (repo-kit **2.3.1**; adopting **2.4.0**) |
+| Maintenance hub | [kit/RULES.md](./kit/RULES.md) (repo-kit **2.4.0**) |
 | AI docs workspace | [docs/README.md](./docs/README.md) |
 
 ### Plan document map (kit triple surface)

@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.3"
+version: "1.10.4"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.3  
+**Document version:** 1.10.4  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -125,14 +125,16 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 
 | Path | Type | Summary |
 |------|------|---------|
-| [README.md](./README.md) | doc | AI docs workspace index: dual PLAN map, modules, plan index. |
+| [README.md](./README.md) | doc | AI docs workspace index: triple PLAN map, workboard, modules, plan index. |
+| [WORKBOARD.md](./WORKBOARD.md) | doc | Live multi-phase board (open / next / SHA). |
 | [FILE-CATALOG.md](./FILE-CATALOG.md) | doc | This inventory: concise purpose of each intentional source file. |
-| [PLAN.md](./PLAN.md) | doc | Living product post-V1 backlog (0.5.0): Cluster 1 complete; freezes link to `docs/plan/`; Agent models in root PLAN only. |
+| [PLAN.md](./PLAN.md) | doc | Living product post-V1 backlog (0.5.1): Cluster 1 complete; freezes link to `docs/plan/`; Agent models in root PLAN only. |
 | [WQ_Priority_Matrix_Concept.md](./WQ_Priority_Matrix_Concept.md) | doc | Progressive V1–V3 priority-score design; V1 is the live implementation target. |
 | [research/README.md](./research/README.md) | doc | Research index: investigations and spikes. |
 | [research/2026-08-12-rules-compliance-gaps.md](./research/2026-08-12-rules-compliance-gaps.md) | doc | RULES.md gap audit; P1 + local P2 applied 2026-08-12 (see CHANGELOG 1.14.1). |
 | [research/2026-08-12-worklist-grouping-and-industry-metrics.md](./research/2026-08-12-worklist-grouping-and-industry-metrics.md) | doc | Planning: column inventory vs industry RCM metrics; grouped worklist options (not a Cluster 3 freeze). |
-| [plan/README.md](./plan/README.md) | doc | Execution plans index (kit dual surface). |
+| [plan/README.md](./plan/README.md) | doc | Execution plans index (kit triple surface; live work on WORKBOARD). |
+| [plan/repo-kit-upgrade-2.4.0.md](./plan/repo-kit-upgrade-2.4.0.md) | doc | Completed execution record for repo-kit 2.4.0 upgrade. |
 | [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | doc | Completed execution record for repo-kit 2.3.1 upgrade. |
 | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 design-freeze checklist (developing). |
 | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) | doc | Cluster 3 design-freeze checklist (developing; V2 boundary). |
@@ -144,12 +146,12 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 
 ## kit
 
-Standards from [repo-kit](https://github.com/shainemeister/repo-kit) **2.3.1** (project-filled). Product code stays outside this tree.
+Standards from [repo-kit](https://github.com/shainemeister/repo-kit) **2.4.0** (project-filled). Product code stays outside this tree.
 
 | Path | Type | Summary |
 |------|------|---------|
-| [RULES.md](../kit/RULES.md) | doc | Maintenance hub: authority map, kit baseline (**2.3.1**), Operator enforcement, Must/Must not, domain module index |
-| [UPGRADE.md](../kit/UPGRADE.md) | doc | Durable upgrade procedure, 1.x → 2.x layout migration, Agent Instruct preserve/regen |
+| [RULES.md](../kit/RULES.md) | doc | Maintenance hub: authority map, kit baseline (**2.4.0**), Operator enforcement, Must/Must not, domain module index |
+| [UPGRADE.md](../kit/UPGRADE.md) | doc | Durable upgrade procedure, 1.x → 2.x layout migration, Agent Instruct preserve/regen; workboard/continuity preserve list |
 | [MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) | doc | Markdown structure, frontmatter, platform-aware examples, author checklist |
 | [rules/hygiene.md](../kit/rules/hygiene.md) | doc | Packaging: standards under `kit/`; product outside |
 | [rules/authoring-and-style.md](../kit/rules/authoring-and-style.md) | doc | Docs rules; pylint; PowerShell style gates |
@@ -158,14 +160,16 @@ Standards from [repo-kit](https://github.com/shainemeister/repo-kit) **2.3.1** (
 | [rules/security.md](../kit/rules/security.md) | doc | Inventory, SAST, certification renewal enforcement |
 | [rules/versioning-and-git.md](../kit/rules/versioning-and-git.md) | doc | Version surfaces, CHANGELOG, commits, AI disclosure (Instructed-by cascade) |
 | [rules/verification-and-ops.md](../kit/rules/verification-and-ops.md) | doc | Verification table, completion, checklist, anti-patterns |
-| [rules/ai-docs-workspace.md](../kit/rules/ai-docs-workspace.md) | doc | Root `docs/` AI resource workspace policy |
+| [rules/ai-docs-workspace.md](../kit/rules/ai-docs-workspace.md) | doc | Root `docs/` AI resource workspace policy (triple surface) |
+| [rules/workboard.md](../kit/rules/workboard.md) | doc | Multi-phase workboard lifecycle, annex/archive, agent resume |
+| [rules/continuity.md](../kit/rules/continuity.md) | doc | Optional surgical-edit overlay policy (no product paths) |
 | [agents/README.md](../kit/agents/README.md) | doc | Agent Instruct index (packs as views over L4) |
 | [agents/OPS.md](../kit/agents/OPS.md) | doc | Utilization order of operations (O3) when Instruct is in use |
 | [agents/BUILD.md](../kit/agents/BUILD.md) | doc | Emit/regen procedure for generated packs |
 | [agents/PLAN-HOOK.md](../kit/agents/PLAN-HOOK.md) | doc | PLAN Agent models control-surface contract |
 | [agents/generated/](../kit/agents/generated/) | pack | Thin project-filled expert packs (maintainer, implementer, docs-author, security, plan-author, reviewer) |
 | [configs/pylintrc](../kit/configs/pylintrc) | config | Kit starter pylint config (product gate uses `kpi-analytics/.pylintrc`) |
-| [templates/](../kit/templates/) | template | Document skeletons (README, CLI, methodology, security, certification, concept, generic, docs workspace) |
+| [templates/](../kit/templates/) | template | Document skeletons (README, CLI, methodology, security, certification, concept, generic, docs workspace, WORKBOARD, continuity, program annex/OOO) |
 
 ---
 
@@ -362,6 +366,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.4 | repo-kit **2.4.0**: WORKBOARD, workboard/continuity modules, upgrade 2.4.0 note |
 | 1.10.3 | Research note: worklist grouping and industry-metric fit |
 | 1.10.2 | Research note for RULES gap audit; fix kpi-analytics.cmd catalog link; `__version__` row 2.7.0 |
 | 1.10.1 | Plan dual-surface compliance: docs/plan freezes (cluster 2/3, B1.1, upgrade complete); root PLAN stages; docs/PLAN 0.5.0; resources index |

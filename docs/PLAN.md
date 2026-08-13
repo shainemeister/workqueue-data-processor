@@ -1,7 +1,7 @@
 ---
 title: "Development Plan — Post-V1 Enhancement Concepts"
-description: "Living product backlog: Cluster 1 complete; optional base retune; Clusters 2–3 developing. Control surface + Agent models in root PLAN.md; execution freezes in docs/plan/."
-version: "0.5.0"
+description: "Living product backlog: Cluster 1 complete; optional base retune; Clusters 2–3 developing. Control surface in root PLAN.md; live multi-phase on docs/WORKBOARD.md; execution freezes in docs/plan/."
+version: "0.5.1"
 status: current
 audience:
   - developers
@@ -20,19 +20,20 @@ related:
   - ../excel-toolkit/CLI-GUIDE.md
   - ../excel-toolkit/README.md
   - ../wq_schema/wq_schema.json
-last_updated: "2026-08-10"
+last_updated: "2026-08-12"
 ---
 
 # Development Plan — Post-V1 Enhancement Concepts
 
 Living **product enhancement backlog** after V1 priority matrix, dynamic mapping, guided menu, gap-safety, scoring profiles, quality audit, certification Phase 2, and menu scoring-profile picker.
 
-**Document version:** 0.5.0  
+**Document version:** 0.5.1  
 **Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Clusters **2–3** still developing (not implementation-ready).  
 
-| Kit dual surface | Path |
-|------------------|------|
+| Kit triple surface | Path |
+|--------------------|------|
 | Mission, stages, **Agent models** | Root [PLAN.md](../PLAN.md) |
+| Live multi-phase (open / next / SHA) | [docs/WORKBOARD.md](./WORKBOARD.md) |
 | **This product backlog** | `docs/PLAN.md` (this file) |
 | Execution / design-freeze notes | [docs/plan/](./plan/) |
 | AI workspace index | [docs/README.md](./README.md) |
@@ -89,7 +90,7 @@ Do not start Cluster 2/3 product code until open questions are design-frozen (up
 
 ## Background and current baseline
 
-| Area | Current state (as of repo **1.14.0** / kpi **2.7.0** / excel **1.9.0** / repo-kit **2.3.1**) |
+| Area | Current state (as of repo **1.14.2** / kpi **2.7.0** / excel **1.9.0** / repo-kit **2.4.0**) |
 |------|--------------------------------------------------------------------------------|
 | Priority scoring | V1 foundation fully implemented; batch-relative minmax/percentile; full audit columns; chaos + POI multipliers (presets selectable) |
 | RCM impact | Dual attribution (`kpi_q_*`) independent of priority; RCM golden in certification; `amount_field` / `adc_mode` honored |
@@ -447,7 +448,7 @@ Add a second (or additional) worksheet to the summary Excel that identifies and 
 
 All work under this plan must follow [kit/RULES.md](../kit/RULES.md) and `kit/rules/`:
 
-- **Dual PLAN surface:** mission / stages / **Agent models** only in root [PLAN.md](../PLAN.md); long freezes and option matrices in [docs/plan/](./plan/); this file stays the product Cluster backlog ([ai-docs-workspace](../kit/rules/ai-docs-workspace.md)).
+- **Triple PLAN surface:** mission / stages / **Agent models** only in root [PLAN.md](../PLAN.md); live multi-phase on [docs/WORKBOARD.md](./WORKBOARD.md); long freezes and option matrices in [docs/plan/](./plan/); this file stays the product Cluster backlog ([ai-docs-workspace](../kit/rules/ai-docs-workspace.md)).
 - **Agent Instruct:** when implementing, match one primary pack and follow [OPS](../kit/agents/OPS.md) O3; packs are views—L4 contracts win.
 - **Operator enforcement:** Progress Tracker on work-advancing replies; promote durable findings from `docs/` to L4 in the same change set.
 - Conventional Commits (`type(scope): …`) with scopes `kpi-analytics`, `excel-toolkit`, `docs`, `plan`, or omitted for root-wide files.
@@ -497,4 +498,5 @@ When a concept moves from “developing” to “ready for implementation”, fr
 | 0.2.0 | Baseline updated to kpi 2.5.0 / excel 1.8.0 after gap-safety close. **Cluster 1 design-frozen** (POI presets + profile schema/CLI). |
 | 0.3.0 | Baseline → repo **1.9.0** / kpi **2.6.0** / excel **1.8.0**. Cluster 1 CLI + POI presets marked **shipped**. Residual: menu **1f**, optional base retune. Sequencing reframed; Clusters 2–3 remain developing (not implementation-ready). |
 | 0.4.0 | Baseline → repo **1.13.0** / kpi **2.7.0** / excel **1.9.0**. Menu residual **1f** shipped. Cluster 1 complete except optional B1.1-retune. Clusters 2–3 still developing. |
+| 0.5.1 | Kit triple surface (repo-kit **2.4.0**): `docs/WORKBOARD.md` for live multi-phase; Clusters 2–3 still developing |
 | 0.5.0 | Kit dual-surface compliance (repo-kit **2.3.1**): links to root PLAN stages/Agent models; execution freezes under `docs/plan/`; compliance section for OPS/Operator/Instructed-by; baseline notes repo **1.14.0**. |

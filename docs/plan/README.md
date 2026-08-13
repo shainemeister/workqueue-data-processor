@@ -1,7 +1,7 @@
 ---
 title: docs/plan — execution plans index
 description: Multi-step execution and design-freeze notes; complements root PLAN and product docs/PLAN.
-version: "1.0.0"
+version: "1.1.0"
 status: current
 audience:
   - developers
@@ -12,14 +12,17 @@ related:
   - ../PLAN.md
   - ../README.md
   - ../../kit/rules/ai-docs-workspace.md
-last_updated: "2026-08-10"
+  - ../../kit/rules/workboard.md
+  - ../WORKBOARD.md
+last_updated: "2026-08-12"
 ---
 
 # docs/plan/ — execution plans
 
 Detailed **execution** and **design-freeze** notes for multi-step work.  
 Not the Agent Instruct control surface (that is root [PLAN.md](../../PLAN.md)).  
-Not the living product backlog (that is [docs/PLAN.md](../PLAN.md)).
+Not the living product backlog (that is [docs/PLAN.md](../PLAN.md)).  
+Live “what is open” is [docs/WORKBOARD.md](../WORKBOARD.md) — not this index.
 
 **Policy:** [kit/rules/ai-docs-workspace.md](../../kit/rules/ai-docs-workspace.md)
 
@@ -30,6 +33,7 @@ Not the living product backlog (that is [docs/PLAN.md](../PLAN.md)).
 | Role | Path |
 |------|------|
 | Control + Agent models | [../../PLAN.md](../../PLAN.md) |
+| Live multi-phase | [../WORKBOARD.md](../WORKBOARD.md) |
 | Product Clusters backlog | [../PLAN.md](../PLAN.md) |
 | This folder | Freeze notes, PR breakdowns, upgrade execution |
 
@@ -41,6 +45,7 @@ When a freeze becomes product law, promote to toolkit contracts / schema / CHANG
 
 | Plan | Status | Purpose |
 |------|--------|---------|
+| [repo-kit-upgrade-2.4.0.md](./repo-kit-upgrade-2.4.0.md) | **complete** | Standards upgrade 2.3.1 → 2.4.0 (workboard + continuity policy) |
 | [repo-kit-upgrade-2.3.1.md](./repo-kit-upgrade-2.3.1.md) | **complete** | Standards upgrade 2.0.1 → 2.3.1 (Agent Instruct + docs workspace) |
 | [cluster-2-multi-file.md](./cluster-2-multi-file.md) | **developing** | Design freeze checklist for multi-file / naming / default xlsx |
 | [cluster-3-analysis.md](./cluster-3-analysis.md) | **developing** | Design freeze checklist for group/sort/denial analysis (reporting-only). Options: [research/worklist grouping](../research/2026-08-12-worklist-grouping-and-industry-metrics.md) |
@@ -62,4 +67,5 @@ When a freeze becomes product law, promote to toolkit contracts / schema / CHANG
 
 | Version | Notes |
 |---------|--------|
+| 1.1.0 | Workboard pointer; 2.4.0 upgrade record |
 | 1.0.0 | Index for kit dual-surface plan layout after repo-kit 2.3.1 |

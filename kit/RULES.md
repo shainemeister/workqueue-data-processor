@@ -232,8 +232,8 @@ Durable record of **which kit version** this project adopted and **where upgrade
 
 | Field | Value |
 |-------|--------|
-| Adopted kit version | **2.3.1** |
-| Adopted on | **2026-08-10** |
+| Adopted kit version | **2.4.0** |
+| Adopted on | **2026-08-12** |
 | Kit source | https://github.com/shainemeister/repo-kit |
 
 **Kit source** is always **https://github.com/shainemeister/repo-kit** for this standards kit. Update **Adopted kit version** and **Adopted on** on every kit upgrade.
