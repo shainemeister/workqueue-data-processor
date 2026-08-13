@@ -80,13 +80,13 @@ last_updated: "2026-08-13"
 | P31 | Freeze Express column order | `done` | `586fae0` | slim-poi-output 1.4.0 |
 | P32 | One ordered copy list | `done` | `586fae0` | include if present |
 | P33 | L4 + CHANGELOG + cert | `done` | `586fae0` | excel 1.17.0 |
-| P34 | Freeze patient-after-invoice + CSV cleanup | `done` | — | slim-poi-output 1.5.0 |
-| P35 | Column order + menu delete generated CSVs | `done` | — | After Excel success only |
-| P36 | L4 + CHANGELOG + cert | `done` | — | excel 1.18.0 |
+| P34 | Freeze patient-after-invoice + CSV cleanup | `done` | `68ef883` | slim-poi-output 1.5.0 |
+| P35 | Column order + menu delete generated CSVs | `done` | `68ef883` | After Excel success only |
+| P36 | L4 + CHANGELOG + cert | `done` | `68ef883` | excel 1.18.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
-- 2026-08-13 Shipped P34–P36 `patient` after `invoice_num`; menu CSV cleanup (excel 1.18.0).  
+- 2026-08-13 Shipped P34–P36 `patient` after `invoice_num`; menu CSV cleanup (`68ef883`; excel 1.18.0).  
 - 2026-08-13 Opened P34–P36 `patient` after `invoice_num`; menu CSV cleanup after Excel.  
 - 2026-08-13 Shipped P31–P33 Express `POI_Scores` column order (`586fae0`; excel 1.17.0).  
 - 2026-08-13 Opened P31–P33 Express `POI_Scores` column order.  
