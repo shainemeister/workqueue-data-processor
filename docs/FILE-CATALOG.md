@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.13"
+version: "1.10.15"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.13  
+**Document version:** 1.10.15  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -137,6 +137,7 @@ AI resource workspace plus maintainer/design documentation (not end-user product
 | [plan/repo-kit-upgrade-2.4.0.md](./plan/repo-kit-upgrade-2.4.0.md) | doc | Completed execution record for repo-kit 2.4.0 upgrade. |
 | [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | doc | Completed execution record for repo-kit 2.3.1 upgrade. |
 | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | doc | Cluster 2 freeze + P8 ship notes: per-file score, filename/`wq_label` identity, preview/naming/Totals. |
+| [plan/slim-poi-output.md](./plan/slim-poi-output.md) | doc | Freeze: opt-in slim detail CSV (WQ columns + one V1 score per shipped POI). |
 | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) | doc | Cluster 3 design-freeze checklist (developing; V2 boundary). |
 | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) | doc | Optional B1.1 base-weight retune checklist (pending). |
 | [plan/post-v1-enhancement/README.md](./plan/post-v1-enhancement/README.md) | doc | Open annex index; active only while WORKBOARD Optional annex points here. |
@@ -254,7 +255,7 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.9.0). |
+| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.10.0). |
 | [__main__.py](../kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](../kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--profile`, `--interactive-mapping`, `--strict`), `generate`, `validate-score`, `profile-list` / `profile-show` / `profile-save`; diagnostics gate on operational score/generate/validate. |
 | [column_map.py](../kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
@@ -312,6 +313,7 @@ Small golden inputs used by `validate-score` and hand-check documentation.
 | [v1_handcalc_input.csv](../kpi-analytics/fixtures/v1_handcalc_input.csv) | fixture | Tiny claim set sized for hand-calculable priority scoring. |
 | [v1_handcalc_config.json](../kpi-analytics/fixtures/v1_handcalc_config.json) | fixture | Config binding fields/weights for the V1 handcalc case. |
 | [v1_handcalc_expected.json](../kpi-analytics/fixtures/v1_handcalc_expected.json) | fixture | Golden expected priority outputs for the handcalc case. |
+| [slim_poi_expected.json](../kpi-analytics/fixtures/slim_poi_expected.json) | fixture | Golden slim multi-POI scores on the handcalc input. |
 | [rcm_impact_example.csv](../kpi-analytics/fixtures/rcm_impact_example.csv) | fixture | Small claim set for RCM dual-attribution checks. |
 | [rcm_impact_config.json](../kpi-analytics/fixtures/rcm_impact_config.json) | fixture | Config for the RCM impact fixture run. |
 | [rcm_impact_expected.json](../kpi-analytics/fixtures/rcm_impact_expected.json) | fixture | Golden expected portfolio totals and claim-level KPI Q values. |
@@ -371,6 +373,8 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.15 | kpi 2.10.0 slim output; `slim_poi_expected.json`; `__version__` 2.10.0 |
+| 1.10.14 | Freeze `plan/slim-poi-output.md` |
 | 1.10.13 | excel-toolkit 1.12.1 Worklist case-sensitive match |
 | 1.10.12 | excel-toolkit 1.12.0 Cluster 2 menu preview / naming / Totals |
 | 1.10.11 | Cluster 2 freeze signed (cluster-2-multi-file 1.1.0) |

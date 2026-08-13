@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.9.0"
+version: "2.10.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-08-12"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.9.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.10.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -263,6 +263,7 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
     [--sort <spec> | --sort-preset priority|deadline|cash]
     [--group-by <cols> | --group-preset payer_category|payer|category|location]
     [--groups <path>]
+    [--output-mode full|slim]
     [--force] [--dry-run] [--json] [--quiet]
 ```
 
@@ -285,6 +286,7 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--group-by` | No | none | Comma-separated scored columns for a **groups** CSV. **No groups file** when omitted. Mutually exclusive with `--group-preset`. Blank cells become `(blank)`. |
 | `--group-preset` | No | none | `payer_category` (`payer,code_category`) · `payer` · `category` · `location`. Mutually exclusive with `--group-by`. |
 | `--groups` | No | `<output_stem>_groups.csv` | Groups file path. Requires `--group-by` or `--group-preset`. Unique-suffix / `--force` same as detail. |
+| `--output-mode` | No | `full` | `full` = source + `v1_*` audit + `kpi_q_*`. `slim` = source + `v1_as_of_date` / `v1_queue_mode` / `v1_normalization` + `v1_priority_score` (balanced) + `v1_score_protect_writeoffs` / `v1_score_maximize_cash` / `v1_score_suppress_aging`. Slim cannot be combined with `--profile` or `--config`. Summary CSV is still written. One norm pass; POI columns reuse those norms. |
 | `--dry-run` | No | off | No file writes (still reports resolved unique paths) |
 | `--force-diagnostics` | No | off | Refresh diagnostics certificate first |
 | `--skip-diagnostics-gate` | No | off | Emergency bypass of diagnostics gate |
@@ -673,4 +675,6 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and package version are aligned at **2.9.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, `kpi_q_*` / summary contracts, or the score `--sort` / `--group-by` contracts.
+CLI and package version are aligned at **2.10.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, `kpi_q_*` / summary contracts, or the score `--sort` / `--group-by` / `--output-mode` contracts.
+
+**2.10.0 notes:** `--output-mode slim` writes WQ columns plus one V1 score per shipped POI (and balanced `v1_priority_score`). Default remains `full`. JSON: `OutputMode`, `SlimScoreColumns`.

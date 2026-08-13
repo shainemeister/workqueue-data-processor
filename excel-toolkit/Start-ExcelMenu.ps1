@@ -1156,6 +1156,9 @@ function Invoke-KpiAnalyticsScore {
         [string]$GroupsPath,
 
         [Parameter(Mandatory = $false)]
+        [string]$OutputMode,
+
+        [Parameter(Mandatory = $false)]
         [switch]$DryRun,
 
         [Parameter(Mandatory = $false)]
@@ -1189,6 +1192,10 @@ function Invoke-KpiAnalyticsScore {
     if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
         $scoreArgs.Add('--groups')
         $scoreArgs.Add($GroupsPath)
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OutputMode)) {
+        $scoreArgs.Add('--output-mode')
+        $scoreArgs.Add($OutputMode)
     }
     if ($DryRun) {
         $scoreArgs.Add('--dry-run')
@@ -1355,6 +1362,7 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         5) If clean → full score with redirects + JSON (unchanged automation-friendly path).
         Optional -Profile is passed through to every score invoke as --profile (no merge in PS).
         Optional -GroupPreset / -GroupsPath are passed as --group-preset / --groups.
+        Optional -OutputMode is passed as --output-mode (full or slim).
     #>
     [CmdletBinding()]
     param(
@@ -1374,7 +1382,10 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         [string]$GroupPreset,
 
         [Parameter(Mandatory = $false)]
-        [string]$GroupsPath
+        [string]$GroupsPath,
+
+        [Parameter(Mandatory = $false)]
+        [string]$OutputMode
     )
 
     $mappingPath = Get-KpiSiblingMappingPath -CsvPath $CsvPath
@@ -1406,6 +1417,9 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     }
     if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
         $preParams['GroupsPath'] = $GroupsPath
+    }
+    if (-not [string]::IsNullOrWhiteSpace($OutputMode)) {
+        $preParams['OutputMode'] = $OutputMode
     }
     $preflight = Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @preParams)
 
@@ -1454,6 +1468,9 @@ function Invoke-KpiAnalyticsScoreWithMapping {
         }
         if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
             $runParams['GroupsPath'] = $GroupsPath
+        }
+        if (-not [string]::IsNullOrWhiteSpace($OutputMode)) {
+            $runParams['OutputMode'] = $OutputMode
         }
         return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @runParams))
     }
@@ -1527,7 +1544,34 @@ function Invoke-KpiAnalyticsScoreWithMapping {
     if (-not [string]::IsNullOrWhiteSpace($GroupsPath)) {
         $guideParams['GroupsPath'] = $GroupsPath
     }
+    if (-not [string]::IsNullOrWhiteSpace($OutputMode)) {
+        $guideParams['OutputMode'] = $OutputMode
+    }
     return (Select-KpiScoreInvokeResult -Raw (Invoke-KpiAnalyticsScore @guideParams))
+}
+
+function Select-KpiOutputMode {
+    <#
+    .SYNOPSIS
+        Full (default) vs slim WQ+POI scores. Slim skips the scoring-profile pick.
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Host ''
+    Write-Host 'Score output:' -ForegroundColor Cyan
+    Write-Host '  [1] Full (WQ + v1 audit + kpi_q)     <- recommended' -ForegroundColor DarkGray
+    Write-Host '  [2] Slim (WQ + score per POI preset)' -ForegroundColor DarkGray
+    $choice = Read-Host 'Choice [1]'
+    if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '1' }
+    switch ($choice.Trim()) {
+        '1' { return 'full' }
+        '2' { return 'slim' }
+        default {
+            Write-Host 'Unrecognized output choice; using Full.' -ForegroundColor Yellow
+            return 'full'
+        }
+    }
 }
 
 function Select-KpiGroupPreset {
@@ -2420,9 +2464,17 @@ function Invoke-KpiScoreExportMenu {
     }
     Write-Host ''
 
+    $resolvedOutputMode = Select-KpiOutputMode
+    if ($resolvedOutputMode -eq 'slim') {
+        Write-Host 'Slim output: WQ columns + one score per shipped POI (no --profile).' -ForegroundColor Cyan
+    }
+
     # One scoring profile for the whole batch (composition only; no merge in PowerShell).
     $resolvedProfile = $null
-    if ($PSBoundParameters.ContainsKey('Profile') -and -not [string]::IsNullOrWhiteSpace($Profile)) {
+    if ($resolvedOutputMode -eq 'slim') {
+        $resolvedProfile = $null
+    }
+    elseif ($PSBoundParameters.ContainsKey('Profile') -and -not [string]::IsNullOrWhiteSpace($Profile)) {
         $resolvedProfile = $Profile.Trim()
         Write-Host ("Scoring profile (provided): {0}" -f $resolvedProfile) -ForegroundColor Cyan
     }
@@ -2517,6 +2569,9 @@ function Invoke-KpiScoreExportMenu {
                 $scoreMapParams['GroupPreset'] = $resolvedGroupPreset
                 $scoreMapParams['GroupsPath'] = $groupsCsvInfo.Path
                 Write-Host ("  Groups CSV  : {0}" -f $groupsCsvInfo.Path) -ForegroundColor DarkGray
+            }
+            if ($resolvedOutputMode -eq 'slim') {
+                $scoreMapParams['OutputMode'] = 'slim'
             }
             $scoreResult = Select-KpiScoreInvokeResult -Raw (
                 Invoke-KpiAnalyticsScoreWithMapping @scoreMapParams

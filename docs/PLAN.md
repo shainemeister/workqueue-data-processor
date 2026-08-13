@@ -1,7 +1,7 @@
 ---
 title: "Development Plan — Post-V1 Enhancement Concepts"
 description: "Living product backlog: Cluster 1 complete; Cluster 2 freeze signed; Cluster 3 partial; optional base retune. Control surface in root PLAN.md; live multi-phase on docs/WORKBOARD.md; execution freezes in docs/plan/."
-version: "0.5.5"
+version: "0.5.6"
 status: current
 audience:
   - developers
@@ -27,7 +27,7 @@ last_updated: "2026-08-12"
 
 Living **product enhancement backlog** after V1 priority matrix, dynamic mapping, guided menu, gap-safety, scoring profiles, quality audit, certification Phase 2, and menu scoring-profile picker.
 
-**Document version:** 0.5.5  
+**Document version:** 0.5.6  
 **Status:** Cluster 1 **complete** (CLI + menu residual **1f** shipped). Residual optional: base-weight retune (**B1.1-retune**). Cluster **2 shipped** (excel 1.12.0). Cluster **3** partial (sort/groups/menu shipped; 3.1 filters still open).  
 
 | Kit triple surface | Path |
@@ -67,6 +67,7 @@ Living **product enhancement backlog** after V1 priority matrix, dynamic mapping
 |------|--------|----------------|
 | **Pending (optional)** | Evidence-based base-weight retune (**B1.1-retune**) | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) |
 | **Shipped (excel 1.12.0)** | **Cluster 2** multi-file preview / naming / Excel deliverable / file-level totals | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) |
+| **Freeze signed (P15)** | Slim detail: WQ columns + one V1 score per shipped POI | [plan/slim-poi-output.md](./plan/slim-poi-output.md) |
 | **Developing (partial freeze)** | **Cluster 3** grouping / multi-sort / denial analysis sheet (reporting-only vs V2) | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) |
 
 Do not start Cluster 2 **product** code until this freeze is signed (it is). Do not start remaining Cluster 3 product (filters) until that slice is frozen.
@@ -494,6 +495,7 @@ When a concept moves from “developing” to “ready for implementation”, fr
 
 | Version | Notes |
 |---------|--------|
+| 0.5.6 | Slim multi-POI detail freeze (P15) |
 | 0.5.5 | Cluster 3 header: partial (filters still open); Worklist case-sensitive match 1.12.1 |
 | 0.5.4 | Cluster 2 **shipped** (excel 1.12.0 / P8) |
 | 0.5.3 | Cluster 2 **freeze signed** (P7); P8 implement |

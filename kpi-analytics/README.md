@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics
 description: Python 3.13 stdlib toolkit for Work Queue priority scoring, RCM claim-level KPI impacts, synthetic data, and validation.
-version: "2.9.0"
+version: "2.10.0"
 status: current
 audience:
   - users
@@ -30,8 +30,9 @@ Windows-oriented **Python 3.13** toolkit (standard library only) for professiona
 8. **Scoring profiles** — named POI focus presets and saved configs (`score --profile`, `profile-list` / `show` / `save`).  
 9. **Detail sort (2.8.0+)** — optional `score --sort` / `--sort-preset` (input order by default; formulas unchanged).  
 10. **Group summary (2.9.0+)** — optional `score --group-by` / `--group-preset` writes `*_groups.csv` (reporting only).
+11. **Slim detail (2.10.0+)** — optional `score --output-mode slim` writes WQ columns plus one V1 score per shipped POI (default remains full).
 
-**Toolkit version:** 2.9.0  
+**Toolkit version:** 2.10.0  
 **Product folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\` (implementation; name differs from the product folder on purpose)
 

@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "description": "Slim multi-POI scores on handcalc input (package POI presets; handcalc base/chaos)",
+  "epsilon": 1e-05,
+  "output_mode": "slim",
+  "queue_mode": "chaos",
+  "slim_score_columns": [
+    "v1_priority_score",
+    "v1_score_protect_writeoffs",
+    "v1_score_maximize_cash",
+    "v1_score_suppress_aging"
+  ],
+  "rows": [
+    {
+      "patient": "Doe,John1",
+      "account": "A1001",
+      "v1_priority_score": "0.994589",
+      "v1_score_protect_writeoffs": "0.993396",
+      "v1_score_maximize_cash": "0.995192",
+      "v1_score_suppress_aging": "0.992938"
+    },
+    {
+      "patient": "Doe,Jane2",
+      "account": "A1002",
+      "v1_priority_score": "0",
+      "v1_score_protect_writeoffs": "0",
+      "v1_score_maximize_cash": "0",
+      "v1_score_suppress_aging": "0"
+    },
+    {
+      "patient": "Doe,John3",
+      "account": "A1003",
+      "v1_priority_score": "0.342313",
+      "v1_score_protect_writeoffs": "0.363739",
+      "v1_score_maximize_cash": "0.330121",
+      "v1_score_suppress_aging": "0.372593"
+    },
+    {
+      "patient": "Doe,Jane4",
+      "account": "A1004",
+      "v1_priority_score": "0.549026",
+      "v1_score_protect_writeoffs": "0.592477",
+      "v1_score_maximize_cash": "0.504444",
+      "v1_score_suppress_aging": "0.570979"
+    },
+    {
+      "patient": "Doe,John5",
+      "account": "A1005",
+      "v1_priority_score": "0.128722",
+      "v1_score_protect_writeoffs": "0.14777",
+      "v1_score_maximize_cash": "0.119873",
+      "v1_score_suppress_aging": "0.156569"
+    }
+  ]
+}

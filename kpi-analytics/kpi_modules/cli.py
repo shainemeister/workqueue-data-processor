@@ -326,6 +326,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Group summary CSV path (default: <output_stem>_groups.csv)",
     )
+    p_score.add_argument(
+        "--output-mode",
+        dest="output_mode",
+        choices=("full", "slim"),
+        default="full",
+        help=(
+            "Detail CSV shape: full (default, v1 audit + kpi_q) or slim "
+            "(WQ columns + balanced score + one score per shipped POI). "
+            "Slim cannot be combined with --profile or --config. "
+            "Summary CSV is still written."
+        ),
+    )
     _add_gate_flags(p_score)
     p_score.add_argument("--json", action="store_true")
     p_score.add_argument("--quiet", action="store_true")
@@ -420,6 +432,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest="expected_path",
         default=None,
         help="Golden expected JSON (default: fixtures/v1_handcalc_expected.json if present)",
+    )
+    p_val.add_argument(
+        "--output-mode",
+        dest="output_mode",
+        choices=("full", "slim"),
+        default="full",
+        help="Same as score --output-mode (default full). Slim skips contrib/kpi row integrity.",
     )
     p_val.add_argument(
         "--scored-csv",
@@ -666,6 +685,23 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 return EXIT_VALIDATION
 
+            output_mode = str(getattr(args, "output_mode", None) or "full")
+            if output_mode == "slim" and (config_path or profile_ref):
+                _emit(
+                    {
+                        "Success": False,
+                        "Command": "score",
+                        "Version": __version__,
+                        "Message": (
+                            "--output-mode slim cannot be combined with "
+                            "--profile or --config."
+                        ),
+                    },
+                    as_json=as_json,
+                    quiet=quiet,
+                )
+                return EXIT_VALIDATION
+
             score_config: dict[str, Any] | None = None
             profile_path_s: str | None = None
             profile_name: str | None = None
@@ -730,6 +766,7 @@ def main(argv: list[str] | None = None) -> int:
                     group_by=getattr(args, "group_by", None),
                     group_preset=getattr(args, "group_preset", None),
                     groups_path=getattr(args, "groups_path", None),
+                    output_mode=output_mode,
                 )
             except (FileNotFoundError, ValueError, OSError) as exc:
                 _emit(
@@ -898,6 +935,7 @@ def main(argv: list[str] | None = None) -> int:
                 expected_path=expected_path,
                 epsilon=float(getattr(args, "epsilon", 1e-5)),
                 scored_csv_path=scored,
+                output_mode=getattr(args, "output_mode", None) or "full",
             )
             result["Version"] = __version__
             if gate:

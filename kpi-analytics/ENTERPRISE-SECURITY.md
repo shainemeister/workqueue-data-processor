@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Enterprise Security
 description: Security review notes and execution restrictions for KPI Analytics on controlled corporate PCs.
-version: "2.9.0"
+version: "2.10.0"
 status: current
 audience:
   - security
@@ -20,7 +20,7 @@ last_updated: "2026-08-12"
 
 Reference for security reviews, AppLocker/WDAC discussions, and controlled corporate desktops.
 
-**Toolkit version:** 2.9.0  
+**Toolkit version:** 2.10.0  
 **Toolkit folder:** `kpi-analytics\`  
 **Python package:** `kpi_modules\`  
 **Runtime:** Python **3.13** standard library only (no third-party packages)
@@ -234,3 +234,4 @@ kpi-analytics.cmd score --csv fixtures\rcm_impact_example.csv --config fixtures\
 | 2.6.0 | Local scoring profiles under `profiles\` (JSON only; no claim rows; no network) |
 | 2.7.0 | Align toolkit version: default unique output paths unless `--force`; diagnostics import-smoke includes `profiles` and stdlib `re` (no network/privilege change) |
 | 2.8.0–2.9.0 | `score --sort` / `--group-by` are post-score reporting only; no trust-boundary change |
+| 2.10.0 | Optional `--output-mode slim` (local files; same privacy); no trust-boundary change |

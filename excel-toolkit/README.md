@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit
 description: PowerShell 5.1 Excel COM toolkit for CSV export, KPI score-to-Excel menu, module API, and CLI.
-version: "1.12.1"
+version: "1.13.0"
 status: current
 audience:
   - users
@@ -18,7 +18,7 @@ last_updated: "2026-08-12"
 
 PowerShell 5.1 toolkit: export CSV data to Excel, import Excel to CSV (including password-protected workbooks), guided **Process my data** menu (via sibling `kpi-analytics` for scoring), readiness checks, and Excel COM helpers—without needing to type PowerShell for everyday use.
 
-**Toolkit version:** 1.12.1  
+**Toolkit version:** 1.13.0  
 **Folder:** `excel-toolkit\` (this directory)
 
 **Related docs:** [CLI-GUIDE.md](./CLI-GUIDE.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
@@ -96,7 +96,9 @@ Excel Toolkit is a **local Windows** PowerShell **5.1** package for controlled d
 
 Excel selections are imported to CSV first (open-password prompt if the workbook is protected), then the same actions apply.
 
-**Scoring profile pick (Full pipeline / Score only / Build worklist):** after files are selected, choose **Balanced (package default)** or a named POI focus preset (e.g. `maximize_cash`). The menu passes `kpi-analytics.cmd score --profile …` only—no scoring math in PowerShell. This is separate from a **column mapping** file (`*_mapping.json`). Full CLI contract: [kpi-analytics/CLI-GUIDE.md — Scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
+**Score output pick:** **Full** (default) keeps today’s scored CSV (`v1_*` audit + `kpi_q_*`) and then the scoring-profile pick. **Slim** writes WQ columns plus one V1 score per shipped POI (`--output-mode slim`) and **skips** the profile pick. No scoring math in PowerShell.
+
+**Scoring profile pick (Full only):** after files are selected, choose **Balanced (package default)** or a named POI focus preset (e.g. `maximize_cash`). The menu passes `kpi-analytics.cmd score --profile …` only. This is separate from a **column mapping** file (`*_mapping.json`). Full CLI contract: [kpi-analytics/CLI-GUIDE.md — Scoring profiles](../kpi-analytics/CLI-GUIDE.md#scoring-profiles-260).
 
 **Group preset pick (Build worklist only):** after the scoring profile, choose a named group key (`payer_category` recommended, or `payer` / `category` / `location`). The menu passes `kpi-analytics.cmd score --group-preset … --groups …`, then `Export-ExcelFromCsv -GroupsCsv -Worklist`. V1 / `kpi_q_*` values are unchanged. Full contracts: [kpi-analytics CLI — group summary](../kpi-analytics/CLI-GUIDE.md) · [Excel CLI — GroupsCsv / Worklist](./CLI-GUIDE.md).
 

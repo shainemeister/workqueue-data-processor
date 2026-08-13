@@ -30,7 +30,7 @@ last_updated: "2026-08-12"
 |-------|--------|
 | **Program id** | `post-v1-enhancement` |
 | **Status** | `active` |
-| **Next phase** | **P1** filters / patient-group policy remain `blocked`; **P9** B1.1 deferred |
+| **Next phase** | **P15–P19** slim multi-POI output (`active`); P1 filters still `blocked` |
 | **L4 owners to update on ship** | After product phases: toolkit CLI-GUIDE / README / SCORE-METHODOLOGY as applicable; `CHANGELOG.md`; FILE-CATALOG |
 
 ## Contents of this annex

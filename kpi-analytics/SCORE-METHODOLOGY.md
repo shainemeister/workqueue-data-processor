@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics Score Methodology
 description: Priority Matrix V1 formulas, RCM kpi_q implementation, validation, and summary output.
-version: "2.7.0"
+version: "2.10.0"
 status: current
 audience:
   - users
@@ -25,7 +25,7 @@ How `kpi-analytics` turns Work Queue rows into:
 3. A **vertical summary CSV** for audit and communication  
 4. **PHI field masking** on score output (`patient` / `dob` when configured)  
 
-**Toolkit version:** 2.7.0  
+**Toolkit version:** 2.10.0  
 **Package:** `kpi_modules`  
 **Default config:** `kpi_modules\config_default.json`  
 **Focus profiles:** `profiles\poi_*.json` (POI multipliers only; CLI `--profile`)  
@@ -281,6 +281,23 @@ v1_priority_score ≈ sum(v1_contrib_*)
 | `v1_priority_score` | Final priority |
 
 Original business columns are preserved; audit fields are appended.
+
+### Slim detail (`--output-mode slim`, 2.10.0+)
+
+Optional **detail** shape for follow-up work. Default remains **full**.
+
+| Slim keeps | Slim omits from the detail file |
+|------------|----------------------------------|
+| Source WQ columns (same privacy) | `v1_raw_*`, `v1_norm_*`, `v1_weight_*`, `v1_contrib_*` |
+| `v1_as_of_date`, `v1_queue_mode`, `v1_normalization` | `v1_poi_name` |
+| `v1_priority_score` (balanced / no POI multipliers) | All `kpi_q_*` |
+| `v1_score_protect_writeoffs` | |
+| `v1_score_maximize_cash` | |
+| `v1_score_suppress_aging` | |
+
+**How slim scores are computed:** one raw-metric + normalize pass (same as full). Each POI column uses that same norm vector times the shipped profile’s weight vector (`effective_weights` after that profile’s multipliers). Chaos is queue-level and applies to all four scores. Do **not** treat slim as four independent batches.
+
+The vertical **summary CSV is still written** (portfolio KPI + explanations). Slim + `--profile` / `--config` is rejected. Golden: `fixtures/slim_poi_expected.json`.
 
 ---
 
@@ -541,4 +558,5 @@ Checks include:
 | 2.4.0 | Rank completeness + `--strict roles\|full` fail-closed optional |
 | 2.5.0 | Privacy header aliases; default patient `token_digits` **4** (`DOE0001`) |
 | 2.6.0 | Scoring profiles + three POI focus presets (multipliers only; base weights/formulas unchanged) |
+| 2.10.0 | Slim detail: one V1 score per shipped POI; one norm pass; default remains full |
 | 2.7.0 | Honor `amount_field`; implement `adc_mode` (`auto`/`config`/`estimate`); non-clobber score/generate outputs + `--force`; strict `credit_policy` validation |

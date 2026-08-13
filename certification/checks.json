@@ -187,6 +187,31 @@
       "SuccessExitCodes": [0]
     },
     {
+      "Id": "validate-score-slim",
+      "Name": "validate-score-slim",
+      "Domain": "CodeValidation",
+      "Surface": "Python",
+      "Category": "static",
+      "Required": true,
+      "Severity": "critical",
+      "PassCriteria": "kpi-analytics.cmd validate-score --output-mode slim with slim_poi golden exit 0",
+      "WorkingDirectory": "kpi-analytics",
+      "Kind": "process",
+      "Executable": "kpi-analytics.cmd",
+      "Arguments": [
+        "validate-score",
+        "--csv",
+        "fixtures/v1_handcalc_input.csv",
+        "--config",
+        "fixtures/v1_handcalc_config.json",
+        "--expected",
+        "fixtures/slim_poi_expected.json",
+        "--output-mode",
+        "slim"
+      ],
+      "SuccessExitCodes": [0]
+    },
+    {
       "Id": "invariant-privacy-score",
       "Name": "invariant-privacy-score",
       "Domain": "Security",

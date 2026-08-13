@@ -1,7 +1,7 @@
 ---
 title: Excel Toolkit CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and use cases for ExcelToolkit.ps1 / excel-toolkit.cmd.
-version: "1.12.1"
+version: "1.13.0"
 status: current
 audience:
   - developers
@@ -18,7 +18,7 @@ last_updated: "2026-08-12"
 
 Professional reference for the **command-line interface** used by automation, Task Scheduler, Python, and other processes.
 
-**Toolkit version:** 1.12.1 (see `version` command / `Get-ExcelToolkitVersion`)
+**Toolkit version:** 1.13.0 (see `version` command / `Get-ExcelToolkitVersion`)
 
 **Related docs:** [README.md](./README.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -630,7 +630,9 @@ Full detail: [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and module version are aligned at **1.12.1** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+CLI and module version are aligned at **1.13.0** via `Get-ExcelToolkitVersion` / `version` command. Bump when shipping breaking CLI contract changes (verbs, exit codes, JSON field names).
+
+**1.13.0 notes:** Process my data offers **Score output** Full or Slim. Slim composes `kpi-analytics.cmd score --output-mode slim` (no `--profile`). No scoring math in PowerShell.
 
 **1.12.1 notes:** Worklist key match is case-sensitive (same trim / `(blank)` rule as kpi-analytics `_cell_label`). PowerShell `-ne` is not used.
 

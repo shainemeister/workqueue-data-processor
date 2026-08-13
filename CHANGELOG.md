@@ -13,6 +13,13 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.20.0] - 2026-08-12
+
+#### Added
+
+- **kpi-analytics 2.10.0:** `score --output-mode slim` writes WQ columns plus balanced `v1_priority_score` and one score per shipped POI (`v1_score_protect_writeoffs`, `v1_score_maximize_cash`, `v1_score_suppress_aging`). One normalize pass; not four batches. Default remains `full`. Slim cannot be combined with `--profile` / `--config`. Summary CSV still written.
+- **excel-toolkit 1.13.0:** Process my data **Score output** Full / Slim; Slim passes `--output-mode slim` (no profile pick).
+
 ### [1.19.1] - 2026-08-12
 
 #### Fixed

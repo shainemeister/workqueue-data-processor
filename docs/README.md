@@ -53,6 +53,7 @@ Standards and portable law remain under **`kit/`**. Product contracts stay in to
 | [plan/repo-kit-upgrade-2.4.0.md](./plan/repo-kit-upgrade-2.4.0.md) | complete |
 | [plan/repo-kit-upgrade-2.3.1.md](./plan/repo-kit-upgrade-2.3.1.md) | complete |
 | [plan/cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) | shipped |
+| [plan/slim-poi-output.md](./plan/slim-poi-output.md) | freeze signed |
 | [plan/cluster-3-analysis.md](./plan/cluster-3-analysis.md) | developing |
 | [plan/b1.1-base-weight-retune.md](./plan/b1.1-base-weight-retune.md) | pending |
 | [plan/post-v1-enhancement/](./plan/post-v1-enhancement/) | **open annex** (see [WORKBOARD](./WORKBOARD.md)) |
