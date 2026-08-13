@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.10"
+version: "1.1.12"
 status: current
 audience:
   - ai-agents
@@ -61,9 +61,16 @@ last_updated: "2026-08-12"
 | P12 | Worklist case-sensitive key match | `done` | `5f6622f` | excel 1.12.1; `-cne`; smoke 4 rows; cert pass |
 | P13 | Cluster 3 PLAN wording | `done` | `851d86e` | Partial vs remaining 3.1 filters |
 | P14 | Preview comment + kpi ENTERPRISE 2.9.0 | `done` | `851d86e` | No trust-boundary change |
+| P15 | Freeze slim multi-POI detail output | `done` | `114ac02` | [slim-poi-output.md](./plan/slim-poi-output.md) |
+| P16 | kpi `--output-mode slim` | `done` | `114ac02` | 2.10.0; one norm pass |
+| P17 | Slim golden fixture | `done` | `114ac02` | `slim_poi_expected.json`; cert check |
+| P18 | Menu Full / Slim | `done` | `114ac02` | excel 1.13.0 compose |
+| P19 | L4 + CHANGELOG + catalog | `done` | `114ac02` | repo 1.20.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-12 Shipped P15–P19 slim multi-POI detail (`114ac02`; kpi 2.10.0 / excel 1.13.0).  
+- 2026-08-12 Opened P15–P19 slim multi-POI detail output (opt-in; full default).  
 - 2026-08-12 Closed P11–P14 audit-fix (Worklist 1.12.1, PLAN partial, kpi ENTERPRISE 2.9.0).  
 - 2026-08-12 Opened P11–P14 audit-fix stack (Worklist `-cne`, PLAN Cluster 3 wording, kpi security version).  
 - 2026-08-12 P8 shipped excel-toolkit 1.12.0 preview, `[WQ]_MM-DD-YYYY.xlsx`, Totals sheet.  
@@ -111,4 +118,4 @@ last_updated: "2026-08-12"
 
 ---
 
-*Agents: P11–P14 done. Next leftover is P1 (filters / patient-group policy). P9 B1.1 remains deferred.*
+*Agents: P15–P19 done (slim POI output). Next leftover is P1 filters. P9 deferred.*
