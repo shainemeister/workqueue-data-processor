@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.7"
+version: "1.1.8"
 status: current
 audience:
   - ai-agents
@@ -54,13 +54,14 @@ last_updated: "2026-08-12"
 | P5 | Excel groups / two-level worklist (C+D) | `done` | `cf14c23` | excel 1.10.0 `-GroupsCsv` / `-Worklist` (docs `20868cb`) |
 | P6 | Menu Build worklist (E) | `done` | `926ed01` | excel 1.11.0 menu [4]; composition only |
 | P7 | Cluster 2 design freeze | `done` | `d151313` | Per-file score; no cross-file groups; [cluster-2-multi-file.md](./plan/cluster-2-multi-file.md) |
-| P8 | Cluster 2 implement | `open` | — | After P7 |
+| P8 | Cluster 2 implement | `done` | `322b6c6` | excel 1.12.0 preview / naming / Totals |
 | P9 | B1.1 base-weight retune | `deferred` | — | Analyst-gated |
 | P10 | V2/V3 in-score category metrics | `cancelled` | — | Not this program (S5) |
 
 ### Progress log (newest first, max ~15 lines)
 
-- 2026-08-12 P7 signed Cluster 2 freeze (per-file score; groups do not span files); P8 implement `open`.  
+- 2026-08-12 P8 shipped excel-toolkit 1.12.0 preview, `[WQ]_MM-DD-YYYY.xlsx`, Totals sheet.  
+- 2026-08-12 P7 signed Cluster 2 freeze (per-file score; groups do not span files).  
 - 2026-08-12 P6 shipped excel-toolkit 1.11.0 menu Build worklist; P1 filters still `blocked`.  
 - 2026-08-12 P5 shipped excel-toolkit 1.10.0 Groups + Worklist sheets; P1 filters still `blocked`.  
 - 2026-08-12 P4 shipped kpi-analytics 2.9.0 groups CSV; 3.1 CSV frozen; P1 filters/patient freeze still `blocked`.  
@@ -104,4 +105,4 @@ last_updated: "2026-08-12"
 
 ---
 
-*Agents: P7 done. Next open is P8 (Cluster 2 implement: preview → naming → wording → file-level totals). P1 remaining: row filters / patient-group policy.*
+*Agents: P8 done. Next open leftover is P1 (filters / patient-group policy). P9 B1.1 remains deferred.*
