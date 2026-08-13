@@ -89,13 +89,13 @@ last_updated: "2026-08-13"
 | P40 | Freeze Express open sheet + width 12 | `done` | `29dde6e` | slim-poi-output 1.7.0 |
 | P41 | Activate POI_Scores; ColumnWidth 12 | `done` | `29dde6e` | Express only |
 | P42 | L4 + CHANGELOG + cert | `done` | `29dde6e` | excel 1.20.0 |
-| P43 | Freeze AutoFilter on POI_Scores | `done` | — | slim-poi-output 1.8.0 |
-| P44 | Enable-ExcelAutoFilter on POI_Scores | `done` | — | Express only |
-| P45 | L4 + CHANGELOG + cert | `done` | — | excel 1.21.0 |
+| P43 | Freeze AutoFilter on POI_Scores | `done` | `11f08db` | slim-poi-output 1.8.0 |
+| P44 | Enable-ExcelAutoFilter on POI_Scores | `done` | `11f08db` | Express only |
+| P45 | L4 + CHANGELOG + cert | `done` | `11f08db` | excel 1.21.0 |
 
 ### Progress log (newest first, max ~15 lines)
 
-- 2026-08-13 Shipped P43–P45 AutoFilter on Express POI_Scores (excel 1.21.0).  
+- 2026-08-13 Shipped P43–P45 AutoFilter on Express POI_Scores (`11f08db`; excel 1.21.0).  
 - 2026-08-13 Opened P43–P45 AutoFilter on Express POI_Scores.  
 - 2026-08-13 Shipped P40–P42 Express open on POI_Scores + column width 12 (`29dde6e`; excel 1.20.0).  
 - 2026-08-13 Opened P40–P42 Express open on POI_Scores + column width 12.  
