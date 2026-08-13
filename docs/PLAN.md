@@ -392,6 +392,8 @@ After file discovery and before the operator chooses Full pipeline / Score only 
 **Intent**  
 Allow the operator to partition or highlight rows that pass simple group-level filters—for example, patients whose total outstanding balance exceeds a threshold, or whose service dates fall in a chosen window—while still preserving the underlying scored detail.
 
+**Status:** **Group CSV shipped (kpi-analytics 2.9.0)** — `score --group-by` / `--group-preset`. Threshold filters and Excel two-level lists remain open.
+
 **Open design points**
 - Exact filter language (threshold on sum of `out_ins_amt` per patient, min/max `service_date`, combination rules)
 - Whether grouping is a score-time feature, a post-score CSV transform, or an Excel sheet/filter only

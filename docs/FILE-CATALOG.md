@@ -1,7 +1,7 @@
 ---
 title: File Catalog
 description: Concise purpose inventory of every intentional source file in this repository.
-version: "1.10.7"
+version: "1.10.8"
 status: current
 audience:
   - developers
@@ -25,7 +25,7 @@ last_updated: "2026-08-12"
 
 Concise, path-level inventory of intentional source files in **workqueue-data-processor**. Use this when onboarding, reviewing layout, or deciding which entry point to call.
 
-**Document version:** 1.10.7  
+**Document version:** 1.10.8  
 **Baseline layout:** scannable root + `wq_schema/` data contract + `kit/` standards (incl. agents) + `docs/` AI workspace  
 
 **Related:** [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [PLAN.md](../PLAN.md) · [kit/MARKDOWN-STANDARD.md](../kit/MARKDOWN-STANDARD.md) · [kit/RULES.md](../kit/RULES.md) · [docs/PLAN.md](./PLAN.md)
@@ -254,12 +254,13 @@ Python package implementing scoring, RCM quantifiers, synthesis, diagnostics, an
 
 | Path | Type | Summary |
 |------|------|---------|
-| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.8.0). |
+| [__init__.py](../kpi-analytics/kpi_modules/__init__.py) | module | Package identity and `__version__` (currently 2.9.0). |
 | [__main__.py](../kpi-analytics/kpi_modules/__main__.py) | module | Enables `python -m kpi_modules`; delegates to CLI `main()`. |
 | [cli.py](../kpi-analytics/kpi_modules/cli.py) | module | Argparse CLI: `version`, `probe`, `diagnostics`, `score` (incl. `--profile`, `--interactive-mapping`, `--strict`), `generate`, `validate-score`, `profile-list` / `profile-show` / `profile-save`; diagnostics gate on operational score/generate/validate. |
 | [column_map.py](../kpi-analytics/kpi_modules/column_map.py) | module | Role-based CSV header resolution, alias auto-detect, sample verification, guided mapping, mapping profile JSON, availability-aware metric set. |
 | [completeness.py](../kpi-analytics/kpi_modules/completeness.py) | module | Rank completeness evaluation (`RankCompleteness`, strict roles/full tiers) for score JSON and CLI `--strict`. |
 | [diagnostics.py](../kpi-analytics/kpi_modules/diagnostics.py) | module | Enterprise runtime/import dry-run, durable pass/fail report, operational gate helpers. |
+| [group_summary.py](../kpi-analytics/kpi_modules/group_summary.py) | module | Post-score group aggregates (`--group-by` / `--group-preset`); reporting only. |
 | [config.py](../kpi-analytics/kpi_modules/config.py) | module | Loads and validates JSON config; resolves healthy vs chaos weight sets (optional active-metric renorm). |
 | [config_default.json](../kpi-analytics/kpi_modules/config_default.json) | config | Default field maps, weights, thresholds, and KPI quantifier settings. |
 | [profiles.py](../kpi-analytics/kpi_modules/profiles.py) | module | Scoring profile envelope, deep-merge onto package default, path resolve, list/show/save helpers. |
@@ -370,6 +371,7 @@ rem Existing destinations require -Force to overwrite
 
 | Version | Notes |
 |---------|--------|
+| 1.10.8 | kpi-analytics 2.9.0 `group_summary.py`; `__version__` row 2.9.0 |
 | 1.10.7 | kpi-analytics 2.8.0 `output_sort.py`; `__version__` row 2.8.0 |
 | 1.10.6 | P2 rehearsal note under post-v1-enhancement annex |
 | 1.10.5 | Annex `plan/post-v1-enhancement/` (workboard-linked OOO) |

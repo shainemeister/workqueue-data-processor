@@ -1,7 +1,7 @@
 ---
 title: Cluster 3 — grouping, sorting, and denial analysis sheet
 description: Design-freeze checklist for post-score analysis; keep reporting-only vs V2 boundary explicit.
-version: "1.1.0"
+version: "1.2.0"
 status: developing
 audience:
   - developers
@@ -19,8 +19,8 @@ last_updated: "2026-08-12"
 
 # Cluster 3 — grouping, sorting, and denial analysis sheet
 
-**Document version:** 1.1.0  
-**Status:** developing (3.2 **frozen**; 3.1 / 3.3 still open).  
+**Document version:** 1.2.0  
+**Status:** developing (3.1 group **CSV** + 3.2 sort frozen; 3.1 filters / 3.3 still open).  
 **Primary surface:** post-score reporting (both toolkits as needed).  
 **Product backlog owner:** [docs/PLAN.md](../PLAN.md) § Cluster 3.  
 **Root stage:** [PLAN.md](../../PLAN.md) **S4**.  
@@ -64,8 +64,8 @@ Beyond default priority ranking: group/filter helpers, multi-sort, and a denial-
 
 | # | Question | Notes |
 |---|----------|--------|
-| 1 | Filter language (sum thresholds, date windows, combinations) | **Open** (3.1). Privacy: patient tokens vs names |
-| 2 | Grouping at score-time vs post-score CSV vs Excel-only | **Open** (3.1). Prefer post-score |
+| 1 | Filter language (sum thresholds, date windows, combinations) | **Open** (3.1 filters). Group **CSV** shipped without row filters. Privacy: patient tokens vs names |
+| 2 | Grouping at score-time vs post-score CSV vs Excel-only | **Frozen (3.1 CSV):** post-score `*_groups.csv` via `--group-by` / `--group-preset`. Excel sheet is P5. |
 | 3 | Stable secondary sort keys | **Frozen (3.2):** `score --sort` / `--sort-preset`; default input order; missing cells last; original row index last. Excel export keeps CSV order. |
 | 4 | Category columns (`code_category`, `reason_code_list`, …) | **Open** (3.3) |
 | 5 | Metrics per category | **Open** (3.3) |
@@ -107,6 +107,7 @@ If analysis begins to feed priority weights, re-scope under [WQ_Priority_Matrix_
 
 | Version | Notes |
 |---------|--------|
+| 1.2.0 | Frozen 3.1 group CSV (`--group-by` / presets); filters and Excel sheet still open |
 | 1.1.0 | Frozen 3.2 sort contract only (`--sort` / presets); 3.1 / 3.3 still developing |
 | 1.0.1 | Pointer to worklist / industry-metric research; still developing |
 | 1.0.0 | Extracted freeze checklist from docs/PLAN Cluster 3 for kit docs/plan surface |

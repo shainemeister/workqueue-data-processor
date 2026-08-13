@@ -1,7 +1,7 @@
 ---
 title: KPI Analytics CLI Reference
 description: Command-line syntax, exit codes, JSON shapes, and automation examples for kpi-analytics.
-version: "2.8.0"
+version: "2.9.0"
 status: current
 audience:
   - developers
@@ -19,7 +19,7 @@ last_updated: "2026-08-12"
 
 Professional reference for the command-line interface used by automation, Task Scheduler, cmd, and other processes.
 
-**Toolkit version:** 2.8.0 (`version` command / `kpi_modules.__version__`)
+**Toolkit version:** 2.9.0 (`version` command / `kpi_modules.__version__`)
 
 **Related docs:** [README.md](./README.md) · [SCORE-METHODOLOGY.md](./SCORE-METHODOLOGY.md) · [RCM_KPI_Claim_Impact_Methodology.md](./RCM_KPI_Claim_Impact_Methodology.md) · [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md)
 
@@ -261,6 +261,8 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
     [--summary <path>] [--no-summary]
     [--privacy | --no-privacy]
     [--sort <spec> | --sort-preset priority|deadline|cash]
+    [--group-by <cols> | --group-preset payer_category|payer|category|location]
+    [--groups <path>]
     [--force] [--dry-run] [--json] [--quiet]
 ```
 
@@ -280,6 +282,9 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 | `--force` | No | off | Overwrite the exact `--output` path if it exists. **Default (off):** write to a free path with a numerical suffix (`name_1.csv`), matching excel-toolkit collision policy. |
 | `--sort` | No | none | Post-score **detail** row order: `column[:asc\|:desc],...` (default **asc**). **Input order** when omitted. Mutually exclusive with `--sort-preset`. Does not change V1 / `kpi_q_*` values. Missing cells sort last. Original input index is the last stable key. |
 | `--sort-preset` | No | none | `priority` (`v1_priority_score:desc,out_ins_amt:desc`) · `deadline` (`days_until_appeal_deadline:asc,v1_priority_score:desc`) · `cash` (`out_ins_amt:desc,v1_priority_score:desc`). Mutually exclusive with `--sort`. |
+| `--group-by` | No | none | Comma-separated scored columns for a **groups** CSV. **No groups file** when omitted. Mutually exclusive with `--group-preset`. Blank cells become `(blank)`. |
+| `--group-preset` | No | none | `payer_category` (`payer,code_category`) · `payer` · `category` · `location`. Mutually exclusive with `--group-by`. |
+| `--groups` | No | `<output_stem>_groups.csv` | Groups file path. Requires `--group-by` or `--group-preset`. Unique-suffix / `--force` same as detail. |
 | `--dry-run` | No | off | No file writes (still reports resolved unique paths) |
 | `--force-diagnostics` | No | off | Refresh diagnostics certificate first |
 | `--skip-diagnostics-gate` | No | off | Emergency bypass of diagnostics gate |
@@ -293,6 +298,8 @@ python -m kpi_modules score [--csv <path>] [--output <path>]
 **Output collision (2.7.0+):** without `--force`, existing destinations are not overwritten. JSON includes `OutputPath` (write target), `RequestedOutputPath`, `OutputPathAdjusted`, and matching `SummaryPath*` fields when a summary is written. `Force` echoes the CLI flag.
 
 **Detail sort (2.8.0+):** JSON includes `SortSpec` (resolved spec string or null), `SortPreset` (name or null), and `SortApplied` (`[{Column, Direction}, ...]`). The vertical summary CSV is **not** reordered. Excel `export-csv` keeps CSV row order.
+
+**Group summary (2.9.0+):** optional reporting file. JSON includes `GroupBy`, `GroupPreset`, `GroupCount`, `GroupsPath` / `RequestedGroupsPath` / `GroupsPathAdjusted`. Groups are sorted by `sum_out_ins_amt` desc (not average priority). V1 / `kpi_q_*` claim values are unchanged. Patient groups use whatever is already on the scored rows (tokens when privacy is on).
 
 **Column mapping**
 
@@ -666,4 +673,4 @@ See [ENTERPRISE-SECURITY.md](./ENTERPRISE-SECURITY.md).
 
 ## 10. Version
 
-CLI and package version are aligned at **2.8.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, `kpi_q_*` / summary contracts, or the score `--sort` contract.
+CLI and package version are aligned at **2.9.0**. Bump when changing verbs, exit codes, JSON field names, default paths, diagnostics gate behavior, privacy defaults, default chaos config, mapping contract, `kpi_q_*` / summary contracts, or the score `--sort` / `--group-by` contracts.

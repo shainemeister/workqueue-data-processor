@@ -13,6 +13,16 @@ Dates are ISO 8601. There is no Unreleased section—record each change under th
 
 ## workqueue-data-processor
 
+### [1.16.0] - 2026-08-12
+
+#### Added
+
+- **kpi-analytics 2.9.0:** `score --group-by` / `--group-preset` / `--groups` writes a reporting `*_groups.csv` (count, sum AR / billed / `kpi_q` share, max priority, min appeal days). Default remains no groups file. V1 / `kpi_q_*` claim values unchanged.
+
+#### Changed
+
+- Cluster 3.1 **group CSV shape** frozen (post-score; `payer_category` straw man). Patient/account grouping and Excel sheets still developing.
+
 ### [1.15.0] - 2026-08-12
 
 #### Added

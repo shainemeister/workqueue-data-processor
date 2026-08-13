@@ -1,7 +1,7 @@
 ---
 title: "workqueue-data-processor — Active Workboard"
 description: Single source of truth for open multi-phase work. Product vision stays in PLAN.md; shipped contracts stay on L4 owners.
-version: "1.1.2"
+version: "1.1.3"
 status: current
 audience:
   - ai-agents
@@ -50,7 +50,7 @@ last_updated: "2026-08-12"
 | P1 | Cluster 3 design freeze (worklists / groups / sort / sheet) | `blocked` | — | Needs group key, output shape, privacy. [cluster-3-analysis.md](./plan/cluster-3-analysis.md) |
 | P2 | Optional Excel rehearsal (option A) | `done` | `cb78d08` | Findings: [p2-rehearsal.md](./plan/post-v1-enhancement/p2-rehearsal.md) |
 | P3 | Implement 3.2 multi-sort | `done` | `b3759d6` | kpi 2.8.0 `--sort` / `--sort-preset` (docs `bf66b2d`) |
-| P4 | Group summary CSV (option B) | `open` | — | kpi-analytics |
+| P4 | Group summary CSV (option B) | `done` | — | kpi 2.9.0 `--group-by` / `--group-preset`. SHA after commit |
 | P5 | Excel groups / two-level worklist (C+D) | `open` | — | No scoring math in PowerShell |
 | P6 | Menu Build worklist (E) | `open` | — | After P4–P5 |
 | P7 | Cluster 2 design freeze | `open` | — | Only if groups span files |
@@ -60,6 +60,7 @@ last_updated: "2026-08-12"
 
 ### Progress log (newest first, max ~15 lines)
 
+- 2026-08-12 P4 shipped kpi-analytics 2.9.0 groups CSV; 3.1 CSV frozen; P1 filters/patient freeze still `blocked`.  
 - 2026-08-12 P3 shipped kpi-analytics 2.8.0 detail sort; 3.2 frozen; P1 grouping freeze still `blocked`.  
 - 2026-08-12 P2 rehearsal on synthetic scored workbook; P1 remains `blocked` (user deferred freeze).  
 - 2026-08-12 Registered **post-v1-enhancement**; P0 annex written; P1 `blocked` on freeze questions.  
@@ -101,4 +102,4 @@ last_updated: "2026-08-12"
 
 ---
 
-*Agents: P3 done. Next open is P4 (group CSV) — still needs P1 grouping freeze. Do not start 3.1/3.3 product code.*
+*Agents: P4 done. Next open is P5 (Excel groups). P1 remaining freeze items: filters / patient groups / 3.3 sheet.*
